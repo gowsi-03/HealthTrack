@@ -1,30 +1,126 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HealthTrack</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - HealthTrack+</title>
+    
+    <!-- Google Fonts & Bootstrap 5 & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HealthTrack.styles.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --ht-blue: #1D4ED8;
+            --ht-blue-hover: #1E40AF;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-dark: #0F172A;
+            --ht-card: #1E293B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-brand-logo {
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: -0.5px;
+            color: var(--ht-blue) !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ht-primary {
+            background-color: var(--ht-blue);
+            color: #ffffff !important;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 8px 18px;
+            border: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-ht-primary:hover {
+            background-color: var(--ht-blue-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+        }
+
+        .btn-ht-success {
+            background-color: var(--ht-green);
+            color: #ffffff !important;
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 8px 18px;
+            border: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-ht-success:hover {
+            background-color: var(--ht-green-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .nav-link {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #475569 !important;
+            transition: color 0.15s ease-in-out;
+        }
+        .nav-link:hover {
+            color: var(--ht-blue) !important;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        footer {
+            background-color: #0F172A;
+            color: #94A3B8;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">HealthTrack</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+    <header class="sticky-top bg-white border-bottom shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-light py-2">
+            <div class="container">
+                <a class="navbar-brand navbar-brand-logo" asp-area="" asp-controller="Home" asp-action="Index">
+                    <!-- Brand Cross Logo Matching Image 1 -->
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1D4ED8 0%, #10B981 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 18px; box-shadow: 0 2px 8px rgba(29,78,216,0.3);">
+                        +
+                    </div>
+                    <span>Health<span style="color: #10B981;">Track+</span></span>
+                </a>
+                
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link" href="#features">Features</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#portals">User Portals</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#demo-accounts">Demo Accounts</a>
                         </li>
                     </ul>
                     <partial name="_LoginPartial" />
@@ -32,17 +128,31 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="py-5 mt-auto">
         <div class="container">
-            &copy; 2026 - HealthTrack - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="row g-4 justify-content-between align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <div class="navbar-brand-logo mb-2 text-white">
+                        <span class="text-white">Health<span style="color: #10B981;">Track+</span></span>
+                    </div>
+                    <p class="small text-muted mb-0">Personal Health & Fitness Management System</p>
+                    <p class="small text-secondary mb-0">CS6004ES – Application Development • London Metropolitan University</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="small text-muted mb-1">&copy; @DateTime.Now.Year HealthTrack+ • Built with ASP.NET Core MVC & C#</p>
+                    <span class="badge bg-primary bg-opacity-25 text-primary border border-primary border-opacity-25 px-2 py-1">.NET 10 / 8 LTS</span>
+                    <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-2 py-1">Bootstrap 5</span>
+                    <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-25 px-2 py-1">SQL Server LocalDB</span>
+                </div>
+            </div>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

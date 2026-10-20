@@ -3,25 +3,21 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
-<ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
 {
-    <li class="nav-item">
-        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">Hello @User.Identity?.Name!</a>
-    </li>
-    <li class="nav-item">
-        <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button  type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+    <div class="d-flex align-items-center gap-3">
+        <a class="nav-link-login fw-semibold" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
+            Hello, @(User.Identity?.Name?.Split('@')[0])!
+        </a>
+        <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3">Logout</button>
         </form>
-    </li>
+    </div>
 }
 else
 {
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">Login</a>
-    </li>
+    <div class="d-flex align-items-center gap-2">
+        <a class="nav-link-login" asp-area="Identity" asp-page="/Account/Login">Log in</a>
+        <a class="btn-get-started" asp-area="Identity" asp-page="/Account/Register">Get started</a>
+    </div>
 }
-</ul>

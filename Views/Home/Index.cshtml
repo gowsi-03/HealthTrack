@@ -304,6 +304,112 @@
         font-size: 1.35rem;
         margin-bottom: 1.5rem;
     }
+
+    /* ========================================================= */
+    /* HOW IT WORKS SECTION (Matching Reference Screenshot)      */
+    /* ========================================================= */
+    .section-how-it-works {
+        padding: 6rem 0 5.5rem;
+        background-color: #FFFFFF;
+        position: relative;
+    }
+
+    .hiw-header-container {
+        max-width: 680px;
+        margin: 0 auto 3.75rem auto;
+    }
+
+    .hiw-eyebrow {
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: #10B981;
+        text-transform: uppercase;
+        margin-bottom: 0.85rem;
+    }
+
+    .hiw-title {
+        font-size: clamp(2.1rem, 3.6vw, 2.85rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #0F172A;
+        line-height: 1.2;
+        margin-bottom: 0.9rem;
+    }
+
+    .hiw-subtitle {
+        font-size: 1.05rem;
+        color: #64748B;
+        line-height: 1.6;
+        margin: 0 auto;
+    }
+
+    .hiw-card {
+        background-color: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 22px;
+        padding: 2.25rem 2.25rem 2.5rem 2.25rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, 0.02);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hiw-card:hover {
+        transform: translateY(-4px);
+        border-color: #CBD5E1;
+        box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.08);
+    }
+
+    .hiw-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 3.5rem;
+    }
+
+    .hiw-step-num {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #64748B;
+        letter-spacing: 0.02em;
+    }
+
+    .hiw-icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background-color: #E8F7F0;
+        color: #10B981;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .hiw-card:hover .hiw-icon-box {
+        background-color: #D1FAE5;
+        transform: scale(1.05);
+    }
+
+    .hiw-card-title {
+        font-size: 1.28rem;
+        font-weight: 700;
+        letter-spacing: -0.015em;
+        color: #0F172A;
+        margin-bottom: 0.65rem;
+    }
+
+    .hiw-card-text {
+        font-size: 0.95rem;
+        color: #64748B;
+        line-height: 1.6;
+        margin-bottom: 0;
+    }
 </style>
 
 <!-- ========================================================= -->
@@ -474,7 +580,87 @@
 
 
 <!-- ========================================================= -->
-<!-- 2. FEATURES GRID (Mapped to the 8 Coursework Tasks)        -->
+<!-- 2. HOW IT WORKS SECTION (Matching Reference Screenshot)   -->
+<!-- ========================================================= -->
+<section id="how-it-works" class="section-how-it-works">
+    <div class="container">
+        
+        <!-- Centered Header -->
+        <div class="text-center hiw-header-container">
+            <span class="hiw-eyebrow">HOW IT WORKS</span>
+            <h2 class="hiw-title">A simpler path to feeling your best</h2>
+            <p class="hiw-subtitle">
+                Set your goals once, then let HealthTrack turn your everyday activity into clear, achievable next steps.
+            </p>
+        </div>
+
+        <!-- 3 Modern Step Cards -->
+        <div class="row g-4 justify-content-center">
+            
+            <!-- Step 01 -->
+            <div class="col-lg-4 col-md-6">
+                <div class="hiw-card">
+                    <div>
+                        <div class="hiw-card-header">
+                            <span class="hiw-step-num">01</span>
+                            <div class="hiw-icon-box">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="hiw-card-title">Tell us about you</h3>
+                        <p class="hiw-card-text">Choose your goals, preferences and current health baseline.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 02 -->
+            <div class="col-lg-4 col-md-6">
+                <div class="hiw-card">
+                    <div>
+                        <div class="hiw-card-header">
+                            <span class="hiw-step-num">02</span>
+                            <div class="hiw-icon-box">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="hiw-card-title">Follow your plan</h3>
+                        <p class="hiw-card-text">Get a practical routine for movement, meals and healthy habits.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 03 -->
+            <div class="col-lg-4 col-md-6">
+                <div class="hiw-card">
+                    <div>
+                        <div class="hiw-card-header">
+                            <span class="hiw-step-num">03</span>
+                            <div class="hiw-icon-box">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                    <polyline points="17 6 23 6 23 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <h3 class="hiw-card-title">Track your growth</h3>
+                        <p class="hiw-card-text">See patterns, celebrate wins and adjust with confidence.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ========================================================= -->
+<!-- 3. FEATURES GRID (Mapped to the 8 Coursework Tasks)        -->
 <!-- ========================================================= -->
 <section id="features" class="section-features">
     <div class="container">
@@ -569,51 +755,7 @@
 </section>
 
 
-<!-- ========================================================= -->
-<!-- 3. HOW IT WORKS (3 Simple Steps)                          -->
-<!-- ========================================================= -->
-<section id="how-it-works" class="py-5 bg-white">
-    <div class="container py-4">
-        
-        <div class="text-center mb-5">
-            <span class="pill-label mb-2">Step by Step</span>
-            <h2 class="fw-bold text-dark" style="font-size: 2.25rem;">How HealthTrack Works</h2>
-        </div>
 
-        <div class="row g-4 text-center">
-            <div class="col-md-4">
-                <div class="p-4">
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold fs-4 mb-3" style="width: 56px; height: 56px; background: #ECFDF5; color: #10B981;">
-                        1
-                    </div>
-                    <h5 class="fw-bold text-dark">Create Your Profile</h5>
-                    <p class="text-secondary small">Register your account with your height, baseline weight, and target fitness goal.</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="p-4">
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold fs-4 mb-3" style="width: 56px; height: 56px; background: #EFF6FF; color: #1D4ED8;">
-                        2
-                    </div>
-                    <h5 class="fw-bold text-dark">Get Assigned Routines</h5>
-                    <p class="text-secondary small">Your certified trainer customizes your workout splits and daily target diet calories.</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="p-4">
-                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold fs-4 mb-3" style="width: 56px; height: 56px; background: #FAF5FF; color: #8B5CF6;">
-                        3
-                    </div>
-                    <h5 class="fw-bold text-dark">Track & Celebrate</h5>
-                    <p class="text-secondary small">Log workouts, record daily body measurements, and watch your progress graphs climb.</p>
-                </div>
-            </div>
-        </div>
-
-    </div>
-</section>
 
 
 <!-- ========================================================= -->

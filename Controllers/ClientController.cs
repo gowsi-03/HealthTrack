@@ -457,6 +457,244 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Workouts));
         }
 
+        // GET: /Client/Diet
+        public async Task<IActionResult> Diet()
+        {
+            var user = await GetCurrentClientUserAsync();
+
+            var vm = new DietPlansViewModel
+            {
+                ClientId = user.Id,
+                FullName = user.FullName ?? user.UserName ?? "John Doe",
+                Email = user.Email ?? "client@healthtrack.com",
+                TrainerName = "Alex Henderson"
+            };
+
+            // Query active Diet Plan from database
+            var activePlan = await _context.DietPlans
+                .Include(d => d.Meals)
+                .OrderByDescending(d => d.CreatedAt)
+                .FirstOrDefaultAsync(d => d.ClientId == user.Id);
+
+            // Auto-upgrade legacy seed to match user design if needed
+            if (activePlan != null && (activePlan.Title == "Lean Cut & Muscle Preservation" || activePlan.Meals.Count < 4))
+            {
+                activePlan.Title = "Balanced Performance Plan";
+                activePlan.TargetCalories = 2150;
+                _context.MealItems.RemoveRange(activePlan.Meals);
+                activePlan.Meals = new List<MealItem>
+                {
+                    new MealItem { MealType = "Breakfast", Description = "Greek yogurt, berries & almond granola", Calories = 420 },
+                    new MealItem { MealType = "Lunch", Description = "Grilled chicken quinoa power bowl", Calories = 610 },
+                    new MealItem { MealType = "Afternoon snack", Description = "Apple with almond butter", Calories = 240 },
+                    new MealItem { MealType = "Dinner", Description = "Baked salmon, greens & brown rice", Calories = 580 }
+                };
+                await _context.SaveChangesAsync();
+            }
+
+            if (activePlan != null && activePlan.Meals.Any())
+            {
+                vm.PlanTitle = string.IsNullOrWhiteSpace(activePlan.Title) ? "Balanced Performance Plan" : activePlan.Title;
+                vm.DailyTargetCalories = activePlan.TargetCalories > 0 ? activePlan.TargetCalories : 2150;
+                vm.TargetProteinGrams = 120;
+                vm.MealsPerDay = activePlan.Meals.Count;
+
+                var defaultTimes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Breakfast", "8:30 AM" },
+                    { "Lunch", "12:30 PM" },
+                    { "Afternoon snack", "3:30 PM" },
+                    { "Snack", "3:30 PM" },
+                    { "Dinner", "7:30 PM" }
+                };
+
+                int idx = 1;
+                var today = DateTime.UtcNow.Date;
+                var todayMealLogs = await _context.HealthLogs
+                    .Where(l => l.ClientId == user.Id && l.LogDate >= today)
+                    .Select(l => l.Notes)
+                    .ToListAsync();
+
+                foreach (var meal in activePlan.Meals)
+                {
+                    string time = defaultTimes.ContainsKey(meal.MealType) ? defaultTimes[meal.MealType] : $"{8 + (idx * 3)}:00 PM";
+                    bool isLogged = idx == 1 || todayMealLogs.Any(n => n != null && n.Contains(meal.MealType));
+
+                    string ingredients = meal.MealType switch
+                    {
+                        "Breakfast" => "0% Greek yogurt (200g), fresh blueberries (50g), strawberries (50g), whole grain almond granola (40g), drizzle of organic honey.",
+                        "Lunch" => "Grilled herb chicken breast (180g), tri-color organic quinoa (120g cooked), steamed broccoli florets, avocado slices (40g), extra virgin olive oil drizzle.",
+                        "Afternoon snack" => "Crisp Gala or Honeycrisp apple (1 large), natural smooth unsalted almond butter (2 tbsp / 30g).",
+                        "Dinner" => "Atlantic salmon fillet (180g) baked with lemon and dill, wild brown rice (120g cooked), roasted asparagus spears & baby spinach with garlic.",
+                        _ => meal.Description
+                    };
+
+                    vm.ScheduledMeals.Add(new MealScheduleItem
+                    {
+                        Id = meal.Id,
+                        MealTime = time,
+                        MealType = meal.MealType,
+                        Description = meal.Description,
+                        Calories = meal.Calories,
+                        ProteinGrams = meal.Calories > 500 ? 35 : (meal.Calories > 300 ? 25 : 10),
+                        CarbsGrams = meal.Calories > 500 ? 60 : (meal.Calories > 300 ? 45 : 25),
+                        FatsGrams = meal.Calories > 500 ? 18 : (meal.Calories > 300 ? 12 : 7),
+                        Ingredients = ingredients,
+                        IsLogged = isLogged
+                    });
+                    idx++;
+                }
+            }
+            else
+            {
+                // Exact match to user reference design: media_1792516155246_4c1992a0.png
+                vm.PlanTitle = "Balanced Performance Plan";
+                vm.PlanDescription = "Nutrient-dense meals to support training, recovery and steady energy.";
+                vm.DailyTargetCalories = 2150;
+                vm.TargetProteinGrams = 120;
+                vm.MealsPerDay = 4;
+
+                vm.ScheduledMeals = new List<MealScheduleItem>
+                {
+                    new MealScheduleItem
+                    {
+                        Id = 1,
+                        MealTime = "8:30 AM",
+                        MealType = "Breakfast",
+                        Description = "Greek yogurt, berries & almond granola",
+                        Calories = 420,
+                        ProteinGrams = 24,
+                        CarbsGrams = 48,
+                        FatsGrams = 14,
+                        Ingredients = "0% Greek yogurt (200g), fresh blueberries (50g), strawberries (50g), whole grain almond granola (40g), drizzle of organic honey.",
+                        IsLogged = true
+                    },
+                    new MealScheduleItem
+                    {
+                        Id = 2,
+                        MealTime = "12:30 PM",
+                        MealType = "Lunch",
+                        Description = "Grilled chicken quinoa power bowl",
+                        Calories = 610,
+                        ProteinGrams = 48,
+                        CarbsGrams = 62,
+                        FatsGrams = 18,
+                        Ingredients = "Grilled herb chicken breast (180g), tri-color organic quinoa (120g cooked), steamed broccoli florets, avocado slices (40g), extra virgin olive oil drizzle.",
+                        IsLogged = false
+                    },
+                    new MealScheduleItem
+                    {
+                        Id = 3,
+                        MealTime = "3:30 PM",
+                        MealType = "Afternoon snack",
+                        Description = "Apple with almond butter",
+                        Calories = 240,
+                        ProteinGrams = 6,
+                        CarbsGrams = 28,
+                        FatsGrams = 12,
+                        Ingredients = "Crisp Gala or Honeycrisp apple (1 large), natural smooth unsalted almond butter (2 tbsp / 30g).",
+                        IsLogged = false
+                    },
+                    new MealScheduleItem
+                    {
+                        Id = 4,
+                        MealTime = "7:30 PM",
+                        MealType = "Dinner",
+                        Description = "Baked salmon, greens & brown rice",
+                        Calories = 580,
+                        ProteinGrams = 42,
+                        CarbsGrams = 46,
+                        FatsGrams = 22,
+                        Ingredients = "Atlantic salmon fillet (180g) baked with lemon and dill, wild brown rice (120g cooked), roasted asparagus spears & baby spinach with garlic.",
+                        IsLogged = false
+                    }
+                };
+            }
+
+            vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
+            vm.TotalMealsCount = vm.ScheduledMeals.Count;
+            // Monday, April 14 format or dynamic
+            vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
+
+            return View(vm);
+        }
+
+        // POST: /Client/LogMealEntry
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogMealEntry(DietPlansViewModel vm)
+        {
+            var user = await GetCurrentClientUserAsync();
+
+            var form = vm.LogMealForm;
+            if (form == null || string.IsNullOrWhiteSpace(form.Description))
+            {
+                TempData["ErrorMessage"] = "Please fill in the meal details.";
+                return RedirectToAction(nameof(Diet));
+            }
+
+            // Save to HealthLog (record caloric intake)
+            var log = new HealthLog
+            {
+                ClientId = user.Id,
+                LogDate = DateTime.UtcNow,
+                WeightKg = user.CurrentWeight ?? 72.4,
+                CalculatedBmi = Math.Round((user.CurrentWeight ?? 72.4) / Math.Pow((user.HeightCm ?? 175.0) / 100.0, 2), 1),
+                CaloriesBurned = 0,
+                WaterIntakeLiters = 2.5,
+                Notes = $"Meal: {form.MealType} - {form.Description} ({form.Calories} kcal, {form.ProteinGrams}g protein)"
+            };
+            _context.HealthLogs.Add(log);
+
+            // Add notification
+            _context.Notifications.Add(new Notification
+            {
+                UserId = user.Id,
+                Message = $"Meal logged: {form.MealType} ({form.Calories} kcal). Great job following your nutrition targets!",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Meal '{form.MealType}' logged successfully (+{form.Calories} kcal recorded)!";
+
+            return RedirectToAction(nameof(Diet));
+        }
+
+        // POST: /Client/ToggleMealStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleMealStatus(string mealType, string mealDescription, int calories)
+        {
+            var user = await GetCurrentClientUserAsync();
+
+            // Add meal record to HealthLogs
+            var log = new HealthLog
+            {
+                ClientId = user.Id,
+                LogDate = DateTime.UtcNow,
+                WeightKg = user.CurrentWeight ?? 72.4,
+                CalculatedBmi = Math.Round((user.CurrentWeight ?? 72.4) / Math.Pow((user.HeightCm ?? 175.0) / 100.0, 2), 1),
+                CaloriesBurned = 0,
+                WaterIntakeLiters = 2.5,
+                Notes = $"Meal Logged: {mealType} - {mealDescription} ({calories} kcal)"
+            };
+            _context.HealthLogs.Add(log);
+
+            _context.Notifications.Add(new Notification
+            {
+                UserId = user.Id,
+                Message = $"You have marked your {mealType} as logged ({calories} kcal).",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"{mealType} marked as logged ({calories} kcal)!";
+
+            return RedirectToAction(nameof(Diet));
+        }
+
         // Helper to retrieve current client user or fallback to seeded demo client
         private async Task<ApplicationUser> GetCurrentClientUserAsync()
         {

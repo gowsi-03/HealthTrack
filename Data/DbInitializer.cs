@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using HealthTrack.Models;
 
 namespace HealthTrack.Data
@@ -102,17 +102,18 @@ namespace HealthTrack.Data
 
                 context.WorkoutPlans.Add(workout);
 
-                // Seed Initial Diet Plan
+                // Seed Initial Diet Plan (Matching user reference layout)
                 var diet = new DietPlan
                 {
-                    Title = "Lean Cut & Muscle Preservation",
-                    TargetCalories = 2100,
+                    Title = "Balanced Performance Plan",
+                    TargetCalories = 2150,
                     ClientId = clientUser.Id,
                     CreatedAt = DateTime.UtcNow
                 };
-                diet.Meals.Add(new MealItem { MealType = "Breakfast", Description = "Oatmeal with Blueberries, Whey Protein & Almond Milk", Calories = 520 });
-                diet.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled Chicken Breast (200g), Brown Rice & Steamed Broccoli", Calories = 680 });
-                diet.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked Salmon Fillet, Sweet Potato Mash & Asparagus", Calories = 580 });
+                diet.Meals.Add(new MealItem { MealType = "Breakfast", Description = "Greek yogurt, berries & almond granola", Calories = 420 });
+                diet.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken quinoa power bowl", Calories = 610 });
+                diet.Meals.Add(new MealItem { MealType = "Afternoon snack", Description = "Apple with almond butter", Calories = 240 });
+                diet.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked salmon, greens & brown rice", Calories = 580 });
 
                 context.DietPlans.Add(diet);
 

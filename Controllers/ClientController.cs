@@ -9,7 +9,7 @@ using HealthTrack.Models.ViewModels;
 
 namespace HealthTrack.Controllers
 {
-    [Authorize] // Client access (also accessible by Admin for demonstration)
+    // Client Dashboard (Accessible when authenticated as Client/Admin, or fallback to demo client in development)
     public class ClientController : Controller
     {
         private readonly ApplicationDbContext _context;

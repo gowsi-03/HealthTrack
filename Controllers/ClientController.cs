@@ -359,7 +359,7 @@ namespace HealthTrack.Controllers
 
             if (plan != null)
             {
-                vm.ProgramTitle = plan.Title.Contains("Weeks") ? plan.Title : $"{plan.Title} • 8 Weeks";
+                vm.ProgramTitle = "Foundation Strength • 8 Weeks";
                 if (!string.IsNullOrEmpty(plan.Description)) vm.ProgramDescription = plan.Description;
                 vm.Exercises = plan.Exercises.ToList();
                 vm.TotalExercisesCount = plan.Exercises.Count;

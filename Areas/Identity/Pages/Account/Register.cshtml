@@ -1,0 +1,516 @@
+@page
+@model HealthTrack.Areas.Identity.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Create your account";
+    Layout = null; // Full-bleed split screen matching screenshot
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create your account - HealthTrack</title>
+    
+    <!-- Google Fonts & Bootstrap 5 & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-green-bg: #ECFDF5;
+            --ht-dark-navy: #0B192C;
+            --ht-slate: #0F172A;
+            --ht-muted: #64748B;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #FFFFFF;
+            color: #0F172A;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .split-layout {
+            display: flex;
+            min-height: 100vh;
+            width: 100vw;
+        }
+
+        /* ==================================================== */
+        /* LEFT HERO PANEL (Dark Navy Side)                    */
+        /* ==================================================== */
+        .hero-panel {
+            flex: 0 0 42%;
+            background-color: var(--ht-dark-navy);
+            color: #FFFFFF;
+            padding: 3rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Concentric ring graphic in bottom right matching screenshot */
+        .hero-rings {
+            position: absolute;
+            bottom: -120px;
+            right: -120px;
+            width: 550px;
+            height: 550px;
+            border-radius: 50%;
+            border: 55px solid rgba(30, 41, 59, 0.45);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .hero-rings::before {
+            content: '';
+            position: absolute;
+            inset: 70px;
+            border-radius: 50%;
+            border: 45px solid rgba(30, 41, 59, 0.35);
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            z-index: 2;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .hero-center-content {
+            z-index: 2;
+            max-width: 440px;
+            margin: auto 0;
+            padding: 3rem 0;
+        }
+
+        .pill-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #E2E8F0;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+        .pill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--ht-green);
+        }
+
+        .hero-heading {
+            font-size: clamp(2.4rem, 3.8vw, 3.25rem);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            color: #FFFFFF;
+        }
+
+        .hero-subtext {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #94A3B8;
+        }
+
+        .hero-footer-text {
+            font-size: 0.85rem;
+            color: #64748B;
+            z-index: 2;
+        }
+
+        /* ==================================================== */
+        /* RIGHT FORM PANEL (Clean White Form Side)            */
+        /* ==================================================== */
+        .form-panel {
+            flex: 1;
+            background-color: #FFFFFF;
+            padding: 3rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 480px;
+            padding: 1rem 0;
+        }
+
+        .form-subhead-pill {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--ht-green);
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .form-main-title {
+            font-size: 2.15rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #0F172A;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-lead {
+            font-size: 0.95rem;
+            color: #64748B;
+            margin-bottom: 2.25rem;
+        }
+
+        .form-label-custom {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.45rem;
+            display: block;
+        }
+
+        .input-custom {
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            color: #0F172A;
+            background-color: #FFFFFF;
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+        .input-custom:focus {
+            outline: none;
+            border-color: var(--ht-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+        .input-custom::placeholder {
+            color: #94A3B8;
+        }
+
+        /* Password input with toggle */
+        .password-wrap {
+            position: relative;
+        }
+        .btn-toggle-pass {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ht-green);
+            cursor: pointer;
+            padding: 0;
+        }
+
+        /* Role Selection Cards (Matching Screenshot) */
+        .role-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 0.35rem;
+        }
+
+        .role-card-item {
+            border: 1.5px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+        .role-card-item:hover {
+            border-color: #CBD5E1;
+        }
+        .role-card-item.selected {
+            border-color: var(--ht-green);
+            background-color: var(--ht-green-bg);
+        }
+
+        .role-card-icon {
+            font-size: 1.35rem;
+            color: #475569;
+        }
+        .role-card-item.selected .role-card-icon {
+            color: var(--ht-green);
+        }
+
+        .role-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #0F172A;
+            display: block;
+            line-height: 1.2;
+        }
+        .role-desc {
+            font-size: 0.75rem;
+            color: #64748B;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Submit Button */
+        .btn-submit-account {
+            background-color: var(--ht-green);
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.85rem 1.5rem;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+            margin-top: 1.5rem;
+        }
+        .btn-submit-account:hover {
+            background-color: var(--ht-green-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .login-switch-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #64748B;
+        }
+        .login-switch-link {
+            color: var(--ht-green);
+            font-weight: 700;
+            text-decoration: none;
+            margin-left: 4px;
+        }
+        .login-switch-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsiveness */
+        @@media (max-width: 991px) {
+            .split-layout {
+                flex-direction: column;
+            }
+            .hero-panel {
+                flex: none;
+                padding: 2.5rem 2rem;
+            }
+            .hero-rings {
+                display: none;
+            }
+            .form-panel {
+                padding: 2.5rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="split-layout">
+        
+        <!-- ==================================================== -->
+        <!-- LEFT: DARK HERO SIDE (Matching Screenshot)          -->
+        <!-- ==================================================== -->
+        <div class="hero-panel">
+            <div class="hero-rings"></div>
+
+            <!-- Top Left Logo -->
+            <a href="/" class="brand-header">
+                <div class="brand-icon">
+                    <i class="bi bi-heart"></i>
+                </div>
+                <span>Health<span style="color: #10B981;">Track</span></span>
+            </a>
+
+            <!-- Center Headline & Copy -->
+            <div class="hero-center-content">
+                <div class="pill-tag">
+                    <span class="pill-dot"></span>
+                    <span>Health made simple</span>
+                </div>
+
+                <h1 class="hero-heading">
+                    Start your health journey today.
+                </h1>
+
+                <p class="hero-subtext">
+                    One place to manage your fitness, nutrition and care — built around your goals.
+                </p>
+            </div>
+
+            <!-- Bottom Copyright Text -->
+            <div class="hero-footer-text">
+                &copy; @DateTime.Now.Year HealthTrack. Your privacy, protected.
+            </div>
+        </div>
+
+        <!-- ==================================================== -->
+        <!-- RIGHT: REGISTRATION FORM SIDE (Matching Screenshot)  -->
+        <!-- ==================================================== -->
+        <div class="form-panel">
+            <div class="form-container">
+                
+                <span class="form-subhead-pill">Create account</span>
+                <h2 class="form-main-title">Create your account</h2>
+                <p class="form-lead">It only takes a minute to get started.</p>
+
+                <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-3" role="alert"></div>
+
+                    <!-- 1. Full name -->
+                    <div class="mb-3">
+                        <label asp-for="Input.FullName" class="form-label-custom">Full name</label>
+                        <input asp-for="Input.FullName" class="input-custom" placeholder="e.g. Alex Morgan" autocomplete="name" required />
+                        <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 2. Email address -->
+                    <div class="mb-3">
+                        <label asp-for="Input.Email" class="form-label-custom">Email address</label>
+                        <input asp-for="Input.Email" class="input-custom" placeholder="you@example.com" autocomplete="username" required />
+                        <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 3. Password -->
+                    <div class="mb-3">
+                        <label asp-for="Input.Password" class="form-label-custom">Password</label>
+                        <div class="password-wrap">
+                            <input asp-for="Input.Password" id="txtPassword" class="input-custom" placeholder="At least 8 characters" autocomplete="new-password" required />
+                            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility('txtPassword', this)">Show</button>
+                        </div>
+                        <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 4. Confirm password -->
+                    <div class="mb-3">
+                        <label asp-for="Input.ConfirmPassword" class="form-label-custom">Confirm password</label>
+                        <input asp-for="Input.ConfirmPassword" class="input-custom" placeholder="Re-enter your password" autocomplete="new-password" required />
+                        <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                    </div>
+
+                    <!-- 5. Role Selection Cards ("I am a") -->
+                    <div class="mb-4">
+                        <label class="form-label-custom">I am a</label>
+                        <!-- Hidden input bound to model -->
+                        <input type="hidden" asp-for="Input.Role" id="selectedRole" value="Client" />
+
+                        <div class="role-cards-grid">
+                            <!-- Card 1: Client -->
+                            <div class="role-card-item selected" id="roleCardClient" onclick="selectRole('Client')">
+                                <div class="role-card-icon">
+                                    <i class="bi bi-person"></i>
+                                </div>
+                                <div>
+                                    <span class="role-title">Client</span>
+                                    <span class="role-desc">Manage my health</span>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Trainer -->
+                            <div class="role-card-item" id="roleCardTrainer" onclick="selectRole('Trainer')">
+                                <div class="role-card-icon">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                                <div>
+                                    <span class="role-title">Trainer</span>
+                                    <span class="role-desc">Support clients</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 6. Agreement Checkbox -->
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="termsCheck" required checked />
+                        <label class="form-check-label text-muted" for="termsCheck" style="font-size: 0.85rem;">
+                            I agree to the <a href="#" class="text-dark fw-semibold text-decoration-none">Terms of Service</a> and <a href="#" class="text-dark fw-semibold text-decoration-none">Privacy Policy</a>.
+                        </label>
+                    </div>
+
+                    <!-- 7. Submit Button -->
+                    <button id="registerSubmit" type="submit" class="btn-submit-account">
+                        Create account
+                    </button>
+                </form>
+
+                <!-- Footer link to Login -->
+                <div class="login-switch-footer">
+                    Already have an account? <a href="/Identity/Account/Login" class="login-switch-link">Log in</a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function selectRole(role) {
+            document.getElementById('selectedRole').value = role;
+            const clientCard = document.getElementById('roleCardClient');
+            const trainerCard = document.getElementById('roleCardTrainer');
+
+            if (role === 'Client') {
+                clientCard.classList.add('selected');
+                trainerCard.classList.remove('selected');
+            } else {
+                trainerCard.classList.add('selected');
+                clientCard.classList.remove('selected');
+            }
+        }
+
+        function togglePasswordVisibility(fieldId, btn) {
+            const field = document.getElementById(fieldId);
+            if (field.type === 'password') {
+                field.type = 'text';
+                btn.textContent = 'Hide';
+            } else {
+                field.type = 'password';
+                btn.textContent = 'Show';
+            }
+        }
+    </script>
+
+</body>
+</html>

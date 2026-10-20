@@ -88,18 +88,9 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     if (user != null)
                     {
                         var roles = await _userManager.GetRolesAsync(user);
-                        if (roles.Contains("Admin"))
+                        if (roles.Contains("Client") && (returnUrl == "/" || returnUrl == "~/" || string.IsNullOrEmpty(returnUrl)))
                         {
-                            // If returnUrl is default home, route admin to Admin dashboard once present
-                            // For now redirect to returnUrl
-                        }
-                        else if (roles.Contains("Trainer"))
-                        {
-                            // Route trainer to Trainer dashboard once present
-                        }
-                        else if (roles.Contains("Client"))
-                        {
-                            // Route client to Client dashboard once present
+                            return RedirectToAction("Index", "Client");
                         }
                     }
 

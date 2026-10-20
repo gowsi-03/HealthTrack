@@ -332,6 +332,131 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // GET: /Client/Workouts
+        public async Task<IActionResult> Workouts()
+        {
+            var user = await GetCurrentClientUserAsync();
+
+            var vm = new WorkoutPlansViewModel
+            {
+                ClientId = user.Id,
+                FullName = user.FullName ?? user.UserName ?? "Alex Morgan",
+                Email = user.Email ?? string.Empty
+            };
+
+            // Fetch trainer info
+            if (!string.IsNullOrEmpty(user.TrainerId))
+            {
+                var trainer = await _userManager.FindByIdAsync(user.TrainerId);
+                if (trainer != null) vm.TrainerName = trainer.FullName;
+            }
+
+            // Fetch active workout plan from DB
+            var plan = await _context.WorkoutPlans
+                .Include(w => w.Exercises)
+                .OrderByDescending(w => w.CreatedAt)
+                .FirstOrDefaultAsync(w => w.ClientId == user.Id);
+
+            if (plan != null)
+            {
+                vm.ProgramTitle = plan.Title.Contains("Weeks") ? plan.Title : $"{plan.Title} • 8 Weeks";
+                if (!string.IsNullOrEmpty(plan.Description)) vm.ProgramDescription = plan.Description;
+                vm.Exercises = plan.Exercises.ToList();
+                vm.TotalExercisesCount = plan.Exercises.Count;
+                vm.CompletedExercisesCount = plan.Exercises.Count(e => e.IsCompleted);
+            }
+
+            // Assemble the weekly training sessions matching uploaded reference design
+            vm.WeeklySessions = new List<WorkoutSessionItem>
+            {
+                new WorkoutSessionItem
+                {
+                    Id = 1,
+                    DaySchedule = "Today • 5:30 PM",
+                    Title = "Upper body strength",
+                    ExerciseCount = 8,
+                    DurationMinutes = 45,
+                    Intensity = "3 sets • 8-12 reps",
+                    Status = "In progress",
+                    IsActiveSession = true,
+                    ExerciseNames = new List<string> { "Barbell Bench Press (4x10)", "Incline Dumbbell Rows (3x12)", "Overhead DB Press (3x10)", "Tricep Pushdowns (3x15)" }
+                },
+                new WorkoutSessionItem
+                {
+                    Id = 2,
+                    DaySchedule = "Wednesday",
+                    Title = "Lower body & core",
+                    ExerciseCount = 7,
+                    DurationMinutes = 50,
+                    Intensity = "3 sets • 8-12 reps",
+                    Status = "Upcoming",
+                    IsActiveSession = false,
+                    ExerciseNames = new List<string> { "Barbell Back Squats (4x8)", "Romanian Deadlifts (3x10)", "Bulgarian Split Squats (3x10)", "Plank Holds (3x60s)" }
+                },
+                new WorkoutSessionItem
+                {
+                    Id = 3,
+                    DaySchedule = "Friday",
+                    Title = "Full body mobility",
+                    ExerciseCount = 10,
+                    DurationMinutes = 35,
+                    Intensity = "3 sets • 8-12 reps",
+                    Status = "Upcoming",
+                    IsActiveSession = false,
+                    ExerciseNames = new List<string> { "World's Greatest Stretch (3x5)", "Goblet Squat Pause (3x8)", "Face Pulls (3x15)", "Hanging Knee Raises (3x12)" }
+                },
+                new WorkoutSessionItem
+                {
+                    Id = 4,
+                    DaySchedule = "Sunday",
+                    Title = "Active recovery & core",
+                    ExerciseCount = 6,
+                    DurationMinutes = 30,
+                    Intensity = "2 sets • 15 reps",
+                    Status = "Upcoming",
+                    IsActiveSession = false,
+                    ExerciseNames = new List<string> { "Zone 2 Incline Walk (20 min)", "Hamstring Flossing (2x10)", "Thoracic Spine Rotations (2x10)" }
+                }
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Client/LogWorkoutSession
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogWorkoutSession(WorkoutPlansViewModel vm)
+        {
+            var user = await GetCurrentClientUserAsync();
+
+            var log = new HealthLog
+            {
+                ClientId = user.Id,
+                LogDate = DateTime.UtcNow,
+                WeightKg = user.CurrentWeight ?? 72.4,
+                CalculatedBmi = Math.Round((user.CurrentWeight ?? 72.4) / Math.Pow((user.HeightCm ?? 175.0) / 100.0, 2), 1),
+                CaloriesBurned = vm.LogWorkoutForm.CaloriesBurned,
+                WaterIntakeLiters = 2.5,
+                Notes = $"Workout: {vm.LogWorkoutForm.WorkoutName} ({vm.LogWorkoutForm.DurationMinutes} min) - {vm.LogWorkoutForm.Notes}"
+            };
+
+            _context.HealthLogs.Add(log);
+
+            // Add notification
+            _context.Notifications.Add(new Notification
+            {
+                UserId = user.Id,
+                Message = $"Great job! You completed '{vm.LogWorkoutForm.WorkoutName}' and burned {vm.LogWorkoutForm.CaloriesBurned} kcal.",
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Workout session '{vm.LogWorkoutForm.WorkoutName}' logged successfully (+{vm.LogWorkoutForm.CaloriesBurned} kcal burned)!";
+
+            return RedirectToAction(nameof(Workouts));
+        }
+
         // Helper to retrieve current client user or fallback to seeded demo client
         private async Task<ApplicationUser> GetCurrentClientUserAsync()
         {

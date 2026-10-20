@@ -410,6 +410,64 @@
         line-height: 1.6;
         margin-bottom: 0;
     }
+
+    /* ========================================================= */
+    /* ABOUT SECTION (Matching Reference Screenshot)             */
+    /* ========================================================= */
+    .section-about {
+        padding: 6.5rem 0;
+        background-color: #FFFFFF;
+        border-top: 1px solid #F1F5F9;
+        position: relative;
+    }
+
+    .about-eyebrow {
+        display: inline-block;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: #10B981;
+        text-transform: uppercase;
+        margin-bottom: 1.15rem;
+    }
+
+    .about-heading {
+        font-size: clamp(2.1rem, 3.6vw, 2.9rem);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #0F172A;
+        line-height: 1.2;
+        margin-bottom: 0;
+    }
+
+    .about-lead {
+        font-size: 1.05rem;
+        color: #64748B;
+        line-height: 1.65;
+        margin-bottom: 2rem;
+    }
+
+    .btn-get-started-white {
+        background-color: #FFFFFF;
+        color: #0F172A !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: 12px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .btn-get-started-white:hover {
+        background-color: #F8FAFC;
+        border-color: #CBD5E1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+    }
 </style>
 
 <!-- ========================================================= -->
@@ -801,6 +859,37 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ========================================================= -->
+<!-- 5. ABOUT HEALTHTRACK (Matching Design Reference)          -->
+<!-- ========================================================= -->
+<section id="about" class="section-about">
+    <div class="container">
+        <div class="row align-items-center g-5 justify-content-between">
+            
+            <!-- Left Column: Title & Eyebrow -->
+            <div class="col-lg-6">
+                <span class="about-eyebrow">ABOUT HEALTHTRACK</span>
+                <h2 class="about-heading">
+                    Health should feel connected,<br class="d-none d-md-block" />
+                    not complicated.
+                </h2>
+            </div>
+
+            <!-- Right Column: Subtitle & CTA -->
+            <div class="col-lg-5">
+                <p class="about-lead">
+                    We bring fitness, nutrition and professional support into one calm, secure experience &mdash; so you can spend less time managing tools and more time building habits that last.
+                </p>
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn-get-started-white">
+                    Get started free
+                </a>
+            </div>
+
         </div>
     </div>
 </section>

@@ -121,10 +121,47 @@
 
         main { flex: 1; }
 
-        footer {
-            background-color: #FAFAFA;
+        /* Minimal Footer matching design reference */
+        .ht-footer {
+            background-color: #FFFFFF;
             border-top: 1px solid #F1F5F9;
+            padding: 2.25rem 0;
+            margin-top: auto;
+        }
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.35rem;
+            letter-spacing: -0.02em;
+            color: #0F172A;
+        }
+        .footer-brand:hover {
+            color: #0F172A;
+        }
+        .footer-logo-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1rem;
+            box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+        }
+        .footer-tagline {
             color: #64748B;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .footer-copyright {
+            color: #94A3B8;
+            font-size: 0.85rem;
+            margin: 0;
         }
     </style>
 </head>
@@ -157,7 +194,7 @@
                             <a class="ht-nav-link" href="#for-trainers">For trainers</a>
                         </li>
                         <li class="nav-item">
-                            <a class="ht-nav-link" href="#features">About</a>
+                            <a class="ht-nav-link" href="#about">About</a>
                         </li>
                     </ul>
 
@@ -174,23 +211,23 @@
         @RenderBody()
     </main>
 
-    <footer class="py-5 mt-auto">
+    <footer class="ht-footer">
         <div class="container">
-            <div class="row g-4 justify-content-between align-items-center">
-                <div class="col-md-6 text-center text-md-start">
-                    <div class="ht-brand mb-2">
-                        <span>Health<span class="ht-brand-accent">Track</span></span>
-                    </div>
-                    <p class="small text-muted mb-0">Personal Health & Fitness Management System</p>
-                    <p class="small text-secondary mb-0">CS6004ES – Application Development • London Metropolitan University</p>
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+                <div class="d-flex flex-column flex-sm-row align-items-center gap-3 text-center text-sm-start">
+                    <a href="/" class="footer-brand">
+                        <div class="footer-logo-icon">
+                            <i class="bi bi-heart-pulse-fill"></i>
+                        </div>
+                        <span>HealthTrack</span>
+                    </a>
+                    <span class="d-none d-sm-inline" style="color: #CBD5E1;">•</span>
+                    <p class="footer-tagline">
+                        Personal health management for clients and trainers.
+                    </p>
                 </div>
-                <div class="col-md-6 text-center text-md-end">
-                    <p class="small text-muted mb-2">&copy; @DateTime.Now.Year HealthTrack • ASP.NET Core MVC & C#</p>
-                    <div class="d-inline-flex gap-2">
-                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill">.NET 10 LTS</span>
-                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1 rounded-pill">Bootstrap 5</span>
-                        <span class="badge bg-dark bg-opacity-10 text-dark border border-dark border-opacity-25 px-2.5 py-1 rounded-pill">SQL LocalDB</span>
-                    </div>
+                <div class="footer-copyright text-center text-md-end">
+                    &copy; 2025 HealthTrack
                 </div>
             </div>
         </div>

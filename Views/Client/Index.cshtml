@@ -968,14 +968,44 @@
                     <span class="notify-dot"></span>
                 </button>
 
-                <!-- User Profile Pill -->
-                <div class="user-profile-pill">
-                    <div class="avatar-initials">@initials</div>
-                    <div class="user-meta d-none d-sm-block">
-                        <span class="user-name">@Model.FullName</span>
-                        <span class="user-role-label">Client</span>
-                    </div>
-                    <i class="bi bi-chevron-down ms-1 text-muted" style="font-size: 0.75rem;"></i>
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="user-profile-pill btn p-0 border-0 d-flex align-items-center" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials">@initials</div>
+                        <div class="user-meta d-none d-sm-block text-start ms-2">
+                            <span class="user-name">@Model.FullName</span>
+                            <span class="user-role-label">Client</span>
+                        </div>
+                        <i class="bi bi-chevron-down ms-2 text-muted" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="userMenuDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.FullName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@(string.IsNullOrEmpty(Model.Email) ? "client@healthtrack.com" : Model.Email)</div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-0.5 rounded-pill mt-1" style="font-size: 0.7rem;">Client Account</span>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="javascript:void(0)" onclick="openMeasurementModal()">
+                                <i class="bi bi-person text-secondary"></i>
+                                <span>Profile & Health</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="javascript:void(0)" onclick="openBookingModal()">
+                                <i class="bi bi-calendar2-check text-secondary"></i>
+                                <span>Book Consultation</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-left"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </header>

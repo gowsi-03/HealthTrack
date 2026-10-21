@@ -218,14 +218,37 @@ namespace HealthTrack.Data
                     }
                 );
 
-                // Seed Initial Notification
-                context.Notifications.Add(new Notification
-                {
-                    UserId = clientUser.Id,
-                    Message = "Trainer Alex approved your consultation appointment for Thursday at 10:00 AM.",
-                    IsRead = false,
-                    CreatedAt = DateTime.UtcNow
-                });
+                // Seed Initial Notifications (Matching user reference layout media_1792593460829_608ca178.png)
+                context.Notifications.AddRange(
+                    new Notification
+                    {
+                        UserId = clientUser.Id,
+                        Message = "Workout starts in 2 hours: Upper Body Strength is scheduled for 5:30 PM today.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+                    },
+                    new Notification
+                    {
+                        UserId = clientUser.Id,
+                        Message = "Appointment confirmed: Dr. Maya Patel approved your health consultation.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow.AddHours(-1)
+                    },
+                    new Notification
+                    {
+                        UserId = clientUser.Id,
+                        Message = "Time to log lunch: Keep your nutrition goals on track by logging your meal.",
+                        IsRead = true,
+                        CreatedAt = DateTime.UtcNow.AddHours(-2)
+                    },
+                    new Notification
+                    {
+                        UserId = clientUser.Id,
+                        Message = "New progress insight: You've improved workout consistency by 12% this month.",
+                        IsRead = true,
+                        CreatedAt = DateTime.UtcNow.AddDays(-1)
+                    }
+                );
 
                 await context.SaveChangesAsync();
             }

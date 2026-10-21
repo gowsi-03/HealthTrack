@@ -38,7 +38,7 @@ namespace HealthTrack.Data
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
 
-            // 3. Seed Trainer User
+            // 3. Seed Trainer User & Specialists
             var trainerEmail = "trainer@healthtrack.com";
             var trainerUser = await userManager.FindByEmailAsync(trainerEmail);
             if (trainerUser == null)
@@ -54,6 +54,60 @@ namespace HealthTrack.Data
                 };
                 await userManager.CreateAsync(trainerUser, "Trainer123!");
                 await userManager.AddToRoleAsync(trainerUser, "Trainer");
+            }
+
+            // Seed Dr. Maya Patel
+            var mayaEmail = "maya.patel@healthtrack.com";
+            var mayaUser = await userManager.FindByEmailAsync(mayaEmail);
+            if (mayaUser == null)
+            {
+                mayaUser = new ApplicationUser
+                {
+                    UserName = mayaEmail,
+                    Email = mayaEmail,
+                    FullName = "Dr. Maya Patel",
+                    Role = "Trainer",
+                    FitnessGoal = "Health & Wellness Physician",
+                    EmailConfirmed = true
+                };
+                await userManager.CreateAsync(mayaUser, "Specialist123!");
+                await userManager.AddToRoleAsync(mayaUser, "Trainer");
+            }
+
+            // Seed Chris Williams
+            var chrisEmail = "chris.williams@healthtrack.com";
+            var chrisUser = await userManager.FindByEmailAsync(chrisEmail);
+            if (chrisUser == null)
+            {
+                chrisUser = new ApplicationUser
+                {
+                    UserName = chrisEmail,
+                    Email = chrisEmail,
+                    FullName = "Chris Williams",
+                    Role = "Trainer",
+                    FitnessGoal = "Senior Performance & Strength Coach",
+                    EmailConfirmed = true
+                };
+                await userManager.CreateAsync(chrisUser, "Specialist123!");
+                await userManager.AddToRoleAsync(chrisUser, "Trainer");
+            }
+
+            // Seed Dr. Nina Ford
+            var ninaEmail = "nina.ford@healthtrack.com";
+            var ninaUser = await userManager.FindByEmailAsync(ninaEmail);
+            if (ninaUser == null)
+            {
+                ninaUser = new ApplicationUser
+                {
+                    UserName = ninaEmail,
+                    Email = ninaEmail,
+                    FullName = "Dr. Nina Ford",
+                    Role = "Trainer",
+                    FitnessGoal = "Registered Clinical Nutritionist",
+                    EmailConfirmed = true
+                };
+                await userManager.CreateAsync(ninaUser, "Specialist123!");
+                await userManager.AddToRoleAsync(ninaUser, "Trainer");
             }
 
             // 4. Seed Client User
@@ -117,16 +171,54 @@ namespace HealthTrack.Data
 
                 context.DietPlans.Add(diet);
 
-                // Seed Initial Appointment
-                context.Appointments.Add(new Appointment
-                {
-                    ClientId = clientUser.Id,
-                    TrainerId = trainerUser.Id,
-                    AppointmentDate = DateTime.UtcNow.AddDays(2),
-                    TimeSlot = "10:00 AM",
-                    Status = "Confirmed",
-                    Notes = "Routine form check & squat technique review"
-                });
+                // Seed Initial Appointments (Matching user reference layout media_1792558583092_fb065d35.png)
+                context.Appointments.AddRange(
+                    new Appointment
+                    {
+                        ClientId = clientUser.Id,
+                        TrainerId = mayaUser.Id,
+                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 18),
+                        TimeSlot = "10:30 AM",
+                        Status = "Approved",
+                        Notes = "HEALTH CONSULTATION · 45 min - Routine cardiovascular screening and general wellness assessment."
+                    },
+                    new Appointment
+                    {
+                        ClientId = clientUser.Id,
+                        TrainerId = chrisUser.Id,
+                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 24),
+                        TimeSlot = "4:00 PM",
+                        Status = "Pending",
+                        Notes = "PERSONAL TRAINING · 60 min - Progressive overload review & squat technique optimization."
+                    },
+                    new Appointment
+                    {
+                        ClientId = clientUser.Id,
+                        TrainerId = ninaUser.Id,
+                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 5, 2),
+                        TimeSlot = "9:15 AM",
+                        Status = "Approved",
+                        Notes = "NUTRITION REVIEW · 60 min - Macronutrient adjustment for endurance & lean retention."
+                    },
+                    new Appointment
+                    {
+                        ClientId = clientUser.Id,
+                        TrainerId = mayaUser.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(-14),
+                        TimeSlot = "10:00 AM",
+                        Status = "Completed",
+                        Notes = "HEALTH CONSULTATION · 45 min - Baseline biometric evaluation and intake consultation."
+                    },
+                    new Appointment
+                    {
+                        ClientId = clientUser.Id,
+                        TrainerId = chrisUser.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(-7),
+                        TimeSlot = "3:30 PM",
+                        Status = "Completed",
+                        Notes = "PERSONAL TRAINING · 60 min - Movement assessment & functional mobility calibration."
+                    }
+                );
 
                 // Seed Initial Notification
                 context.Notifications.Add(new Notification

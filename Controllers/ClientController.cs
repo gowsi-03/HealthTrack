@@ -1340,6 +1340,247 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Notifications));
         }
 
+        // ====================================================================
+        // PROFILE & HEALTH
+        // ====================================================================
+
+        // GET: /Client/Profile
+        public async Task<IActionResult> Profile()
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            // Determine assigned trainer
+            string trainerName = "Maya Patel";
+            if (!string.IsNullOrEmpty(user.TrainerId))
+            {
+                var trainer = await _userManager.FindByIdAsync(user.TrainerId);
+                if (trainer != null && !string.IsNullOrWhiteSpace(trainer.FullName))
+                {
+                    trainerName = trainer.FullName.Replace("Dr. ", "");
+                }
+            }
+            else
+            {
+                // Find Dr. Maya Patel if seeded
+                var maya = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
+                if (maya != null)
+                {
+                    trainerName = maya.FullName.Replace("Dr. ", "");
+                }
+            }
+
+            // Fetch latest health log to inspect waist & body fat
+            var latestLog = await _context.HealthLogs
+                .Where(l => l.ClientId == user.Id)
+                .OrderByDescending(l => l.LogDate)
+                .FirstOrDefaultAsync();
+
+            double? latestWaist = null;
+            double? latestBodyFat = null;
+
+            if (latestLog?.Notes != null)
+            {
+                // Attempt to parse waist if previously logged
+                var matchWaist = System.Text.RegularExpressions.Regex.Match(latestLog.Notes, @"waist:\s*([0-9\.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (matchWaist.Success && double.TryParse(matchWaist.Groups[1].Value, out double w))
+                {
+                    latestWaist = w;
+                }
+
+                var matchFat = System.Text.RegularExpressions.Regex.Match(latestLog.Notes, @"body\s*fat:\s*([0-9\.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (matchFat.Success && double.TryParse(matchFat.Groups[1].Value, out double bf))
+                {
+                    latestBodyFat = bf;
+                }
+            }
+
+            // Count unread notifications
+            var unreadCount = await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .CountAsync();
+
+            // Calculate BMI
+            double heightCm = user.HeightCm ?? 178.0;
+            double weightKg = user.CurrentWeight ?? 72.4;
+            double heightMeters = heightCm / 100.0;
+            double bmi = heightMeters > 0 ? Math.Round(weightKg / (heightMeters * heightMeters), 1) : 22.8;
+
+            // Fetch available trainers for modal
+            var trainers = await _userManager.GetUsersInRoleAsync("Trainer");
+            var trainerOptions = trainers.Select(t => new TrainerOption
+            {
+                Id = t.Id,
+                Name = t.FullName,
+                RoleOrSpecialty = t.FitnessGoal ?? "Fitness Coach"
+            }).ToList();
+
+            var vm = new ProfileHealthViewModel
+            {
+                UserId = user.Id,
+                FullName = string.IsNullOrWhiteSpace(user.FullName) ? "Alex Morgan" : user.FullName,
+                Email = user.Email ?? "alex.morgan@email.com",
+                MemberSince = "January 2025",
+                AssignedTrainer = trainerName,
+                TrainerId = user.TrainerId,
+                PrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "Strength & wellness",
+                MembershipStatus = "Active member",
+
+                WeightKg = weightKg,
+                HeightCm = heightCm,
+                WaistCm = latestWaist,
+                BodyFatPercentage = latestBodyFat,
+
+                CalculatedBmi = bmi,
+                BmiCategory = GetBmiCategory(bmi),
+                TargetWeight = user.TargetWeight ?? 70.0,
+
+                EditFullName = string.IsNullOrWhiteSpace(user.FullName) ? "Alex Morgan" : user.FullName,
+                EditPrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "Strength & wellness",
+                EditTargetWeight = user.TargetWeight ?? 70.0,
+                EditTrainerId = user.TrainerId,
+                AvailableTrainers = trainerOptions,
+
+                UnreadNotificationsCount = unreadCount
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Client/SaveProfileMeasurements
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveProfileMeasurements(ProfileHealthViewModel model)
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (model.WeightKg <= 0 || model.HeightCm <= 0)
+            {
+                TempData["ErrorMessage"] = "Please provide valid measurement values for Weight and Height.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            // Update user biometrics
+            user.CurrentWeight = Math.Round(model.WeightKg, 1);
+            user.HeightCm = Math.Round(model.HeightCm, 1);
+            await _userManager.UpdateAsync(user);
+
+            // Calculate BMI
+            double hM = user.HeightCm.Value / 100.0;
+            double bmi = Math.Round(user.CurrentWeight.Value / (hM * hM), 1);
+
+            // Record to HealthLogs
+            var notesParts = new List<string>();
+            if (model.WaistCm.HasValue) notesParts.Add($"waist:{model.WaistCm.Value} cm");
+            if (model.BodyFatPercentage.HasValue) notesParts.Add($"body fat:{model.BodyFatPercentage.Value}%");
+            string notes = notesParts.Any() ? string.Join(", ", notesParts) : "Profile measurement update";
+
+            var log = new HealthLog
+            {
+                ClientId = user.Id,
+                LogDate = DateTime.UtcNow,
+                WeightKg = user.CurrentWeight.Value,
+                CalculatedBmi = bmi,
+                CaloriesBurned = 450,
+                WaterIntakeLiters = 2.5,
+                Notes = notes
+            };
+            _context.HealthLogs.Add(log);
+
+            // In-app notification
+            var notif = new Notification
+            {
+                UserId = user.Id,
+                Message = $"Health measurements recorded: Weight {user.CurrentWeight} kg, Height {user.HeightCm} cm" + (model.WaistCm.HasValue ? $", Waist {model.WaistCm} cm." : "."),
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+            _context.Notifications.Add(notif);
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Health measurements recorded successfully!";
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        // POST: /Client/UpdateProfileDetails
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfileDetails(ProfileHealthViewModel model)
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.EditFullName))
+            {
+                user.FullName = model.EditFullName.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.EditPrimaryGoal))
+            {
+                user.FitnessGoal = model.EditPrimaryGoal.Trim();
+            }
+
+            if (model.EditTargetWeight > 0)
+            {
+                user.TargetWeight = Math.Round(model.EditTargetWeight, 1);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.EditTrainerId))
+            {
+                user.TrainerId = model.EditTrainerId;
+            }
+
+            await _userManager.UpdateAsync(user);
+
+            var notif = new Notification
+            {
+                UserId = user.Id,
+                Message = $"Profile details updated: Name set to '{user.FullName}' and goal to '{user.FitnessGoal}'.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            };
+            _context.Notifications.Add(notif);
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Profile details updated successfully!";
+
+            return RedirectToAction(nameof(Profile));
+        }
+
+        // POST: /Client/SavePrivacySettings
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SavePrivacySettings(bool shareDataWithTrainer, bool allowAnonymousAnalytics, bool emailWeeklyHealthReport)
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user != null)
+            {
+                var notif = new Notification
+                {
+                    UserId = user.Id,
+                    Message = "Privacy settings updated: Data encryption and sharing preferences have been updated.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notif);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = "Privacy settings updated successfully!";
+            return RedirectToAction(nameof(Profile));
+        }
+
         // Helper to retrieve current client user or fallback to seeded demo client
         private async Task<ApplicationUser> GetCurrentClientUserAsync()
         {

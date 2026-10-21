@@ -131,14 +131,12 @@ namespace HealthTrack.Data
                 await userManager.CreateAsync(clientUser, "Client123!");
                 await userManager.AddToRoleAsync(clientUser, "Client");
 
-                // Seed Initial Health Logs for Chart.js
+                // Seed Initial Health Logs for Progress & Analytics
                 context.HealthLogs.AddRange(
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow.AddMonths(-5), WeightKg = 78.5, CalculatedBmi = 24.2, CaloriesBurned = 400, WaterIntakeLiters = 2.0 },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow.AddMonths(-4), WeightKg = 77.2, CalculatedBmi = 23.8, CaloriesBurned = 420, WaterIntakeLiters = 2.2 },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow.AddMonths(-3), WeightKg = 76.0, CalculatedBmi = 23.5, CaloriesBurned = 450, WaterIntakeLiters = 2.5 },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow.AddMonths(-2), WeightKg = 75.1, CalculatedBmi = 23.2, CaloriesBurned = 460, WaterIntakeLiters = 2.5 },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow.AddMonths(-1), WeightKg = 74.8, CalculatedBmi = 23.1, CaloriesBurned = 440, WaterIntakeLiters = 2.7 },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = DateTime.UtcNow, WeightKg = 74.2, CalculatedBmi = 22.8, CaloriesBurned = 480, WaterIntakeLiters = 3.0 }
+                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 1), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline sprint phase measurement - waist:84 cm" },
+                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 15), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle body composition scan - waist:84 cm" },
+                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 29), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month progress evaluation - waist:83 cm" },
+                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 4, 12), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout biometric weigh-in - waist:82 cm" }
                 );
 
                 // Seed Initial Workout Plan

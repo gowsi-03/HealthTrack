@@ -88,9 +88,20 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     if (user != null)
                     {
                         var roles = await _userManager.GetRolesAsync(user);
-                        if (roles.Contains("Client") && (returnUrl == "/" || returnUrl == "~/" || string.IsNullOrEmpty(returnUrl)))
+                        if (returnUrl == "/" || returnUrl == "~/" || string.IsNullOrEmpty(returnUrl))
                         {
-                            return RedirectToAction("Index", "Client");
+                            if (roles.Contains("Trainer"))
+                            {
+                                return RedirectToAction("Index", "Trainer");
+                            }
+                            if (roles.Contains("Admin"))
+                            {
+                                return RedirectToAction("Index", "Trainer");
+                            }
+                            if (roles.Contains("Client"))
+                            {
+                                return RedirectToAction("Index", "Client");
+                            }
                         }
                     }
 

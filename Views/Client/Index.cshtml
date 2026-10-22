@@ -1320,9 +1320,24 @@
                                             Start
                                         </button>
                                     }
+                                    else if (item.Category == "Hydration")
+                                    {
+                                        <form asp-action="LogHydration" asp-controller="Client" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn-plan-start">
+                                                Log
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (item.Title.Contains("breakfast", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button type="button" class="btn-plan-start" onclick="openMealModal('Breakfast')">
+                                            Log
+                                        </button>
+                                    }
                                     else
                                     {
-                                        <button type="button" class="btn-plan-start" onclick="openMealModal()">
+                                        <button type="button" class="btn-plan-start" onclick="openMealModal('Dinner')">
                                             Log
                                         </button>
                                     }
@@ -1616,13 +1631,21 @@
 
     function openMeasurementModal() { measurementModal.show(); }
     function openBookingModal() { bookingModal.show(); }
-    function openMealModal() { mealModal.show(); }
+    function openMealModal(mealType) {
+        if (mealType) {
+            const select = document.querySelector('#mealModal select[name="QuickMeal.MealType"]');
+            if (select) select.value = mealType;
+        }
+        mealModal.show();
+    }
     function openWorkoutModal() { workoutModal.show(); }
 
     function toggleExercise(id) {
         fetch('/Client/ToggleExercise/' + id, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
+        }).then(() => {
+            setTimeout(() => window.location.reload(), 300);
         }).catch(err => console.error(err));
     }
 

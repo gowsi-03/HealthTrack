@@ -217,6 +217,56 @@ namespace HealthTrack.Controllers
             }
 
             // 6. Assemble Today's Plan items
+            bool hasHydrationToday = false;
+            bool hasBreakfastToday = false;
+            bool hasWorkoutToday = false;
+            bool hasEveningMealToday = false;
+
+            if (isDemoUser)
+            {
+                // Demo client layout preset
+                hasHydrationToday = true;
+                hasBreakfastToday = true;
+                hasWorkoutToday = false;
+                hasEveningMealToday = false;
+            }
+            else
+            {
+                var today = DateTime.UtcNow.Date;
+
+                // Check today's health logs for water or meal notes
+                var todayLogs = await _context.HealthLogs
+                    .Where(l => l.ClientId == user.Id && l.LogDate >= today)
+                    .ToListAsync();
+
+                hasHydrationToday = todayLogs.Any(l => l.WaterIntakeLiters > 0);
+
+                // Check meals in DietPlans
+                var userDiet = await _context.DietPlans
+                    .Include(d => d.Meals)
+                    .Where(d => d.ClientId == user.Id)
+                    .FirstOrDefaultAsync();
+
+                if (userDiet != null && userDiet.Meals.Any())
+                {
+                    hasBreakfastToday = userDiet.Meals.Any(m => m.MealType.Equals("Breakfast", StringComparison.OrdinalIgnoreCase));
+                    hasEveningMealToday = userDiet.Meals.Any(m => m.MealType.Equals("Dinner", StringComparison.OrdinalIgnoreCase) || m.MealType.Contains("Evening", StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Check if any meals were logged in HealthLog notes today
+                if (todayLogs.Any())
+                {
+                    if (todayLogs.Any(l => l.Notes != null && l.Notes.Contains("Breakfast", StringComparison.OrdinalIgnoreCase))) hasBreakfastToday = true;
+                    if (todayLogs.Any(l => l.Notes != null && (l.Notes.Contains("Dinner", StringComparison.OrdinalIgnoreCase) || l.Notes.Contains("Evening", StringComparison.OrdinalIgnoreCase)))) hasEveningMealToday = true;
+                }
+
+                // Check workout completion
+                if (vm.ActiveWorkoutPlan?.Exercises != null && vm.ActiveWorkoutPlan.Exercises.Any())
+                {
+                    hasWorkoutToday = vm.ActiveWorkoutPlan.Exercises.All(e => e.IsCompleted);
+                }
+            }
+
             vm.TodayPlanItems = new List<DailyPlanItem>
             {
                 new DailyPlanItem
@@ -225,8 +275,8 @@ namespace HealthTrack.Controllers
                     Title = "Morning hydration",
                     Subtitle = "8:00 AM • 500 ml water",
                     Category = "Hydration",
-                    IsCompleted = true,
-                    ActionButtonText = "Done"
+                    IsCompleted = hasHydrationToday,
+                    ActionButtonText = hasHydrationToday ? "Done" : "Log"
                 },
                 new DailyPlanItem
                 {
@@ -234,17 +284,17 @@ namespace HealthTrack.Controllers
                     Title = "Healthy breakfast",
                     Subtitle = "8:30 AM • 420 kcal",
                     Category = "Meal",
-                    IsCompleted = true,
-                    ActionButtonText = "Done"
+                    IsCompleted = hasBreakfastToday,
+                    ActionButtonText = hasBreakfastToday ? "Done" : "Log"
                 },
                 new DailyPlanItem
                 {
                     Id = 3,
-                    Title = vm.ActiveWorkoutPlan?.Title ?? "Upper body strength",
+                    Title = vm.ActiveWorkoutPlan?.Title ?? "Daily Workout Routine",
                     Subtitle = "5:30 PM • 45 minutes",
                     Category = "Workout",
-                    IsCompleted = false,
-                    ActionButtonText = "Start"
+                    IsCompleted = hasWorkoutToday,
+                    ActionButtonText = hasWorkoutToday ? "Done" : "Start"
                 },
                 new DailyPlanItem
                 {
@@ -252,8 +302,8 @@ namespace HealthTrack.Controllers
                     Title = "Log evening meal",
                     Subtitle = "7:30 PM • Target 560 kcal",
                     Category = "Meal",
-                    IsCompleted = false,
-                    ActionButtonText = "Log"
+                    IsCompleted = hasEveningMealToday,
+                    ActionButtonText = hasEveningMealToday ? "Done" : "Log"
                 }
             };
 
@@ -261,6 +311,44 @@ namespace HealthTrack.Controllers
             vm.CompletedActivitiesCount = vm.TodayPlanItems.Count(i => i.IsCompleted);
 
             return View(vm);
+        }
+
+        // POST: /Client/LogHydration
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogHydration()
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var today = DateTime.UtcNow.Date;
+            var todayLog = await _context.HealthLogs
+                .Where(l => l.ClientId == user.Id && l.LogDate >= today)
+                .OrderByDescending(l => l.LogDate)
+                .FirstOrDefaultAsync();
+
+            if (todayLog != null)
+            {
+                todayLog.WaterIntakeLiters = (todayLog.WaterIntakeLiters > 0 ? todayLog.WaterIntakeLiters : 0) + 0.5;
+            }
+            else
+            {
+                _context.HealthLogs.Add(new HealthLog
+                {
+                    ClientId = user.Id,
+                    LogDate = DateTime.UtcNow,
+                    WeightKg = user.CurrentWeight ?? 70,
+                    CalculatedBmi = (user.HeightCm.HasValue && user.HeightCm > 0) ? Math.Round((user.CurrentWeight ?? 70) / Math.Pow(user.HeightCm.Value / 100.0, 2), 1) : 22,
+                    CaloriesBurned = 0,
+                    WaterIntakeLiters = 0.5,
+                    Notes = "Morning hydration logged (500 ml water)"
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Morning hydration logged (500 ml water)!";
+
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Client/LogMeasurement

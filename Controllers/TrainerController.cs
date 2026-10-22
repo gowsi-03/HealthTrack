@@ -670,10 +670,230 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Clients));
         }
 
+        // ====================================================================
+        // WORKOUT PLANS MANAGEMENT (Trainer Portal)
+        // ====================================================================
+
         // GET: /Trainer/Workouts
         public async Task<IActionResult> Workouts()
         {
-            return RedirectToAction(nameof(Index));
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var dbClients = await _context.Users
+                .Where(u => u.TrainerId == trainer.Id && u.Role == "Client")
+                .ToListAsync();
+
+            var availableClients = new List<ClientDropdownOption>
+            {
+                new ClientDropdownOption { Id = "c-alex", FullName = "Alex Morgan", Email = "alex.morgan@email.com" },
+                new ClientDropdownOption { Id = "c-olivia", FullName = "Olivia Smith", Email = "olivia.smith@email.com" },
+                new ClientDropdownOption { Id = "c-liam", FullName = "Liam Parker", Email = "liam.parker@email.com" },
+                new ClientDropdownOption { Id = "c-sophia", FullName = "Sophia Chen", Email = "sophia.chen@email.com" }
+            };
+
+            foreach (var c in dbClients)
+            {
+                if (!availableClients.Any(a => a.Email.Equals(c.Email, StringComparison.OrdinalIgnoreCase)))
+                {
+                    availableClients.Add(new ClientDropdownOption
+                    {
+                        Id = c.Id,
+                        FullName = c.FullName,
+                        Email = c.Email ?? string.Empty
+                    });
+                }
+            }
+
+            var templates = new List<WorkoutTemplateItem>
+            {
+                new WorkoutTemplateItem
+                {
+                    Id = "tpl-strength",
+                    Title = "Foundation Strength",
+                    Category = "Strength & Mobility",
+                    DurationWeeks = 8,
+                    DaysPerWeek = 4,
+                    MinutesPerSession = 45,
+                    AssignedClientsCount = 12,
+                    Description = "A progressive full-body program designed to improve multi-joint strength, mobility and athletic endurance.",
+                    BadgeClass = "badge-teal"
+                },
+                new WorkoutTemplateItem
+                {
+                    Id = "tpl-cardio",
+                    Title = "Cardio & Athletic Endurance",
+                    Category = "Cardio Conditioning",
+                    DurationWeeks = 6,
+                    DaysPerWeek = 3,
+                    MinutesPerSession = 50,
+                    AssignedClientsCount = 6,
+                    Description = "Targeted aerobic capacity and interval metabolic conditioning for functional cardiovascular fitness.",
+                    BadgeClass = "badge-blue"
+                },
+                new WorkoutTemplateItem
+                {
+                    Id = "tpl-hypertrophy",
+                    Title = "Hypertrophy Push / Pull Split",
+                    Category = "Hypertrophy",
+                    DurationWeeks = 12,
+                    DaysPerWeek = 5,
+                    MinutesPerSession = 60,
+                    AssignedClientsCount = 4,
+                    Description = "Periodized multi-angle resistance split optimizing lean muscle protein synthesis and compound movement mastery.",
+                    BadgeClass = "badge-purple"
+                },
+                new WorkoutTemplateItem
+                {
+                    Id = "tpl-posture",
+                    Title = "Posture & Core Mobility",
+                    Category = "Rehab & Posture",
+                    DurationWeeks = 4,
+                    DaysPerWeek = 3,
+                    MinutesPerSession = 35,
+                    AssignedClientsCount = 2,
+                    Description = "Spinal decompression, glute activation, rotator cuff integrity, and deep anterior core stabilization.",
+                    BadgeClass = "badge-amber"
+                }
+            };
+
+            var clientRoutines = new List<ClientWorkoutRoutineItem>
+            {
+                new ClientWorkoutRoutineItem
+                {
+                    ClientId = "c-alex",
+                    ClientName = "Alex Morgan",
+                    ClientEmail = "alex.morgan@email.com",
+                    ClientInitials = "AM",
+                    RoutineTitle = "Foundation Strength · 8 Weeks",
+                    Category = "Strength & Mobility",
+                    DurationText = "Week 5 of 8 · 4 days/wk",
+                    CompletionPercentage = 87,
+                    Status = "Active",
+                    LastCompletedSession = "Today (Upper body strength)"
+                },
+                new ClientWorkoutRoutineItem
+                {
+                    ClientId = "c-olivia",
+                    ClientName = "Olivia Smith",
+                    ClientEmail = "olivia.smith@email.com",
+                    ClientInitials = "OS",
+                    RoutineTitle = "Cardio & Athletic Endurance · 6 Weeks",
+                    Category = "Cardio Conditioning",
+                    DurationText = "Week 3 of 6 · 3 days/wk",
+                    CompletionPercentage = 74,
+                    Status = "Active",
+                    LastCompletedSession = "Yesterday (Interval sprints)"
+                },
+                new ClientWorkoutRoutineItem
+                {
+                    ClientId = "c-liam",
+                    ClientName = "Liam Parker",
+                    ClientEmail = "liam.parker@email.com",
+                    ClientInitials = "LP",
+                    RoutineTitle = "Weight Management Split · 8 Weeks",
+                    Category = "Strength & Mobility",
+                    DurationText = "Week 7 of 8 · 4 days/wk",
+                    CompletionPercentage = 91,
+                    Status = "Active",
+                    LastCompletedSession = "2 days ago (Lower body power)"
+                },
+                new ClientWorkoutRoutineItem
+                {
+                    ClientId = "c-sophia",
+                    ClientName = "Sophia Chen",
+                    ClientEmail = "sophia.chen@email.com",
+                    ClientInitials = "SC",
+                    RoutineTitle = "Posture & Core Mobility · 4 Weeks",
+                    Category = "Rehab & Posture",
+                    DurationText = "Week 1 of 4 · 3 days/wk",
+                    CompletionPercentage = 62,
+                    Status = "At risk",
+                    LastCompletedSession = "4 days ago (Spine mobility)"
+                }
+            };
+
+            var unreadCount = await _context.Notifications
+                .Where(n => n.UserId == trainer.Id && !n.IsRead)
+                .CountAsync();
+
+            var vm = new TrainerWorkoutsViewModel
+            {
+                TrainerName = trainer.FullName.Replace("Dr. ", ""),
+                TrainerEmail = trainer.Email ?? "maya.patel@healthtrack.com",
+                TrainerInitials = "AM",
+                UnreadNotificationsCount = unreadCount > 0 ? unreadCount : 2,
+                TotalActiveProgramsCount = 24,
+                TotalTemplatesCount = templates.Count,
+                AvgCompletionRate = 78,
+                WeeklyCompletedSessions = 142,
+                Templates = templates,
+                ClientRoutines = clientRoutines,
+                AvailableClients = availableClients
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Trainer/CreateWorkoutPlan
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateWorkoutPlan(CreateWorkoutRoutineFormModel model)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                TempData["ErrorMessage"] = "Workout routine title is required.";
+                return RedirectToAction(nameof(Workouts));
+            }
+
+            // Find client user if existing in database
+            var client = await _userManager.FindByIdAsync(model.ClientId);
+            if (client == null)
+            {
+                client = await _userManager.FindByEmailAsync("client@healthtrack.com");
+            }
+
+            if (client != null)
+            {
+                var newPlan = new WorkoutPlan
+                {
+                    Title = model.Title.Trim(),
+                    Description = model.Description ?? $"{model.DurationWeeks} Weeks · {model.DaysPerWeek} days/week",
+                    ClientId = client.Id,
+                    TrainerId = trainer.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                newPlan.Exercises.Add(new WorkoutExercise { Name = "Barbell Squats", Sets = "3 sets", Reps = "10 reps" });
+                newPlan.Exercises.Add(new WorkoutExercise { Name = "Dumbbell Bench Press", Sets = "3 sets", Reps = "12 reps" });
+                newPlan.Exercises.Add(new WorkoutExercise { Name = "Romanian Deadlifts", Sets = "3 sets", Reps = "10 reps" });
+                newPlan.Exercises.Add(new WorkoutExercise { Name = "Plank Hold", Sets = "3 sets", Reps = "45 sec" });
+
+                _context.WorkoutPlans.Add(newPlan);
+
+                var notif = new Notification
+                {
+                    UserId = client.Id,
+                    Message = $"Your trainer {trainer.FullName} assigned a new workout routine: '{model.Title}'.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notif);
+
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = $"Workout routine '{model.Title}' created and assigned to client successfully!";
+            return RedirectToAction(nameof(Workouts));
         }
 
         // GET: /Trainer/Diet

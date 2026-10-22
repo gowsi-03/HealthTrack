@@ -2037,9 +2037,9 @@ namespace HealthTrack.Controllers
                 .Where(n => n.UserId == user.Id && !n.IsRead)
                 .CountAsync();
 
-            bool hasLoggedMeasurements = latestLog != null || (user.CurrentWeight.HasValue && user.CurrentWeight.Value > 0);
-            double heightCm = user.HeightCm ?? (isDemoUser ? 175.0 : 0);
-            double weightKg = user.CurrentWeight ?? (isDemoUser ? 72.4 : 0);
+            bool hasLoggedMeasurements = latestLog != null;
+            double heightCm = hasLoggedMeasurements ? (user.HeightCm ?? 0) : (isDemoUser ? 175.0 : 0);
+            double weightKg = hasLoggedMeasurements ? (user.CurrentWeight ?? 0) : (isDemoUser ? 72.4 : 0);
             double heightMeters = heightCm / 100.0;
             double bmi = (heightMeters > 0 && weightKg > 0) ? Math.Round(weightKg / (heightMeters * heightMeters), 1) : 0;
 

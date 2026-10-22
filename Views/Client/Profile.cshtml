@@ -943,17 +943,17 @@
                             <span class="profile-meta-val">@Model.MemberSince</span>
                         </div>
                         <div class="profile-meta-row">
-                            <span class="profile-meta-label">Assigned trainer</span>
+                            <span class="profile-meta-label">Trainer</span>
                             @if (!string.IsNullOrEmpty(Model.TrainerId) || (Model.AssignedTrainer != "Not assigned yet" && Model.AssignedTrainer != "None"))
                             {
                                 <span class="profile-meta-val">@Model.AssignedTrainer</span>
                             }
                             else
                             {
-                                <span class="profile-meta-val text-muted d-inline-flex align-items-center gap-1">
-                                    <span>Not assigned yet</span>
-                                    <a href="/Client/Appointments" class="text-success small text-decoration-none fw-semibold ms-1" title="Book a coach consultation">
-                                        <i class="bi bi-calendar2-plus me-0.5"></i>Book coach
+                                <span class="profile-meta-val d-inline-flex align-items-center gap-2">
+                                    <span class="text-muted small">None</span>
+                                    <a href="/Client/Appointments" class="badge bg-light text-success border border-success border-opacity-25 text-decoration-none px-2 py-1 fw-semibold" style="font-size: 0.74rem;">
+                                        <i class="bi bi-calendar2-plus me-1"></i>Book coach
                                     </a>
                                 </span>
                             }

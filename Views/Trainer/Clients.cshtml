@@ -1,0 +1,1185 @@
+@model HealthTrack.Models.ViewModels.TrainerClientsViewModel
+@{
+    ViewData["Title"] = "My Clients - HealthTrack";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Clients - HealthTrack</title>
+
+    <!-- Google Fonts & Bootstrap 5 & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ht-navy: #0B192C;
+            --ht-navy-light: #1E293B;
+            --ht-navy-hover: #152840;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-teal: #0D9488;
+            --ht-teal-hover: #0F766E;
+            --ht-teal-light: #CCFBF1;
+            --ht-slate: #0F172A;
+            --ht-muted: #64748B;
+            --ht-border: #E2E8F0;
+            --ht-bg: #F8FAFC;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--ht-bg);
+            color: var(--ht-slate);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ========================================================= */
+        /* 1. SIDEBAR (Dark Navy, Scrollable, Exact Match to Image)  */
+        /* ========================================================= */
+        .sidebar {
+            width: 255px;
+            background-color: var(--ht-navy);
+            color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            max-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem 1.15rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(11, 25, 44, 0.4);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            margin-bottom: 1.35rem;
+            padding-left: 0.5rem;
+        }
+        .brand-header:hover { color: #FFFFFF; }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .nav-category {
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0.68rem 0.85rem;
+            border-radius: 12px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: var(--ht-navy-hover);
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #FFFFFF;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-link i { font-size: 1.15rem; }
+
+        .active-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--ht-green);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+        }
+
+        .sidebar-bottom-section {
+            margin-top: 1.25rem;
+            flex-shrink: 0;
+            padding-bottom: 0.5rem;
+        }
+
+        .support-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--ht-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-title { font-size: 0.88rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.25rem; }
+        .support-desc { font-size: 0.75rem; color: #94A3B8; margin-bottom: 0.65rem; line-height: 1.4; }
+        .support-link { font-size: 0.78rem; font-weight: 700; color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .support-link:hover { color: var(--ht-green); }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-signout:hover {
+            color: #FFFFFF;
+            background-color: var(--ht-navy-hover);
+        }
+
+        .link-public-site {
+            display: block;
+            color: #64748B;
+            font-size: 0.76rem;
+            text-decoration: none;
+            padding: 0.4rem 0.75rem 0 0.75rem;
+            transition: color 0.15s ease;
+        }
+        .link-public-site:hover {
+            color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 2. TOP NAVBAR (Role Switcher: Client / Trainer / Admin)   */
+        /* ========================================================= */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .top-navbar {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid var(--ht-border);
+            padding: 0.85rem 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .search-box {
+            position: relative;
+            width: 320px;
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ht-muted);
+            font-size: 0.95rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.4rem;
+            border-radius: 12px;
+            border: 1px solid var(--ht-border);
+            background-color: #F8FAFC;
+            font-size: 0.88rem;
+            color: var(--ht-slate);
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        .search-input:focus {
+            background-color: #FFFFFF;
+            border-color: var(--ht-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Role Switcher Pill */
+        .role-switcher {
+            display: flex;
+            align-items: center;
+            background-color: #F1F5F9;
+            border: 1px solid var(--ht-border);
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .role-pill {
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #64748B;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .role-pill:hover {
+            color: #0F172A;
+        }
+        .role-pill.active {
+            background-color: #FFFFFF;
+            color: #0F172A;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-notification {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--ht-border);
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ht-slate);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .btn-notification:hover {
+            background-color: #F8FAFC;
+            color: var(--ht-green);
+        }
+
+        .notify-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #EF4444;
+            border: 2px solid #FFFFFF;
+        }
+
+        .user-profile-pill {
+            display: flex;
+            align-items: center;
+            padding: 4px 10px 4px 6px;
+            border-radius: 9999px;
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .user-profile-pill:hover { background-color: #F8FAFC; }
+
+        .avatar-initials {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #D1FAE5;
+            color: #0F766E;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ========================================================= */
+        /* 3. MY CLIENTS PAGE CONTENT                                */
+        /* ========================================================= */
+        .dashboard-body {
+            padding: 2.25rem 2.5rem 3.5rem 2.5rem;
+            flex: 1;
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* Header Eyebrow & Title */
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        .page-title {
+            font-size: 1.95rem;
+            font-weight: 800;
+            color: #0F172A;
+            margin: 0;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #64748B;
+            margin-top: 0.4rem;
+            margin-bottom: 0;
+        }
+
+        .btn-add-client {
+            background-color: #0D9488;
+            border: none;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 0.92rem;
+            padding: 0.65rem 1.35rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-add-client:hover {
+            background-color: #0F766E;
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
+            color: #FFFFFF;
+        }
+
+        /* Filter Controls Bar */
+        .filter-controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.85rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .client-search-wrapper {
+            position: relative;
+            flex: 1;
+            max-width: 440px;
+            min-width: 260px;
+        }
+
+        .client-search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        .client-search-input {
+            width: 100%;
+            padding: 0.68rem 1rem 0.68rem 2.45rem;
+            border-radius: 12px;
+            border: 1px solid var(--ht-border);
+            background-color: #FFFFFF;
+            font-size: 0.9rem;
+            color: var(--ht-slate);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .client-search-input:focus {
+            border-color: var(--ht-teal);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+        }
+
+        .filter-dropdowns-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-select {
+            padding: 0.65rem 2rem 0.65rem 1rem;
+            border: 1px solid var(--ht-border);
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            color: #334155;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394A3B8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem top 50%;
+            background-size: 0.65rem auto;
+            transition: all 0.2s ease;
+        }
+        .filter-select:focus {
+            border-color: var(--ht-teal);
+        }
+
+        .btn-filters-toggle {
+            padding: 0.65rem 1.15rem;
+            border: 1px solid var(--ht-border);
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            color: #1E293B;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-filters-toggle:hover {
+            background-color: #F8FAFC;
+            border-color: #CBD5E1;
+        }
+
+        /* Assigned Clients Card & Table */
+        .clients-table-card {
+            background-color: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 16px;
+            padding: 1.75rem 2rem 1.25rem 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-header-area {
+            margin-bottom: 1.25rem;
+        }
+
+        .card-header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 0.2rem;
+        }
+
+        .card-header-subtitle {
+            font-size: 0.85rem;
+            color: #64748B;
+            margin: 0;
+        }
+
+        .custom-clients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+        }
+
+        .custom-clients-table th {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #94A3B8;
+            text-transform: uppercase;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid #F1F5F9;
+            text-align: left;
+        }
+
+        .custom-clients-table td {
+            padding: 1.15rem 1rem;
+            border-bottom: 1px solid #F8FAFC;
+            font-size: 0.9rem;
+            color: #0F172A;
+            vertical-align: middle;
+        }
+
+        .custom-clients-table tr:hover td {
+            background-color: #F8FAFC;
+        }
+
+        .client-avatar-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .client-pill-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background-color: #D1FAE5;
+            color: #0F766E;
+            font-size: 0.82rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .status-badge-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #ECFDF5;
+            color: #065F46;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+        }
+
+        .status-badge-risk {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #FEF2F2;
+            color: #DC2626;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+        }
+
+        .status-dot-green {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #10B981;
+        }
+
+        .status-dot-red {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #EF4444;
+        }
+
+        .btn-table-dots {
+            background: none;
+            border: none;
+            color: #94A3B8;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .btn-table-dots:hover { color: #0F172A; }
+
+        /* Pagination Footer */
+        .table-footer-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 1.25rem;
+            border-top: 1px solid #F1F5F9;
+            margin-top: 0.5rem;
+        }
+
+        .pagination-info {
+            font-size: 0.83rem;
+            color: #64748B;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .page-link-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 30px;
+            padding: 0 6px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #64748B;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .page-link-custom:hover {
+            color: #0F172A;
+            background-color: #F1F5F9;
+        }
+        .page-link-custom.active {
+            background-color: #0B192C;
+            color: #FFFFFF;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .sidebar { display: none; }
+            .filter-controls-row { flex-direction: column; align-items: stretch; }
+            .client-search-wrapper { max-width: 100%; }
+            .dashboard-body { padding: 1.5rem 1rem; }
+            .top-navbar { padding: 0.85rem 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- ========================================================= -->
+    <!-- 1. LEFT SIDEBAR (Trainer Portal)                          -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div>
+            <a href="/" class="brand-header">
+                <div class="brand-icon">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </div>
+                <span>HealthTrack</span>
+            </a>
+
+            <div class="nav-category">WORKSPACE</div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/Trainer" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Clients" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>My Clients</span>
+                        </div>
+                        <span class="active-dot"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Client/Workouts" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6.5 6.5 11 11"></path>
+                                <path d="m21 21-1-1"></path>
+                                <path d="m3 3 1 1"></path>
+                                <path d="m18 22 4-4"></path>
+                                <path d="m2 6 4-4"></path>
+                                <path d="m3 10 7-7"></path>
+                                <path d="m14 21 7-7"></path>
+                            </svg>
+                            <span>Workout Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Client/Diet" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 2a.75.75 0 0 1 .75.75v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.75a3 3 0 0 1-2.25 2.9V21.25a.75.75 0 0 1-1.5 0V9.4a3 3 0 0 1-2.25-2.9V2.75A.75.75 0 0 1 7 2z"/>
+                                <path d="M16.5 2c-.28 0-.5.22-.5.5v8.5a.75.75 0 0 0 .75.75h.5v9.5a.75.75 0 0 0 1.5 0V2.7c0-.39-.31-.7-.75-.7h-1.5z"/>
+                            </svg>
+                            <span>Diet Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Client/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Client/Analytics" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Progress & Reports</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom-section">
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div class="support-title">Need assistance?</div>
+                <div class="support-desc">Our care team is here to help.</div>
+                <a href="mailto:support@healthtrack.com" class="support-link">
+                    <span>Contact support</span>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                <button type="submit" class="btn-signout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Sign out</span>
+                </button>
+            </form>
+
+            <a href="/" class="link-public-site">View public site</a>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT AREA                                      -->
+    <!-- ========================================================= -->
+    <div class="main-wrapper">
+        
+        <!-- Top Navbar with Role Switcher (Client / Trainer / Admin) -->
+        <header class="top-navbar">
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search anything..." />
+            </div>
+
+            <div class="top-controls">
+                <!-- Role Switcher Segmented Pill -->
+                <div class="role-switcher">
+                    <a href="/Client" class="role-pill">Client</a>
+                    <a href="/Trainer" class="role-pill active">Trainer</a>
+                    <a href="/Trainer" class="role-pill">Admin</a>
+                </div>
+
+                <!-- Notifications Bell -->
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
+                    <i class="bi bi-bell"></i>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="user-profile-pill btn p-0 border-0 d-flex align-items-center" type="button" id="trainerClientsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials">@Model.TrainerInitials</div>
+                        <div class="user-meta d-none d-sm-block text-start ms-2">
+                            <span class="fw-bold small text-dark d-block">@Model.TrainerName</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">Trainer</span>
+                        </div>
+                        <i class="bi bi-chevron-right ms-2 text-muted" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="trainerClientsDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.TrainerName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@Model.TrainerEmail</div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer">
+                                <i class="bi bi-grid text-secondary"></i> Trainer Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Trainer/Clients">
+                                <i class="bi bi-people text-secondary"></i> My Clients
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Profile">
+                                <i class="bi bi-person text-secondary"></i> Profile & Health
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="dashboard-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <!-- Header Section (Matches User Reference Image media_1792643462910_78b85980.png) -->
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+                <div>
+                    <div class="page-eyebrow">CLIENT CARE</div>
+                    <h1 class="page-title">My Clients</h1>
+                    <p class="page-subtitle">Search, review and manage profiles from one place.</p>
+                </div>
+                <div>
+                    <button type="button" class="btn-add-client" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add client</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filter Bar Row -->
+            <div class="filter-controls-row">
+                <div class="client-search-wrapper">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="liveClientSearchInput" 
+                           class="client-search-input" 
+                           placeholder="Search by name or email..." 
+                           oninput="filterClientTable(this.value)" />
+                </div>
+
+                <div class="filter-dropdowns-group">
+                    <select class="filter-select" id="statusFilterSelect" onchange="filterByStatus(this.value)">
+                        <option value="All">All statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="At risk">At risk</option>
+                    </select>
+
+                    <select class="filter-select" id="planFilterSelect" onchange="filterByPlan(this.value)">
+                        <option value="All">All plans</option>
+                        <option value="Strength & mobility">Strength & mobility</option>
+                        <option value="Cardio endurance">Cardio endurance</option>
+                        <option value="Weight management">Weight management</option>
+                        <option value="Posture & core">Posture & core</option>
+                    </select>
+
+                    <button type="button" class="btn-filters-toggle" onclick="resetFilters()">
+                        <i class="bi bi-sliders2 me-1"></i> Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Assigned clients Card (Matches Image media_1792643462910_78b85980.png) -->
+            <div class="clients-table-card">
+                <div class="card-header-area">
+                    <div class="card-header-title">Assigned clients</div>
+                    <p class="card-header-subtitle">Showing 1-4 of 28 results</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="custom-clients-table" id="clientsDataTable">
+                        <thead>
+                            <tr>
+                                <th>CLIENT</th>
+                                <th>ACTIVE PLAN</th>
+                                <th>COMPLETION</th>
+                                <th>WEIGHT CHANGE</th>
+                                <th>STATUS</th>
+                                <th style="text-align: right;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var client in Model.Clients)
+                            {
+                                <tr class="client-data-row" data-name="@client.FullName.ToLower()" data-plan="@client.ActivePlan.ToLower()" data-status="@client.Status.ToLower()">
+                                    <td>
+                                        <div class="client-avatar-cell">
+                                            <div class="client-pill-avatar">@client.Initials</div>
+                                            <span class="client-name-text">@client.FullName</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-secondary fw-semibold client-plan-text">@client.ActivePlan</td>
+                                    <td class="fw-bold">@client.CompletionPercentage%</td>
+                                    <td class="fw-semibold @(client.IsWeightLoss ? "text-dark" : "text-danger")">@client.WeightChange</td>
+                                    <td>
+                                        @if (client.Status == "Active")
+                                        {
+                                            <span class="status-badge-active">
+                                                <span class="status-dot-green"></span>
+                                                Active
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge-risk">
+                                                <span class="status-dot-red"></span>
+                                                At risk
+                                            </span>
+                                        }
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <div class="dropdown">
+                                            <button class="btn-table-dots" type="button" data-bs-toggle="dropdown" aria-expanded="false">···</button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                                <li><a class="dropdown-item small" href="/Client/Analytics"><i class="bi bi-person-lines-fill me-2"></i>View Client Profile</a></li>
+                                                <li><a class="dropdown-item small" href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#assignPlanModal" onclick="preparePlanModal('@client.FullName')"><i class="bi bi-plus-circle me-2"></i>Assign New Plan</a></li>
+                                                <li><a class="dropdown-item small" href="/Client/Appointments"><i class="bi bi-calendar2-check me-2"></i>Schedule Session</a></li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer (Matching Reference Image) -->
+                <div class="table-footer-pagination">
+                    <div class="pagination-info">Showing 1 to 4 of 28</div>
+                    <div class="pagination-controls">
+                        <a href="/Trainer/Clients?page=1" class="page-link-custom">Previous</a>
+                        <a href="/Trainer/Clients?page=1" class="page-link-custom active">1</a>
+                        <a href="/Trainer/Clients?page=2" class="page-link-custom">2</a>
+                        <a href="/Trainer/Clients?page=3" class="page-link-custom">3</a>
+                        <a href="/Trainer/Clients?page=2" class="page-link-custom">Next</a>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 3. MODALS                                                 -->
+<!-- ========================================================= -->
+
+<!-- Modal: Add Client (Matches '+ Add client' Button) -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+            <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                <h5 class="modal-title fw-bold text-dark" id="addClientModalLabel">
+                    <i class="bi bi-person-plus text-success me-2"></i>Add New Client
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="AddClient" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body px-4 py-3">
+                    <p class="text-muted small mb-3">Register a new client profile and add them to your assigned care list.</p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Full Name</label>
+                        <input type="text" name="FullName" class="form-control rounded-3 py-2" placeholder="e.g. Emma Watson" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Email Address</label>
+                        <input type="email" name="Email" class="form-control rounded-3 py-2" placeholder="e.g. emma.watson@email.com" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Active Fitness Goal / Plan</label>
+                        <select name="FitnessGoal" class="form-select rounded-3 py-2">
+                            <option value="Strength & mobility" selected>Strength & mobility</option>
+                            <option value="Cardio endurance">Cardio endurance</option>
+                            <option value="Weight management">Weight management</option>
+                            <option value="Posture & core">Posture & core</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Current Weight (kg)</label>
+                            <input type="number" step="0.1" name="CurrentWeight" class="form-control rounded-3 py-2" value="70.0" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small text-dark">Target Weight (kg)</label>
+                            <input type="number" step="0.1" name="TargetWeight" class="form-control rounded-3 py-2" value="68.0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold" style="background-color: var(--ht-teal); border: none;">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Assign Plan Quick Modal -->
+<div class="modal fade" id="assignPlanModal" tabindex="-1" aria-labelledby="assignPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+            <div class="modal-header border-bottom px-4 pt-4 pb-3">
+                <h5 class="modal-title fw-bold text-dark" id="assignPlanModalLabel">
+                    <i class="bi bi-shield-check text-success me-2"></i>Assign Routine to Client
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="CreatePlan" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Client</label>
+                        <input type="text" id="assignClientInput" class="form-control rounded-3 py-2 bg-light" readonly />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">New Plan Title</label>
+                        <input type="text" name="Title" class="form-control rounded-3 py-2" placeholder="e.g. Progressive Strength Phase 2" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark">Plan Category</label>
+                        <select name="PlanType" class="form-select rounded-3 py-2">
+                            <option value="Workout">Workout Routine</option>
+                            <option value="Diet">Diet Nutrition Plan</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-top px-4 py-3 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-3 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold" style="background-color: var(--ht-teal); border: none;">Assign Routine</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS Bundle & Client Filter JS -->
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function filterClientTable(query) {
+        var q = query.toLowerCase();
+        var rows = document.querySelectorAll('.client-data-row');
+        rows.forEach(function(row) {
+            var name = row.getAttribute('data-name');
+            if (name.indexOf(q) > -1) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function filterByStatus(status) {
+        var s = status.toLowerCase();
+        var rows = document.querySelectorAll('.client-data-row');
+        rows.forEach(function(row) {
+            var rowStatus = row.getAttribute('data-status');
+            if (s === 'all' || rowStatus === s) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function filterByPlan(plan) {
+        var p = plan.toLowerCase();
+        var rows = document.querySelectorAll('.client-data-row');
+        rows.forEach(function(row) {
+            var rowPlan = row.getAttribute('data-plan');
+            if (p === 'all' || rowPlan.indexOf(p) > -1) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    function resetFilters() {
+        document.getElementById('statusFilterSelect').value = 'All';
+        document.getElementById('planFilterSelect').value = 'All';
+        document.getElementById('liveClientSearchInput').value = '';
+        document.querySelectorAll('.client-data-row').forEach(function(r) {
+            r.style.display = '';
+        });
+    }
+
+    function preparePlanModal(clientName) {
+        document.getElementById('assignClientInput').value = clientName;
+    }
+</script>
+
+</body>
+</html>

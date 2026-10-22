@@ -228,6 +228,18 @@
             background-color: var(--ht-navy-hover);
         }
 
+        .link-public-site {
+            display: block;
+            color: #64748B;
+            font-size: 0.76rem;
+            text-decoration: none;
+            padding: 0.4rem 0.75rem 0 0.75rem;
+            transition: color 0.15s ease;
+        }
+        .link-public-site:hover {
+            color: #94A3B8;
+        }
+
         /* ========================================================= */
         /* 2. TOP NAVBAR                                             */
         /* ========================================================= */
@@ -285,6 +297,36 @@
             display: flex;
             align-items: center;
             gap: 16px;
+        }
+
+        /* Role Switcher Pill */
+        .role-switcher {
+            display: flex;
+            align-items: center;
+            background-color: #F1F5F9;
+            border: 1px solid var(--ht-border);
+            border-radius: 9999px;
+            padding: 3px;
+            gap: 2px;
+        }
+
+        .role-pill {
+            padding: 0.3rem 0.85rem;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #64748B;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+        .role-pill:hover {
+            color: #0F172A;
+        }
+        .role-pill.active {
+            background-color: #FFFFFF;
+            color: #0F172A;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .btn-notification {
@@ -788,31 +830,42 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#clientProgressSection" class="sidebar-link">
+                    <a href="/Trainer/Clients" class="sidebar-link">
                         <div class="sidebar-link-left">
                             <i class="bi bi-people"></i>
-                            <span>Assigned Clients</span>
+                            <span>My Clients</span>
                         </div>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#createPlanModal" class="sidebar-link">
+                    <a href="/Client/Workouts" class="sidebar-link">
                         <div class="sidebar-link-left">
-                            <i class="bi bi-shield-check"></i>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6.5 6.5 11 11"></path>
+                                <path d="m21 21-1-1"></path>
+                                <path d="m3 3 1 1"></path>
+                                <path d="m18 22 4-4"></path>
+                                <path d="m2 6 4-4"></path>
+                                <path d="m3 10 7-7"></path>
+                                <path d="m14 21 7-7"></path>
+                            </svg>
                             <span>Workout Plans</span>
                         </div>
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#createPlanModal" class="sidebar-link">
+                    <a href="/Client/Diet" class="sidebar-link">
                         <div class="sidebar-link-left">
-                            <i class="bi bi-egg-fried"></i>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 2a.75.75 0 0 1 .75.75v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.75a3 3 0 0 1-2.25 2.9V21.25a.75.75 0 0 1-1.5 0V9.4a3 3 0 0 1-2.25-2.9V2.75A.75.75 0 0 1 7 2z"/>
+                                <path d="M16.5 2c-.28 0-.5.22-.5.5v8.5a.75.75 0 0 0 .75.75h.5v9.5a.75.75 0 0 0 1.5 0V2.7c0-.39-.31-.7-.75-.7h-1.5z"/>
+                            </svg>
                             <span>Diet Plans</span>
                         </div>
                     </a>
                 </li>
                 <li>
-                    <a href="#pendingRequestsSection" class="sidebar-link">
+                    <a href="/Client/Appointments" class="sidebar-link">
                         <div class="sidebar-link-left">
                             <i class="bi bi-calendar2-event"></i>
                             <span>Appointments</span>
@@ -823,23 +876,7 @@
                     <a href="/Client/Analytics" class="sidebar-link">
                         <div class="sidebar-link-left">
                             <i class="bi bi-graph-up-arrow"></i>
-                            <span>Progress & Analytics</span>
-                        </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Client/Notifications" class="sidebar-link">
-                        <div class="sidebar-link-left">
-                            <i class="bi bi-bell"></i>
-                            <span>Notifications</span>
-                        </div>
-                    </a>
-                </li>
-                <li>
-                    <a href="/Client/Profile" class="sidebar-link">
-                        <div class="sidebar-link-left">
-                            <i class="bi bi-person"></i>
-                            <span>Profile & Health</span>
+                            <span>Progress & Reports</span>
                         </div>
                     </a>
                 </li>
@@ -852,7 +889,7 @@
                     <i class="bi bi-heart-pulse"></i>
                 </div>
                 <div class="support-title">Need assistance?</div>
-                <div class="support-desc">Clinical and coaching support team is here to help.</div>
+                <div class="support-desc">Our care team is here to help.</div>
                 <a href="mailto:support@healthtrack.com" class="support-link">
                     <span>Contact support</span>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
@@ -865,6 +902,8 @@
                     <span>Sign out</span>
                 </button>
             </form>
+
+            <a href="/" class="link-public-site">View public site</a>
         </div>
     </aside>
 
@@ -877,10 +916,17 @@
         <header class="top-navbar">
             <div class="search-box">
                 <i class="bi bi-search search-icon"></i>
-                <input type="text" class="search-input" placeholder="Search clients, routines, requests..." />
+                <input type="text" class="search-input" placeholder="Search anything..." />
             </div>
 
             <div class="top-controls">
+                <!-- Role Switcher Segmented Pill -->
+                <div class="role-switcher">
+                    <a href="/Client" class="role-pill">Client</a>
+                    <a href="/Trainer" class="role-pill active">Trainer</a>
+                    <a href="/Trainer" class="role-pill">Admin</a>
+                </div>
+
                 <!-- Notifications Bell -->
                 <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>

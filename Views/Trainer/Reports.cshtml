@@ -15,6 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -1107,53 +1108,9 @@
                         </span>
                     </div>
 
-                    <!-- Clean SVG Line Graph replicating mockup -->
+                    <!-- Interactive Chart.js Weight Trend Graph (Hoverable points & tooltip) -->
                     <div class="trend-chart-box">
-                        <svg class="trend-svg" viewBox="0 0 540 180" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="weightAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#0D9488" stop-opacity="0.18" />
-                                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0.01" />
-                                </linearGradient>
-                            </defs>
-
-                            <!-- Horizontal Grid lines & Y labels (80, 75, 70, 65) -->
-                            <!-- 80 -->
-                            <text x="5" y="24" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">80</text>
-                            <line x1="32" y1="20" x2="530" y2="20" stroke="#F1F5F9" stroke-width="1.2" />
-
-                            <!-- 75 -->
-                            <text x="5" y="64" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">75</text>
-                            <line x1="32" y1="60" x2="530" y2="60" stroke="#F1F5F9" stroke-width="1.2" />
-
-                            <!-- 70 -->
-                            <text x="5" y="104" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">70</text>
-                            <line x1="32" y1="100" x2="530" y2="100" stroke="#F1F5F9" stroke-width="1.2" />
-
-                            <!-- 65 -->
-                            <text x="5" y="144" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">65</text>
-                            <line x1="32" y1="140" x2="530" y2="140" stroke="#F1F5F9" stroke-width="1.2" />
-
-                            <!-- Smooth Curve & Area Fill -->
-                            <path d="M 40,140 C 100,135 120,118 150,115 C 210,110 240,88 270,85 C 330,80 360,72 390,70 C 450,68 480,50 510,48 L 510,145 L 40,145 Z" fill="url(#weightAreaGrad)" />
-                            
-                            <path d="M 40,140 C 100,135 120,118 150,115 C 210,110 240,88 270,85 C 330,80 360,72 390,70 C 450,68 480,50 510,48" 
-                                  fill="none" stroke="#0D9488" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-
-                            <!-- Marker Circles -->
-                            <circle cx="40" cy="140" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
-                            <circle cx="150" cy="115" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
-                            <circle cx="270" cy="85" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
-                            <circle cx="390" cy="70" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
-                            <circle cx="510" cy="48" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
-
-                            <!-- X Axis Date Labels -->
-                            <text x="32" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 01</text>
-                            <text x="142" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 08</text>
-                            <text x="262" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 15</text>
-                            <text x="382" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 22</text>
-                            <text x="500" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 29</text>
-                        </svg>
+                        <canvas id="trainerWeightChart"></canvas>
                     </div>
                 </div>
 
@@ -1243,5 +1200,92 @@
 
 <!-- Bootstrap Bundle JS -->
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Interactive Weight Trend Chart.js Initialization -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById('trainerWeightChart');
+        if (!canvas) return;
+
+        const weightCtx = canvas.getContext('2d');
+        
+        // Gradient fill matching theme
+        const gradient = weightCtx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, 'rgba(13, 148, 136, 0.22)');
+        gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+
+        const weightLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightLabels));
+        const weightData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightValues));
+
+        new Chart(weightCtx, {
+            type: 'line',
+            data: {
+                labels: weightLabels,
+                datasets: [{
+                    label: 'Weight',
+                    data: weightData,
+                    borderColor: '#0D9488',
+                    borderWidth: 3,
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.4, // Smooth spline curve
+                    pointRadius: 5,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#0D9488',
+                    pointBorderWidth: 2.5,
+                    pointHoverRadius: 7.5,
+                    pointHoverBackgroundColor: '#0D9488',
+                    pointHoverBorderColor: '#FFFFFF',
+                    pointHoverBorderWidth: 2.5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
+                        bodyFont: { family: 'Plus Jakarta Sans', size: 12, weight: '500' },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function (context) {
+                                return context.parsed.y.toFixed(1) + ' kg';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            color: '#94A3B8',
+                            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+                        }
+                    },
+                    y: {
+                        grace: '8%',
+                        grid: {
+                            color: '#F1F5F9',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            stepSize: 5,
+                            color: '#94A3B8',
+                            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 </body>
 </html>

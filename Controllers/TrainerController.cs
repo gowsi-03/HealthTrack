@@ -1483,13 +1483,37 @@ namespace HealthTrack.Controllers
             }
 
             // Merge database health logs recorded by the client if registered in DB
-            var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == selectedClient.Id || u.Email == selectedClient.Email);
+            var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == selectedClient.Id || u.Email == selectedClient.Email || u.FullName == selectedClient.Name);
+            if (dbClient == null && (selectedClient.Id == "c-alex" || selectedClient.Name == "Alex Morgan"))
+            {
+                dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Email == "client@healthtrack.com");
+            }
+
             if (dbClient != null)
             {
                 var dbLogs = await _context.HealthLogs
                     .Where(h => h.ClientId == dbClient.Id)
                     .OrderByDescending(h => h.LogDate)
                     .ToListAsync();
+
+                if (dbLogs.Any())
+                {
+                    var latestDbLog = dbLogs.First();
+                    vm.CurrentWeightKg = latestDbLog.WeightKg;
+
+                    // Dynamically sync chart with client's recorded log date & weight
+                    var latestDateLabel = latestDbLog.LogDate.ToString("MMM dd");
+                    var existingIndex = vm.WeightLabels.IndexOf(latestDateLabel);
+                    if (existingIndex >= 0)
+                    {
+                        vm.WeightValues[existingIndex] = latestDbLog.WeightKg;
+                    }
+                    else
+                    {
+                        vm.WeightLabels.Add(latestDateLabel);
+                        vm.WeightValues.Add(latestDbLog.WeightKg);
+                    }
+                }
 
                 foreach (var log in dbLogs)
                 {

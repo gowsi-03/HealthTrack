@@ -180,6 +180,25 @@ namespace HealthTrack.Controllers
                     vm.TrainerId = trainer.Id;
                 }
             }
+            else if (isDemoUser)
+            {
+                vm.TrainerName = "Alex Henderson";
+                vm.TrainerId = "demo-trainer-id";
+            }
+            else
+            {
+                vm.TrainerName = null;
+                vm.TrainerId = null;
+            }
+
+            // Available Trainers for 1-Click Coach Selector
+            var availableTrainers = await _userManager.GetUsersInRoleAsync("Trainer");
+            vm.AvailableTrainers = availableTrainers.Select(t => new TrainerOption
+            {
+                Id = t.Id,
+                Name = t.FullName,
+                RoleOrSpecialty = t.FitnessGoal ?? "Personal Coach"
+            }).ToList();
 
             // 5. Fetch Upcoming Appointment
             var nextAppointment = await _context.Appointments
@@ -266,7 +285,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 1,
                     Title = "Morning hydration",
-                    Subtitle = "8:00 AM • 500 ml water",
+                    Subtitle = "8:00 AM â€¢ 500 ml water",
                     Category = "Hydration",
                     IsCompleted = hasHydrationToday,
                     ActionButtonText = hasHydrationToday ? "Done" : "Log"
@@ -275,7 +294,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 2,
                     Title = "Healthy breakfast",
-                    Subtitle = "8:30 AM • 420 kcal",
+                    Subtitle = "8:30 AM â€¢ 420 kcal",
                     Category = "Meal",
                     IsCompleted = hasBreakfastToday,
                     ActionButtonText = hasBreakfastToday ? "Done" : "Log"
@@ -284,7 +303,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 3,
                     Title = vm.ActiveWorkoutPlan?.Title ?? "Daily Workout Routine",
-                    Subtitle = "5:30 PM • 45 minutes",
+                    Subtitle = "5:30 PM â€¢ 45 minutes",
                     Category = "Workout",
                     IsCompleted = hasWorkoutToday,
                     ActionButtonText = hasWorkoutToday ? "Done" : "Start"
@@ -293,7 +312,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 4,
                     Title = "Log evening meal",
-                    Subtitle = "7:30 PM • Target 560 kcal",
+                    Subtitle = "7:30 PM â€¢ Target 560 kcal",
                     Category = "Meal",
                     IsCompleted = hasEveningMealToday,
                     ActionButtonText = hasEveningMealToday ? "Done" : "Log"
@@ -304,6 +323,54 @@ namespace HealthTrack.Controllers
             vm.CompletedActivitiesCount = vm.TodayPlanItems.Count(i => i.IsCompleted);
 
             return View(vm);
+        }
+
+        // POST: /Client/AssignCoach
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignCoach(string trainerId)
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            if (string.IsNullOrEmpty(trainerId))
+            {
+                TempData["ErrorMessage"] = "Please select a valid coach.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var trainer = await _userManager.FindByIdAsync(trainerId);
+            if (trainer == null)
+            {
+                TempData["ErrorMessage"] = "Selected trainer could not be found.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            user.TrainerId = trainer.Id;
+            await _userManager.UpdateAsync(user);
+
+            // Add notification for client
+            _context.Notifications.Add(new Notification
+            {
+                UserId = user.Id,
+                Message = $"You are now paired with Coach {trainer.FullName}! They can now design your personalized training and nutrition routines.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            });
+
+            // Add notification for trainer
+            _context.Notifications.Add(new Notification
+            {
+                UserId = trainer.Id,
+                Message = $"New client paired: {user.FullName} ({user.Email}) has selected you as their primary coach.",
+                CreatedAt = DateTime.UtcNow,
+                IsRead = false
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Awesome! Coach {trainer.FullName} is now your primary trainer.";
+            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Client/LogHydration
@@ -584,18 +651,18 @@ namespace HealthTrack.Controllers
                 vm.CompletionPercentage = vm.TotalExercisesCount > 0 
                     ? (int)Math.Round((double)vm.CompletedExercisesCount / vm.TotalExercisesCount * 100) 
                     : 0;
-                vm.CurrentWeekText = $"Week 1 of 8 • {vm.CompletedExercisesCount} of {vm.TotalExercisesCount} exercises completed";
+                vm.CurrentWeekText = $"Week 1 of 8 â€¢ {vm.CompletedExercisesCount} of {vm.TotalExercisesCount} exercises completed";
 
                 vm.WeeklySessions = new List<WorkoutSessionItem>
                 {
                     new WorkoutSessionItem
                     {
                         Id = plan.Id,
-                        DaySchedule = "Today • 5:30 PM",
+                        DaySchedule = "Today â€¢ 5:30 PM",
                         Title = plan.Title,
                         ExerciseCount = plan.Exercises.Count,
                         DurationMinutes = 45,
-                        Intensity = "3 sets • 8-12 reps",
+                        Intensity = "3 sets â€¢ 8-12 reps",
                         Status = vm.CompletionPercentage == 100 ? "Completed" : (vm.CompletionPercentage > 0 ? "In progress" : "Upcoming"),
                         IsActiveSession = true,
                         ExerciseNames = plan.Exercises.Select(e => $"{e.Name} ({e.Sets}x{e.Reps})").ToList()
@@ -606,25 +673,25 @@ namespace HealthTrack.Controllers
             {
                 // Pre-populated mockup view only for demo client
                 vm.HasActivePlan = true;
-                vm.ProgramTitle = "Foundation Strength • 8 Weeks";
+                vm.ProgramTitle = "Foundation Strength â€¢ 8 Weeks";
                 vm.ProgramDescription = "A progressive full-body program designed to improve strength, mobility and endurance.";
                 vm.DaysPerWeek = 4;
                 vm.MinutesPerSession = 45;
                 vm.TotalExercisesCount = 8;
                 vm.CompletedExercisesCount = 5;
                 vm.CompletionPercentage = 62;
-                vm.CurrentWeekText = "Week 5 of 8 • Stay consistent";
+                vm.CurrentWeekText = "Week 5 of 8 â€¢ Stay consistent";
 
                 vm.WeeklySessions = new List<WorkoutSessionItem>
                 {
                     new WorkoutSessionItem
                     {
                         Id = 1,
-                        DaySchedule = "Today • 5:30 PM",
+                        DaySchedule = "Today â€¢ 5:30 PM",
                         Title = "Upper body strength",
                         ExerciseCount = 8,
                         DurationMinutes = 45,
-                        Intensity = "3 sets • 8-12 reps",
+                        Intensity = "3 sets â€¢ 8-12 reps",
                         Status = "In progress",
                         IsActiveSession = true,
                         ExerciseNames = new List<string> { "Barbell Bench Press (4x10)", "Incline Dumbbell Rows (3x12)", "Overhead DB Press (3x10)", "Tricep Pushdowns (3x15)" }
@@ -636,7 +703,7 @@ namespace HealthTrack.Controllers
                         Title = "Lower body & core",
                         ExerciseCount = 7,
                         DurationMinutes = 50,
-                        Intensity = "3 sets • 8-12 reps",
+                        Intensity = "3 sets â€¢ 8-12 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "Barbell Back Squats (4x8)", "Romanian Deadlifts (3x10)", "Bulgarian Split Squats (3x10)", "Plank Holds (3x60s)" }
@@ -648,7 +715,7 @@ namespace HealthTrack.Controllers
                         Title = "Full body mobility",
                         ExerciseCount = 10,
                         DurationMinutes = 35,
-                        Intensity = "3 sets • 8-12 reps",
+                        Intensity = "3 sets â€¢ 8-12 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "World's Greatest Stretch (3x5)", "Goblet Squat Pause (3x8)", "Face Pulls (3x15)", "Hanging Knee Raises (3x12)" }
@@ -660,7 +727,7 @@ namespace HealthTrack.Controllers
                         Title = "Active recovery & core",
                         ExerciseCount = 6,
                         DurationMinutes = 30,
-                        Intensity = "2 sets • 15 reps",
+                        Intensity = "2 sets â€¢ 15 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "Zone 2 Incline Walk (20 min)", "Hamstring Flossing (2x10)", "Thoracic Spine Rotations (2x10)" }
@@ -826,7 +893,7 @@ namespace HealthTrack.Controllers
 
                 vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
                 vm.TotalMealsCount = vm.ScheduledMeals.Count;
-                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
+                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} Â· {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
             }
             else if (isDemoUser)
             {
@@ -896,7 +963,7 @@ namespace HealthTrack.Controllers
 
                 vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
                 vm.TotalMealsCount = vm.ScheduledMeals.Count;
-                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
+                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} Â· {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
             }
             else
             {
@@ -969,13 +1036,13 @@ namespace HealthTrack.Controllers
 
                     vm.LoggedMealsCount = vm.ScheduledMeals.Count;
                     vm.TotalMealsCount = vm.ScheduledMeals.Count;
-                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} meal{(vm.LoggedMealsCount == 1 ? "" : "s")} logged today";
+                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} Â· {vm.LoggedMealsCount} meal{(vm.LoggedMealsCount == 1 ? "" : "s")} logged today";
                 }
                 else
                 {
                     vm.LoggedMealsCount = 0;
                     vm.TotalMealsCount = 0;
-                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · Awaiting nutritionist schedule";
+                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} Â· Awaiting nutritionist schedule";
                 }
             }
 
@@ -1103,7 +1170,7 @@ namespace HealthTrack.Controllers
                         AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 18),
                         TimeSlot = "10:30 AM",
                         Status = "Approved",
-                        Notes = "HEALTH CONSULTATION · 45 min - Routine cardiovascular screening and general wellness assessment."
+                        Notes = "HEALTH CONSULTATION Â· 45 min - Routine cardiovascular screening and general wellness assessment."
                     },
                     new Appointment
                     {
@@ -1112,7 +1179,7 @@ namespace HealthTrack.Controllers
                         AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 24),
                         TimeSlot = "4:00 PM",
                         Status = "Pending",
-                        Notes = "PERSONAL TRAINING · 60 min - Progressive overload review & squat technique optimization."
+                        Notes = "PERSONAL TRAINING Â· 60 min - Progressive overload review & squat technique optimization."
                     },
                     new Appointment
                     {
@@ -1121,7 +1188,7 @@ namespace HealthTrack.Controllers
                         AppointmentDate = new DateTime(DateTime.UtcNow.Year, 5, 2),
                         TimeSlot = "9:15 AM",
                         Status = "Approved",
-                        Notes = "NUTRITION REVIEW · 60 min - Macronutrient adjustment for endurance & lean retention."
+                        Notes = "NUTRITION REVIEW Â· 60 min - Macronutrient adjustment for endurance & lean retention."
                     },
                     new Appointment
                     {
@@ -1130,7 +1197,7 @@ namespace HealthTrack.Controllers
                         AppointmentDate = DateTime.UtcNow.AddDays(-14),
                         TimeSlot = "10:00 AM",
                         Status = "Completed",
-                        Notes = "HEALTH CONSULTATION · 45 min - Baseline biometric evaluation and intake consultation."
+                        Notes = "HEALTH CONSULTATION Â· 45 min - Baseline biometric evaluation and intake consultation."
                     },
                     new Appointment
                     {
@@ -1139,7 +1206,7 @@ namespace HealthTrack.Controllers
                         AppointmentDate = DateTime.UtcNow.AddDays(-7),
                         TimeSlot = "3:30 PM",
                         Status = "Completed",
-                        Notes = "PERSONAL TRAINING · 60 min - Movement assessment & functional mobility calibration."
+                        Notes = "PERSONAL TRAINING Â· 60 min - Movement assessment & functional mobility calibration."
                     }
                 };
 
@@ -1290,7 +1357,7 @@ namespace HealthTrack.Controllers
                 AppointmentDate = form.AppointmentDate,
                 TimeSlot = form.TimeSlot,
                 Status = "Pending",
-                Notes = $"{form.Category.ToUpper()} · {form.DurationText} - {form.Notes ?? "Client booked consultation via portal."}",
+                Notes = $"{form.Category.ToUpper()} Â· {form.DurationText} - {form.Notes ?? "Client booked consultation via portal."}",
                 CreatedAt = DateTime.UtcNow
             };
 

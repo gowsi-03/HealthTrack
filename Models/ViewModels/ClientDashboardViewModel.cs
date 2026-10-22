@@ -12,8 +12,10 @@ namespace HealthTrack.Models.ViewModels
         public double HeightCm { get; set; } = 175.0;
         public double TargetWeight { get; set; } = 70.0;
         public string FitnessGoal { get; set; } = "General Fitness";
-        public string? TrainerName { get; set; } = "Alex Henderson";
+        public string? TrainerName { get; set; }
         public string? TrainerId { get; set; }
+        public bool HasAssignedTrainer => !string.IsNullOrEmpty(TrainerId);
+        public List<TrainerOption> AvailableTrainers { get; set; } = new();
 
         // Top 3 Stat Cards
         public double CurrentWeight { get; set; } = 72.4;

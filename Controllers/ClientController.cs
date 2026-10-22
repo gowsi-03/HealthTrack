@@ -1341,6 +1341,67 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Analytics));
         }
 
+        // POST: /Client/DeleteMeasurement
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMeasurement(int id)
+        {
+            var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var log = await _context.HealthLogs.FirstOrDefaultAsync(l => l.Id == id && l.ClientId == user.Id);
+            if (log != null)
+            {
+                var removedWeight = log.WeightKg;
+                var removedDate = log.LogDate;
+                _context.HealthLogs.Remove(log);
+                await _context.SaveChangesAsync();
+
+                // Recalculate user's CurrentWeight to latest remaining log if any
+                var remainingLogs = await _context.HealthLogs
+                    .Where(l => l.ClientId == user.Id && l.WeightKg > 0)
+                    .OrderByDescending(l => l.LogDate)
+                    .ToListAsync();
+
+                if (remainingLogs.Any())
+                {
+                    user.CurrentWeight = remainingLogs.First().WeightKg;
+                }
+                else
+                {
+                    user.CurrentWeight = null;
+                }
+                await _userManager.UpdateAsync(user);
+
+                // Live Sync: Notify assigned trainer of deletion
+                var trainerId = user.TrainerId;
+                if (string.IsNullOrEmpty(trainerId))
+                {
+                    var defaultTrainer = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com") ?? await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                    trainerId = defaultTrainer?.Id;
+                }
+                if (!string.IsNullOrEmpty(trainerId))
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = trainerId,
+                        Message = $"{user.FullName} deleted biometric entry ({removedWeight:0.0} kg from {removedDate:MMM dd}).",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
+
+                TempData["SuccessMessage"] = $"Measurement entry ({removedWeight:0.0} kg) deleted successfully.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Measurement entry not found or already deleted.";
+            }
+
+            return RedirectToAction(nameof(Analytics));
+        }
+
         // GET: /Client/ExportReport
         public async Task<IActionResult> ExportReport()
         {

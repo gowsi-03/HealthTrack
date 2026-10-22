@@ -321,6 +321,7 @@ namespace HealthTrack.Controllers
 
             vm.TotalActivitiesCount = vm.TodayPlanItems.Count;
             vm.CompletedActivitiesCount = vm.TodayPlanItems.Count(i => i.IsCompleted);
+            vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
 
             return View(vm);
         }
@@ -750,6 +751,8 @@ namespace HealthTrack.Controllers
                 vm.Exercises = new List<WorkoutExercise>();
             }
 
+            vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+
             return View(vm);
         }
 
@@ -801,7 +804,7 @@ namespace HealthTrack.Controllers
                 ClientId = user.Id,
                 FullName = user.FullName ?? user.UserName ?? "John Doe",
                 Email = user.Email ?? string.Empty,
-                TrainerName = "Alex Henderson"
+                TrainerName = "No coach assigned yet"
             };
 
             // Fetch trainer info
@@ -810,7 +813,7 @@ namespace HealthTrack.Controllers
                 var trainer = await _userManager.FindByIdAsync(user.TrainerId);
                 if (trainer != null)
                 {
-                    vm.TrainerName = trainer.FullName ?? trainer.UserName ?? "Alex Henderson";
+                    vm.TrainerName = trainer.FullName ?? trainer.UserName ?? "Personal Coach";
                 }
             }
 
@@ -1046,6 +1049,8 @@ namespace HealthTrack.Controllers
                 }
             }
 
+            vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+
             return View(vm);
         }
 
@@ -1056,6 +1061,14 @@ namespace HealthTrack.Controllers
         {
             var user = await GetCurrentClientUserAsync();
 
+            // Strict Coach Model: Validate client has active diet plan
+            var activePlan = await _context.DietPlans.FirstOrDefaultAsync(d => d.ClientId == user.Id);
+            if (activePlan == null)
+            {
+                TempData["ErrorMessage"] = "You do not have an active diet plan assigned yet. Please consult your coach or nutritionist to get a personalized meal plan.";
+                return RedirectToAction(nameof(Diet));
+            }
+
             var form = vm.LogMealForm;
             if (form == null || string.IsNullOrWhiteSpace(form.Description))
             {
@@ -1064,14 +1077,20 @@ namespace HealthTrack.Controllers
             }
 
             // Save to HealthLog (record caloric intake)
+            double userWeight = user.CurrentWeight ?? 0;
+            double userHeight = user.HeightCm ?? 0;
+            double bmi = (userWeight > 0 && userHeight > 0) 
+                ? Math.Round(userWeight / Math.Pow(userHeight / 100.0, 2), 1) 
+                : 0;
+
             var log = new HealthLog
             {
                 ClientId = user.Id,
                 LogDate = DateTime.UtcNow,
-                WeightKg = user.CurrentWeight ?? 72.4,
-                CalculatedBmi = Math.Round((user.CurrentWeight ?? 72.4) / Math.Pow((user.HeightCm ?? 175.0) / 100.0, 2), 1),
+                WeightKg = userWeight,
+                CalculatedBmi = bmi,
                 CaloriesBurned = 0,
-                WaterIntakeLiters = 2.5,
+                WaterIntakeLiters = 2.0,
                 Notes = $"Meal: {form.MealType} - {form.Description} ({form.Calories} kcal, {form.ProteinGrams}g protein)"
             };
             _context.HealthLogs.Add(log);
@@ -1298,6 +1317,17 @@ namespace HealthTrack.Controllers
             vm.UpcomingAppointments = upcoming;
             vm.PastAppointments = past;
 
+            // Load available trainers dynamically for booking dropdown
+            var trainers = await _userManager.GetUsersInRoleAsync("Trainer");
+            vm.AvailableTrainers = trainers.Select(t => new TrainerOption
+            {
+                Id = t.Id,
+                Name = t.FullName ?? t.UserName ?? "Trainer",
+                RoleOrSpecialty = t.FitnessGoal ?? "Specialist & Coach"
+            }).ToList();
+
+            vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+
             return View(vm);
         }
 
@@ -1315,33 +1345,22 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Appointments));
             }
 
-            // Find specialist ID or fallback
+            // Find specialist ID dynamically from registered database trainers
+            var trainersList = await _userManager.GetUsersInRoleAsync("Trainer");
             string trainerId = user.TrainerId ?? string.Empty;
-            if (form.SpecialistName.Contains("Maya", StringComparison.OrdinalIgnoreCase))
+
+            var matchedTrainer = trainersList.FirstOrDefault(t => 
+                t.Id == form.SpecialistName || 
+                string.Equals(t.FullName, form.SpecialistName, StringComparison.OrdinalIgnoreCase) ||
+                (t.FullName != null && !string.IsNullOrEmpty(form.SpecialistName) && form.SpecialistName.Contains(t.FullName, StringComparison.OrdinalIgnoreCase)));
+
+            if (matchedTrainer != null)
             {
-                var s = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
-                if (s != null) trainerId = s.Id;
+                trainerId = matchedTrainer.Id;
             }
-            else if (form.SpecialistName.Contains("Chris", StringComparison.OrdinalIgnoreCase))
+            else if (string.IsNullOrEmpty(trainerId) && trainersList.Any())
             {
-                var s = await _userManager.FindByEmailAsync("chris.williams@healthtrack.com");
-                if (s != null) trainerId = s.Id;
-            }
-            else if (form.SpecialistName.Contains("Nina", StringComparison.OrdinalIgnoreCase))
-            {
-                var s = await _userManager.FindByEmailAsync("nina.ford@healthtrack.com");
-                if (s != null) trainerId = s.Id;
-            }
-            else if (form.SpecialistName.Contains("Alex", StringComparison.OrdinalIgnoreCase))
-            {
-                var s = await _userManager.FindByEmailAsync("trainer@healthtrack.com");
-                if (s == null) s = await _userManager.Users.FirstOrDefaultAsync(u => u.FullName.Contains("Alex"));
-                if (s != null) trainerId = s.Id;
-            }
-            else
-            {
-                var s = await _userManager.Users.FirstOrDefaultAsync(u => u.FullName == form.SpecialistName);
-                if (s != null) trainerId = s.Id;
+                trainerId = trainersList.First().Id;
             }
 
             if (string.IsNullOrEmpty(trainerId))
@@ -1586,6 +1605,8 @@ namespace HealthTrack.Controllers
                     : "0";
                 vm.AverageCaloriesPeriod = "Daily average";
             }
+
+            vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
 
             return View(vm);
         }

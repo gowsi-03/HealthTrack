@@ -57,6 +57,7 @@ namespace HealthTrack.Models.ViewModels
         // Active Plans
         public WorkoutPlan? ActiveWorkoutPlan { get; set; }
         public DietPlan? ActiveDietPlan { get; set; }
+        public int UnreadNotificationsCount { get; set; } = 0;
 
         // Quick Action Forms
         public QuickLogMeasurementModel QuickMeasurement { get; set; } = new();

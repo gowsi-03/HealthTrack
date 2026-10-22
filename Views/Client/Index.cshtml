@@ -986,10 +986,13 @@
 
             <div class="top-controls">
                 <!-- Notifications Bell -->
-                <button type="button" class="btn-notification" onclick="alert('Notification: Consultation with Dr. Maya Patel scheduled for Friday at 10:30 AM.')" title="Notifications">
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>
-                    <span class="notify-dot"></span>
-                </button>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
 
                 <!-- User Profile Dropdown -->
                 <div class="dropdown">
@@ -1277,7 +1280,7 @@
                                         <div class="appt-provider-name">@Model.AppointmentProvider</div>
                                         <div class="appt-meta-item">
                                             <i class="bi bi-clock"></i>
-                                            <span>Friday, @Model.AppointmentTime</span>
+                                            <span>@(string.IsNullOrEmpty(Model.AppointmentDateFormatted) ? Model.AppointmentTime : Model.AppointmentDateFormatted)</span>
                                         </div>
                                         <div class="appt-meta-item">
                                             <i class="bi bi-camera-video"></i>

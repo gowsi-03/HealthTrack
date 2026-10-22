@@ -802,10 +802,13 @@
 
             <div class="top-controls">
                 <!-- Notifications -->
-                <button class="btn-notification" type="button" title="Notifications" onclick="alert('Progress updated: Weight is down 3.8 kg since baseline.');">
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>
-                    <span class="notify-dot"></span>
-                </button>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
 
                 <!-- User Profile Dropdown with working Logout -->
                 <div class="dropdown">

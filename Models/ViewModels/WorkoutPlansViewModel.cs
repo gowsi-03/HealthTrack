@@ -30,6 +30,7 @@ namespace HealthTrack.Models.ViewModels
 
         // Form for logging a completed session
         public LogWorkoutInputModel LogWorkoutForm { get; set; } = new();
+        public int UnreadNotificationsCount { get; set; } = 0;
     }
 
     public class WorkoutSessionItem

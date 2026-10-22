@@ -39,6 +39,7 @@ namespace HealthTrack.Models.ViewModels
 
         // Form for recording new measurement
         public RecordMeasurementInputModel RecordMeasurementForm { get; set; } = new();
+        public int UnreadNotificationsCount { get; set; } = 0;
     }
 
     public class MeasurementHistoryItem

@@ -21,6 +21,8 @@ namespace HealthTrack.Models.ViewModels
         public List<AppointmentItemViewModel> PastAppointments { get; set; } = new();
 
         public BookAppointmentInputModel BookingForm { get; set; } = new();
+        public List<TrainerOption> AvailableTrainers { get; set; } = new();
+        public int UnreadNotificationsCount { get; set; } = 0;
     }
 
     public class AppointmentItemViewModel

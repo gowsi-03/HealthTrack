@@ -27,6 +27,7 @@ namespace HealthTrack.Models.ViewModels
 
         // Form for logging a meal
         public LogMealEntryInputModel LogMealForm { get; set; } = new();
+        public int UnreadNotificationsCount { get; set; } = 0;
     }
 
     public class MealScheduleItem

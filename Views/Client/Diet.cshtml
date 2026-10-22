@@ -843,10 +843,13 @@
 
             <div class="top-controls">
                 <!-- Notifications -->
-                <button class="btn-notification" type="button" title="Notifications" onclick="alert('Latest alert: Trainer Alex reviewed your nutrition log.');">
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>
-                    <span class="notify-dot"></span>
-                </button>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
 
                 <!-- User Profile Dropdown with working Logout -->
                 <div class="dropdown">
@@ -923,10 +926,20 @@
                     <h1 class="page-main-title">Diet plans</h1>
                     <p class="page-subtitle">Balanced nutrition designed around your preferences and goals.</p>
                 </div>
-                <button type="button" class="btn-log-meal-cta" data-bs-toggle="modal" data-bs-target="#logMealModal">
-                    <i class="bi bi-plus-lg"></i>
-                    <span>Log meal</span>
-                </button>
+                @if (Model.HasActivePlan)
+                {
+                    <button type="button" class="btn-log-meal-cta" data-bs-toggle="modal" data-bs-target="#logMealModal">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Log meal</span>
+                    </button>
+                }
+                else
+                {
+                    <a href="/Client/Appointments" class="btn btn-outline-success fw-bold rounded-3 px-3 py-2 text-decoration-none d-flex align-items-center gap-2" style="font-size: 0.88rem;">
+                        <i class="bi bi-calendar2-plus"></i>
+                        <span>Request Diet Plan</span>
+                    </a>
+                }
             </div>
 
             @if (Model.HasActivePlan)
@@ -983,15 +996,11 @@
                         </div>
                         <h2 class="banner-plan-title mb-2 text-white" style="font-size: 1.55rem; font-weight: 700;">No Diet Plan Assigned Yet</h2>
                         <p class="banner-plan-desc mb-4 text-white-50" style="font-size: 0.92rem; line-height: 1.6; max-width: 520px;">
-                            Your coach or nutritionist will design a custom nutrition plan and macro targets for you. In the meantime, you can record your meals anytime.
+                            Your coach or nutritionist will design a custom nutrition plan and macro targets tailored to your goals. Connect with your coach to receive your personalized meal schedule.
                         </p>
                         <div class="d-flex align-items-center gap-3">
-                            <button type="button" class="btn-log-meal-cta" data-bs-toggle="modal" data-bs-target="#logMealModal">
-                                <i class="bi bi-plus-lg"></i>
-                                <span>Log a Meal</span>
-                            </button>
-                            <a href="/Client/Appointments" class="btn btn-outline-light px-4 py-2.5 fw-semibold rounded-3">
-                                <i class="bi bi-calendar2-plus me-1"></i> Consult Coach
+                            <a href="/Client/Appointments" class="btn btn-success px-4 py-2.5 fw-semibold rounded-3 text-white shadow-sm" style="background: #10B981; border: none;">
+                                <i class="bi bi-calendar2-plus me-1"></i> Book Nutrition Consultation
                             </a>
                         </div>
                     </div>
@@ -1053,9 +1062,9 @@
                         <div class="fw-bold text-dark fs-5 mb-1">No scheduled meals for today</div>
                         <div class="text-muted small mb-3">Once your coach or nutritionist assigns a personalized nutrition plan, your scheduled meals and macros will appear here.</div>
                         <div>
-                            <button type="button" class="btn btn-sm btn-outline-success rounded-3 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#logMealModal">
-                                <i class="bi bi-plus-lg me-1"></i> Log custom meal
-                            </button>
+                            <a href="/Client/Appointments" class="btn btn-sm btn-outline-success rounded-3 px-3 fw-bold">
+                                <i class="bi bi-calendar2-plus me-1"></i> Consult Coach for Meal Schedule
+                            </a>
                         </div>
                     </div>
                 }
@@ -1123,7 +1132,7 @@
                     <div class="p-3 rounded-3" style="background-color: #F8FAFC; border: 1px dashed #CBD5E1;">
                         <div class="d-flex align-items-center gap-2 small text-muted">
                             <i class="bi bi-info-circle text-primary"></i>
-                            <span>This meal log is recorded to your daily nutrition log and alerts your assigned trainer Alex.</span>
+                            <span>This meal log is recorded to your daily nutrition log and alerts your assigned coach (@Model.TrainerName).</span>
                         </div>
                     </div>
                 </div>
@@ -1151,7 +1160,7 @@
                         <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill small fw-bold">ACTIVE NUTRITION ARCHITECTURE</span>
                     </div>
                     <h4 class="modal-title fw-bold text-white mb-1" id="fullPlanModalLabel">Balanced Performance Plan</h4>
-                    <p class="text-white-50 mb-0 small">Designed by Trainer Alex Henderson for optimum endurance and metabolic health.</p>
+                    <p class="text-white-50 mb-0 small">Designed by Coach @Model.TrainerName for optimum endurance and metabolic health.</p>
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>

@@ -863,10 +863,13 @@
 
             <div class="top-controls">
                 <!-- Notifications -->
-                <button class="btn-notification" type="button" title="Notifications" onclick="alert('You have an upcoming consultation with Dr. Maya Patel.');">
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>
-                    <span class="notify-dot"></span>
-                </button>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
 
                 <!-- User Profile Dropdown with working Logout -->
                 <div class="dropdown">
@@ -1115,10 +1118,20 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-secondary text-uppercase">Specialist / Clinician</label>
                         <select asp-for="BookingForm.SpecialistName" class="form-select rounded-3 py-2" id="specialistSelect">
-                            <option value="Dr. Maya Patel">Dr. Maya Patel (Health & Wellness Physician)</option>
-                            <option value="Chris Williams">Chris Williams (Senior Performance Coach)</option>
-                            <option value="Dr. Nina Ford">Dr. Nina Ford (Clinical Nutritionist)</option>
-                            <option value="Alex Henderson">Alex Henderson (Head Coach)</option>
+                            @if (Model.AvailableTrainers != null && Model.AvailableTrainers.Any())
+                            {
+                                foreach (var trainer in Model.AvailableTrainers)
+                                {
+                                    <option value="@trainer.Name">@trainer.Name (@trainer.RoleOrSpecialty)</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="Dr. Maya Patel">Dr. Maya Patel (Health & Wellness Physician)</option>
+                                <option value="Chris Williams">Chris Williams (Senior Performance Coach)</option>
+                                <option value="Dr. Nina Ford">Dr. Nina Ford (Clinical Nutritionist)</option>
+                                <option value="Alex Henderson">Alex Henderson (Head Coach)</option>
+                            }
                         </select>
                     </div>
 

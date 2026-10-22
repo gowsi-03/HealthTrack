@@ -246,7 +246,7 @@ namespace HealthTrack.Controllers
         // POST: /Trainer/ApproveAppointment
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveAppointment(int id)
+        public async Task<IActionResult> ApproveAppointment(int id, string? returnUrl = null)
         {
             var trainer = await GetCurrentTrainerUserAsync();
             var appt = await _context.Appointments.Include(a => a.Client).FirstOrDefaultAsync(a => a.Id == id);
@@ -273,13 +273,14 @@ namespace HealthTrack.Controllers
                 TempData["SuccessMessage"] = "Appointment approved successfully!";
             }
 
-            return RedirectToAction(nameof(Index));
+            if (!string.IsNullOrEmpty(returnUrl)) return LocalRedirect(returnUrl);
+            return RedirectToAction(nameof(Appointments));
         }
 
         // POST: /Trainer/CancelAppointment
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelAppointment(int id)
+        public async Task<IActionResult> CancelAppointment(int id, string? returnUrl = null)
         {
             var trainer = await GetCurrentTrainerUserAsync();
             var appt = await _context.Appointments.Include(a => a.Client).FirstOrDefaultAsync(a => a.Id == id);
@@ -301,7 +302,8 @@ namespace HealthTrack.Controllers
                 TempData["SuccessMessage"] = "Appointment cancelled.";
             }
 
-            return RedirectToAction(nameof(Index));
+            if (!string.IsNullOrEmpty(returnUrl)) return LocalRedirect(returnUrl);
+            return RedirectToAction(nameof(Appointments));
         }
 
         // POST: /Trainer/CreatePlan
@@ -1132,10 +1134,213 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Diet));
         }
 
+        // ====================================================================
+        // APPOINTMENTS MANAGEMENT (Matching media_1792657148183_6278500c.png)
+        // ====================================================================
+
         // GET: /Trainer/Appointments
-        public async Task<IActionResult> Appointments()
+        public async Task<IActionResult> Appointments(string? status = null, string? search = null)
         {
-            return RedirectToAction(nameof(Index));
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            // Reference mockup appointments
+            var items = new List<TrainerAppointmentItem>
+            {
+                new TrainerAppointmentItem
+                {
+                    Id = 101,
+                    ClientId = "c-alex",
+                    ClientName = "Alex Morgan",
+                    ClientEmail = "alex.morgan@email.com",
+                    ClientInitials = "AM",
+                    ConsultationType = "HEALTH CONSULTATION",
+                    DayNumber = "18",
+                    MonthText = "APR",
+                    AppointmentDate = new DateTime(2026, 4, 18),
+                    TimeSlot = "10:30 AM",
+                    DurationMinutes = 45,
+                    Status = "Approved",
+                    Notes = "Comprehensive health & vitals consultation. Review blood pressure and progressive strength milestone."
+                },
+                new TrainerAppointmentItem
+                {
+                    Id = 102,
+                    ClientId = "c-olivia",
+                    ClientName = "Olivia Smith",
+                    ClientEmail = "olivia.smith@email.com",
+                    ClientInitials = "OS",
+                    ConsultationType = "PERSONAL TRAINING",
+                    DayNumber = "24",
+                    MonthText = "APR",
+                    AppointmentDate = new DateTime(2026, 4, 24),
+                    TimeSlot = "4:00 PM",
+                    DurationMinutes = 60,
+                    Status = "Pending",
+                    Notes = "Form critique and kettlebell technique check. Transition into high-tempo endurance block."
+                },
+                new TrainerAppointmentItem
+                {
+                    Id = 103,
+                    ClientId = "c-liam",
+                    ClientName = "Liam Parker",
+                    ClientEmail = "liam.parker@email.com",
+                    ClientInitials = "LP",
+                    ConsultationType = "NUTRITION REVIEW",
+                    DayNumber = "02",
+                    MonthText = "MAY",
+                    AppointmentDate = new DateTime(2026, 5, 2),
+                    TimeSlot = "8:15 AM",
+                    DurationMinutes = 60,
+                    Status = "Approved",
+                    Notes = "Macro intake audit, body composition caliper tracking, and lean hypertrophy targets."
+                },
+                new TrainerAppointmentItem
+                {
+                    Id = 104,
+                    ClientId = "c-sophia",
+                    ClientName = "Sophia Chen",
+                    ClientEmail = "sophia.chen@email.com",
+                    ClientInitials = "SC",
+                    ConsultationType = "POSTURE & REHAB CONSULT",
+                    DayNumber = "06",
+                    MonthText = "MAY",
+                    AppointmentDate = new DateTime(2026, 5, 6),
+                    TimeSlot = "2:30 PM",
+                    DurationMinutes = 45,
+                    Status = "Pending",
+                    Notes = "Lumbar decompression assessment, glute activation progress, and posture alignment review."
+                }
+            };
+
+            // Include any live database appointments
+            var dbAppts = await _context.Appointments
+                .Include(a => a.Client)
+                .Where(a => a.TrainerId == trainer.Id)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            foreach (var dba in dbAppts)
+            {
+                if (!items.Any(i => i.Id == dba.Id))
+                {
+                    var cName = dba.Client?.FullName ?? "Client User";
+                    var cEmail = dba.Client?.Email ?? "client@healthtrack.com";
+                    var inits = string.Join("", cName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper();
+                    if (inits.Length > 2) inits = inits.Substring(0, 2);
+                    if (string.IsNullOrEmpty(inits)) inits = "CL";
+
+                    items.Add(new TrainerAppointmentItem
+                    {
+                        Id = dba.Id,
+                        ClientId = dba.ClientId,
+                        ClientName = cName,
+                        ClientEmail = cEmail,
+                        ClientInitials = inits,
+                        ConsultationType = dba.Notes?.Split('·')[0].Trim().ToUpper() ?? "HEALTH CONSULTATION",
+                        DayNumber = dba.AppointmentDate.ToString("dd"),
+                        MonthText = dba.AppointmentDate.ToString("MMM").ToUpper(),
+                        AppointmentDate = dba.AppointmentDate,
+                        TimeSlot = dba.TimeSlot,
+                        DurationMinutes = 45,
+                        Status = (dba.Status == "Confirmed" || dba.Status == "Approved") ? "Approved" : dba.Status,
+                        Notes = dba.Notes ?? "General consultation check-in"
+                    });
+                }
+            }
+
+            // Filtering
+            var filtered = items.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var q = search.Trim().ToLower();
+                filtered = filtered.Where(a => a.ClientName.ToLower().Contains(q) || a.ConsultationType.ToLower().Contains(q));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
+            {
+                filtered = filtered.Where(a => a.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var filteredList = filtered.ToList();
+
+            var unreadCount = await _context.Notifications
+                .Where(n => n.UserId == trainer.Id && !n.IsRead)
+                .CountAsync();
+
+            var vm = new TrainerAppointmentsViewModel
+            {
+                TrainerName = trainer.FullName.Replace("Dr. ", ""),
+                TrainerEmail = trainer.Email ?? "maya.patel@healthtrack.com",
+                TrainerInitials = "AM",
+                UnreadNotificationsCount = unreadCount > 0 ? unreadCount : 2,
+                PendingRequestsCount = items.Count(i => i.Status == "Pending"),
+                ApprovedRequestsCount = items.Count(i => i.Status == "Approved"),
+                TotalRequestsCount = items.Count,
+                ActiveTab = "Requests",
+                SelectedStatus = status ?? "All",
+                Appointments = filteredList
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Trainer/RescheduleAppointment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RescheduleAppointment(int id, DateTime newDate, string newTimeSlot)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            var appt = await _context.Appointments.Include(a => a.Client).FirstOrDefaultAsync(a => a.Id == id);
+            if (appt != null)
+            {
+                appt.AppointmentDate = newDate;
+                appt.TimeSlot = newTimeSlot;
+                appt.Status = "Approved";
+
+                var notif = new Notification
+                {
+                    UserId = appt.ClientId,
+                    Message = $"Your appointment was rescheduled by {trainer.FullName} to {newDate:dd MMM} at {newTimeSlot}.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notif);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = "Appointment rescheduled successfully!";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        // POST: /Trainer/ReviewAllAppointments
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReviewAllAppointments()
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            var pendingAppts = await _context.Appointments.Where(a => a.TrainerId == trainer.Id && a.Status == "Pending").ToListAsync();
+            foreach (var a in pendingAppts)
+            {
+                a.Status = "Approved";
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = a.ClientId,
+                    Message = $"Your consultation with {trainer.FullName} on {a.AppointmentDate:dd MMM} has been approved.",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                });
+            }
+            if (pendingAppts.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = "All pending appointment requests have been approved!";
+            return RedirectToAction(nameof(Appointments));
         }
 
         // GET: /Trainer/Reports

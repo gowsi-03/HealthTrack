@@ -1249,7 +1249,7 @@ namespace HealthTrack.Controllers
             }
 
             // Find specialist ID or fallback
-            string trainerId = user.TrainerId ?? user.Id;
+            string trainerId = user.TrainerId ?? string.Empty;
             if (form.SpecialistName.Contains("Maya", StringComparison.OrdinalIgnoreCase))
             {
                 var s = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
@@ -1264,6 +1264,23 @@ namespace HealthTrack.Controllers
             {
                 var s = await _userManager.FindByEmailAsync("nina.ford@healthtrack.com");
                 if (s != null) trainerId = s.Id;
+            }
+            else if (form.SpecialistName.Contains("Alex", StringComparison.OrdinalIgnoreCase))
+            {
+                var s = await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                if (s == null) s = await _userManager.Users.FirstOrDefaultAsync(u => u.FullName.Contains("Alex"));
+                if (s != null) trainerId = s.Id;
+            }
+            else
+            {
+                var s = await _userManager.Users.FirstOrDefaultAsync(u => u.FullName == form.SpecialistName);
+                if (s != null) trainerId = s.Id;
+            }
+
+            if (string.IsNullOrEmpty(trainerId))
+            {
+                var fallback = await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                if (fallback != null) trainerId = fallback.Id;
             }
 
             var appt = new Appointment

@@ -1,0 +1,1437 @@
+@model HealthTrack.Models.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Administrator Dashboard - HealthTrack";
+    Layout = null;
+    var initials = string.IsNullOrEmpty(Model.AdminInitials) ? "JL" : Model.AdminInitials;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --ht-navy-bg: #0C1E28;
+            --ht-navy-card: #132733;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-green-light: #ECFDF5;
+            --ht-slate-dark: #0F172A;
+            --ht-slate-muted: #64748B;
+            --ht-border: #E2E8F0;
+            --ht-body-bg: #F8FAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--ht-body-bg);
+            color: var(--ht-slate-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ========================================================= */
+        /* 1. SIDEBAR                                                */
+        /* ========================================================= */
+        .sidebar {
+            width: 260px;
+            background-color: var(--ht-navy-bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 1.5rem 1.15rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .nav-category {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.95rem;
+            border-radius: 12px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-link.active {
+            color: #FFFFFF;
+            background-color: rgba(16, 185, 129, 0.16);
+            font-weight: 700;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-link-left i {
+            font-size: 1.15rem;
+        }
+
+        .sidebar-link.active .sidebar-link-left i {
+            color: #10B981;
+        }
+
+        .active-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #10B981;
+            box-shadow: 0 0 8px #10B981;
+        }
+
+        /* Sidebar Support Card & Logout */
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-top: 1.5rem;
+        }
+
+        .support-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1rem;
+        }
+
+        .support-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .support-title {
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .support-desc {
+            color: #94A3B8;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-bottom: 0.65rem;
+        }
+
+        .support-link {
+            color: #10B981;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0.7rem 0.95rem;
+            border-radius: 10px;
+            color: #94A3B8;
+            background: transparent;
+            border: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-align: left;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-signout:hover {
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .public-site-link {
+            display: block;
+            text-align: center;
+            color: #64748B;
+            font-size: 0.72rem;
+            text-decoration: none;
+            padding-top: 4px;
+        }
+
+        .public-site-link:hover {
+            color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 2. MAIN CONTENT                                           */
+        /* ========================================================= */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--ht-border);
+            padding: 0.9rem 2.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .search-box {
+            position: relative;
+            width: 360px;
+        }
+
+        .search-input {
+            width: 100%;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 0.55rem 1rem 0.55rem 2.5rem;
+            font-size: 0.88rem;
+            color: var(--ht-slate-dark);
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            background: #FFFFFF;
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-notification {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-notification:hover {
+            background: #F8FAFC;
+            color: var(--ht-slate-dark);
+            border-color: #CBD5E1;
+        }
+
+        .notify-dot {
+            position: absolute;
+            top: 9px;
+            right: 10px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #EF4444;
+            border: 2px solid #FFFFFF;
+        }
+
+        .admin-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.35rem 0.85rem 0.35rem 0.4rem;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-profile-pill:hover {
+            background: #F8FAFC;
+            border-color: #CBD5E1;
+        }
+
+        .avatar-initials-admin {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #D1FAE5;
+            color: #059669;
+            font-weight: 800;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-meta-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #0F172A;
+            line-height: 1.2;
+        }
+
+        .admin-meta-role {
+            font-size: 0.72rem;
+            color: #64748B;
+        }
+
+        /* Body container */
+        .dashboard-body {
+            padding: 2.25rem;
+            flex: 1;
+        }
+
+        /* Alerts */
+        .alert-custom-success {
+            background-color: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #065F46;
+            border-radius: 12px;
+            padding: 0.9rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .alert-custom-error {
+            background-color: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #991B1B;
+            border-radius: 12px;
+            padding: 0.9rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Page Header */
+        .page-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.75rem;
+        }
+
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        .page-title {
+            font-weight: 800;
+            font-size: 1.85rem;
+            color: #0F172A;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            color: #64748B;
+            font-size: 0.92rem;
+            margin-bottom: 0;
+        }
+
+        .btn-add-user {
+            background: #10B981;
+            color: #FFFFFF;
+            border: none;
+            padding: 0.7rem 1.35rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            cursor: pointer;
+        }
+
+        .btn-add-user:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+            color: #FFFFFF;
+        }
+
+        /* ========================================================= */
+        /* 3. METRIC STAT CARDS (Row 1)                              */
+        /* ========================================================= */
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 18px;
+            padding: 1.45rem;
+            transition: all 0.2s;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+            border-color: #CBD5E1;
+        }
+
+        .stat-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon-wrapper {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .stat-icon-blue {
+            background: #EFF6FF;
+            color: #3B82F6;
+        }
+
+        .stat-icon-green {
+            background: #ECFDF5;
+            color: #10B981;
+        }
+
+        .stat-icon-orange {
+            background: #FFF7ED;
+            color: #F97316;
+        }
+
+        .stat-icon-indigo {
+            background: #EEF2FF;
+            color: #6366F1;
+        }
+
+        .stat-dots {
+            color: #94A3B8;
+            cursor: pointer;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            padding: 0 4px;
+        }
+
+        .stat-label {
+            font-size: 0.88rem;
+            color: #64748B;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+        }
+
+        .stat-value {
+            font-weight: 800;
+            font-size: 1.95rem;
+            color: #0F172A;
+            line-height: 1.15;
+            margin-bottom: 0.65rem;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-trend {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #10B981;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* ========================================================= */
+        /* 4. CHARTS SECTION (Row 2)                                 */
+        /* ========================================================= */
+        .chart-box-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 20px;
+            padding: 1.65rem;
+            height: 100%;
+        }
+
+        .chart-box-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .box-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #0F172A;
+            margin-bottom: 0.2rem;
+        }
+
+        .box-sub {
+            font-size: 0.82rem;
+            color: #64748B;
+            margin-bottom: 0;
+        }
+
+        .active-stats-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .active-number-group {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .active-big-val {
+            font-weight: 800;
+            font-size: 1.65rem;
+            color: #0F172A;
+            letter-spacing: -0.02em;
+        }
+
+        .active-pill {
+            font-size: 0.75rem;
+            font-weight: 700;
+            background: #ECFDF5;
+            color: #059669;
+            padding: 0.2rem 0.55rem;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .select-filter-custom {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #475569;
+            border: 1px solid #E2E8F0;
+            background: #F8FAFC;
+            border-radius: 8px;
+            padding: 0.35rem 0.75rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Donut Chart Legend */
+        .donut-container {
+            position: relative;
+            width: 100%;
+            height: 210px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .donut-center-text {
+            position: absolute;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .donut-center-val {
+            font-weight: 800;
+            font-size: 1.45rem;
+            color: #0F172A;
+            line-height: 1.1;
+        }
+
+        .donut-center-lbl {
+            font-size: 0.75rem;
+            color: #64748B;
+            font-weight: 600;
+        }
+
+        .donut-legend-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding-top: 1.25rem;
+            border-top: 1px solid #F1F5F9;
+            margin-top: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-dot-green {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        .legend-dot-navy {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #1E3A8A;
+        }
+
+        .legend-name {
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        .legend-pct {
+            font-weight: 700;
+            color: #0F172A;
+        }
+
+        /* ========================================================= */
+        /* 5. RECENT ACTIVITY TABLE (Row 3)                          */
+        /* ========================================================= */
+        .activity-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 20px;
+            padding: 1.65rem;
+            margin-top: 1.5rem;
+        }
+
+        .table-activity {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 0;
+        }
+
+        .table-activity th {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.9rem 1.2rem;
+            border-bottom: 1px solid #F1F5F9;
+            background: #FAFAFA;
+        }
+
+        .table-activity th:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .table-activity th:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .table-activity td {
+            padding: 1.15rem 1.2rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F8FAFC;
+            font-size: 0.88rem;
+        }
+
+        .table-activity tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-activity tr:hover td {
+            background-color: #F8FAFC;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar-circle {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.88rem;
+            flex-shrink: 0;
+        }
+
+        .user-name-bold {
+            font-weight: 700;
+            color: #0F172A;
+            font-size: 0.9rem;
+        }
+
+        .status-pill-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            background: #ECFDF5;
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.76rem;
+        }
+
+        .status-pill-inactive {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            background: #FEF2F2;
+            color: #DC2626;
+            font-weight: 700;
+            font-size: 0.76rem;
+        }
+
+        .status-dot-green {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        .status-dot-red {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #EF4444;
+        }
+
+        .link-audit {
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .link-audit:hover {
+            color: #047857;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================= -->
+    <!-- 1. SIDEBAR (Dark Navy)                                    -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div>
+            <!-- Brand Logo -->
+            <a href="/Admin" class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="bi bi-heart"></i>
+                </div>
+                <span>Health<span style="color: #10B981;">Track</span></span>
+            </a>
+
+            <!-- Navigation Links -->
+            <div class="nav-category">WORKSPACE</div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="/Admin" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid-fill"></i>
+                            <span>Dashboard</span>
+                        </div>
+                        <span class="active-dot"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Users" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>User Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Trainers" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-activity"></i>
+                            <span>Trainer Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Analytics" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Reports & Analytics</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Settings" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-gear"></i>
+                            <span>System Settings</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <!-- Support Card -->
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div class="support-title">Need assistance?</div>
+                <div class="support-desc">Our care team is here to help.</div>
+                <a href="mailto:support@healthtrack.com" class="support-link">
+                    <span>Contact support</span>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+
+            <!-- Sign Out Button -->
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                <button type="submit" class="btn-signout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Sign out</span>
+                </button>
+            </form>
+
+            <a href="/" class="public-site-link">View public site</a>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT AREA                                      -->
+    <!-- ========================================================= -->
+    <div class="main-wrapper">
+
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search anything..." />
+            </div>
+
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <a href="javascript:void(0)" class="btn-notification" title="Notifications">
+                    <i class="bi bi-bell"></i>
+                    <span class="notify-dot"></span>
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="admin-profile-pill btn p-0 border-0" type="button" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials-admin">@initials</div>
+                        <div class="text-start d-none d-sm-block">
+                            <div class="admin-meta-name">@Model.AdminFullName</div>
+                            <div class="admin-meta-role">@Model.AdminRole</div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted ms-1" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="adminDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.AdminFullName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@Model.AdminEmail</div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin">
+                                <i class="bi bi-grid text-secondary"></i> Administrator Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Users">
+                                <i class="bi bi-people text-secondary"></i> User Management
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="dashboard-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-custom-success">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert-custom-error">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <span>@TempData["ErrorMessage"]</span>
+                    </div>
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                </div>
+            }
+
+            <!-- Page Header Row -->
+            <div class="page-header-row">
+                <div>
+                    <div class="page-eyebrow">SYSTEM OVERVIEW</div>
+                    <h1 class="page-title">Administrator dashboard</h1>
+                    <p class="page-subtitle">Monitor platform health, activity and operations.</p>
+                </div>
+                <div>
+                    <button type="button" class="btn-add-user" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add user</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 3. METRIC STAT CARDS (Row 1)                              -->
+            <!-- ========================================================= -->
+            <div class="row g-4 mb-4">
+                
+                <!-- Card 1: Total Users -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <div class="stat-icon-wrapper stat-icon-blue">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <span class="stat-dots" title="Options">•••</span>
+                        </div>
+                        <div>
+                            <div class="stat-label">Total users</div>
+                            <div class="stat-value">@Model.TotalUsers.ToString("N0")</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.UsersGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Clients -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <div class="stat-icon-wrapper stat-icon-green">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <span class="stat-dots" title="Options">•••</span>
+                        </div>
+                        <div>
+                            <div class="stat-label">Clients</div>
+                            <div class="stat-value">@Model.TotalClients.ToString("N0")</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.ClientsGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Trainers -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <div class="stat-icon-wrapper stat-icon-orange">
+                                <i class="bi bi-activity"></i>
+                            </div>
+                            <span class="stat-dots" title="Options">•••</span>
+                        </div>
+                        <div>
+                            <div class="stat-label">Trainers</div>
+                            <div class="stat-value">@Model.TotalTrainers.ToString("N0")</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.TrainersGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Appointments -->
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <div class="stat-icon-wrapper stat-icon-indigo">
+                                <i class="bi bi-calendar2-event"></i>
+                            </div>
+                            <span class="stat-dots" title="Options">•••</span>
+                        </div>
+                        <div>
+                            <div class="stat-label">Appointments</div>
+                            <div class="stat-value">@Model.TotalAppointments.ToString("N0")</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.AppointmentsGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 4. CHARTS SECTION (Row 2)                                 -->
+            <!-- ========================================================= -->
+            <div class="row g-4 mb-4">
+                
+                <!-- Left 8 cols: System usage -->
+                <div class="col-lg-8">
+                    <div class="chart-box-card">
+                        <div class="chart-box-header">
+                            <div>
+                                <h2 class="box-title">System usage</h2>
+                                <p class="box-sub">Daily active users over 30 days</p>
+                            </div>
+                            <select class="select-filter-custom">
+                                <option selected>Last 30 days</option>
+                                <option>Last 7 days</option>
+                                <option>Last 90 days</option>
+                            </select>
+                        </div>
+
+                        <div class="active-stats-row">
+                            <div class="active-number-group">
+                                <span class="active-big-val">@Model.ActiveUsersCount.ToString("N0") active</span>
+                                <span class="active-pill">@Model.UsageGrowthText</span>
+                            </div>
+                        </div>
+
+                        <!-- System Usage Canvas -->
+                        <div style="position: relative; width: 100%; height: 210px;">
+                            <canvas id="systemUsageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 4 cols: User distribution -->
+                <div class="col-lg-4">
+                    <div class="chart-box-card">
+                        <div class="chart-box-header">
+                            <div>
+                                <h2 class="box-title">User distribution</h2>
+                                <p class="box-sub">Across platform roles</p>
+                            </div>
+                        </div>
+
+                        <!-- Donut Canvas with Center Text -->
+                        <div class="donut-container">
+                            <canvas id="userDistributionChart"></canvas>
+                            <div class="donut-center-text">
+                                <div class="donut-center-val">@Model.TotalUsers.ToString("N0")</div>
+                                <div class="donut-center-lbl">Total</div>
+                            </div>
+                        </div>
+
+                        <!-- Legend Row -->
+                        <div class="donut-legend-row">
+                            <div class="legend-item">
+                                <span class="legend-dot-green"></span>
+                                <span class="legend-name">Clients</span>
+                                <span class="legend-pct">@Model.ClientsPercentage%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot-navy"></span>
+                                <span class="legend-name">Trainers</span>
+                                <span class="legend-pct">@Model.TrainersPercentage%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 5. RECENT ACTIVITY TABLE (Row 3 - Matching Screenshot)    -->
+            <!-- ========================================================= -->
+            <div class="activity-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h2 class="box-title">Recent activity</h2>
+                        <p class="box-sub">Latest user and system events</p>
+                    </div>
+                    <a href="javascript:void(0)" class="link-audit">
+                        <span>View audit log</span>
+                        <i class="bi bi-chevron-right" style="font-size: 0.75rem;"></i>
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-activity">
+                        <thead>
+                            <tr>
+                                <th>USER</th>
+                                <th>EMAIL</th>
+                                <th>ROLE</th>
+                                <th>STATUS</th>
+                                <th>LAST ACTIVE</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentActivities != null && Model.RecentActivities.Any())
+                            {
+                                foreach (var act in Model.RecentActivities)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="user-cell">
+                                                <div class="user-avatar-circle" style="background-color: @act.AvatarBgColor; color: @act.AvatarTextColor;">
+                                                    @act.Initials
+                                                </div>
+                                                <span class="user-name-bold">@act.FullName</span>
+                                            </div>
+                                        </td>
+                                        <td class="text-muted">@act.Email</td>
+                                        <td>
+                                            <span class="fw-semibold text-secondary">@act.Role</span>
+                                        </td>
+                                        <td>
+                                            @if (act.Status == "Active")
+                                            {
+                                                <span class="status-pill-active">
+                                                    <span class="status-dot-green"></span>
+                                                    <span>Active</span>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-pill-inactive">
+                                                    <span class="status-dot-red"></span>
+                                                    <span>Inactive</span>
+                                                </span>
+                                            }
+                                        </td>
+                                        <td class="text-muted">@act.LastActive</td>
+                                        <td class="text-end">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3 py-1">
+                                                    <li>
+                                                        <form asp-action="ToggleUserStatus" method="post" style="display:inline;">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="userId" value="@act.Id" />
+                                                            <button type="submit" class="dropdown-item small py-1.5">
+                                                                <i class="bi bi-toggle-on me-1 text-secondary"></i> Toggle Status
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL: ADD USER (+ Add user button)                       -->
+    <!-- ========================================================= -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="addUserModalLabel">Create Platform User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-action="AddUser" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Full Name</label>
+                            <input asp-for="NewUserForm.FullName" class="form-control rounded-3 py-2" placeholder="e.g. Jordan Lee" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Email Address</label>
+                            <input asp-for="NewUserForm.Email" type="email" class="form-control rounded-3 py-2" placeholder="e.g. user@healthtrack.com" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Account Role</label>
+                            <select asp-for="NewUserForm.Role" class="form-select rounded-3 py-2">
+                                <option value="Client" selected>Client (Health & Fitness Tracker)</option>
+                                <option value="Trainer">Trainer (Coach / Specialist)</option>
+                                <option value="Admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Temporary Password</label>
+                            <input asp-for="NewUserForm.Password" type="password" class="form-control rounded-3 py-2" value="HealthTrack123!" required />
+                            <small class="text-muted">Must be at least 6 characters with a digit and lowercase letter.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn text-white rounded-3 px-4 fw-bold" style="background: #10B981;">
+                            <i class="bi bi-plus-lg me-1"></i> Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chart.js Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. System Usage Area Chart (Emerald Gradient)
+            const ctxUsage = document.getElementById('systemUsageChart').getContext('2d');
+            
+            const gradientEmerald = ctxUsage.createLinearGradient(0, 0, 0, 200);
+            gradientEmerald.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+            gradientEmerald.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+            new Chart(ctxUsage, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.UsageLabels)),
+                    datasets: [{
+                        data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.UsageData)),
+                        borderColor: '#10B981',
+                        borderWidth: 3,
+                        backgroundColor: gradientEmerald,
+                        fill: true,
+                        tension: 0.45,
+                        pointBackgroundColor: '#FFFFFF',
+                        pointBorderColor: '#10B981',
+                        pointBorderWidth: 2.5,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' daily active users';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            }
+                        },
+                        y: {
+                            min: 60,
+                            max: 90,
+                            grid: {
+                                color: '#F1F5F9',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                stepSize: 5
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. User Distribution Donut Chart
+            const ctxDonut = document.getElementById('userDistributionChart').getContext('2d');
+
+            new Chart(ctxDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Clients', 'Trainers'],
+                    datasets: [{
+                        data: [@Model.ClientsPercentage, @Model.TrainersPercentage],
+                        backgroundColor: ['#10B981', '#1E3A8A'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '76%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -90,11 +90,19 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     if (user != null)
                     {
                         var roles = await _userManager.GetRolesAsync(user);
-                        var isTrainer = roles.Contains("Trainer") || roles.Contains("Admin") || user.Role == "Trainer" || user.Role == "Admin";
+                        var isAdmin = roles.Contains("Admin") || user.Role == "Admin";
+                        var isTrainer = roles.Contains("Trainer") || user.Role == "Trainer";
 
-                        if (isTrainer)
+                        if (isAdmin)
                         {
-                            // If they requested a specific Trainer URL, honor it; otherwise always send to Trainer Dashboard
+                            if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))
+                            {
+                                return LocalRedirect(returnUrl);
+                            }
+                            return RedirectToAction("Index", "Admin");
+                        }
+                        else if (isTrainer)
+                        {
                             if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Trainer", StringComparison.OrdinalIgnoreCase))
                             {
                                 return LocalRedirect(returnUrl);
@@ -103,7 +111,6 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                         }
                         else
                         {
-                            // Client user: if they requested a specific Client URL, honor it; otherwise always send to Client Dashboard
                             if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Client", StringComparison.OrdinalIgnoreCase))
                             {
                                 return LocalRedirect(returnUrl);

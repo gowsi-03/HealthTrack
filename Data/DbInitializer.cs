@@ -30,12 +30,17 @@ namespace HealthTrack.Data
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
-                    FullName = "Super Administrator",
+                    FullName = "Jordan Lee",
                     Role = "Admin",
                     EmailConfirmed = true
                 };
                 await userManager.CreateAsync(adminUser, "Admin123!");
                 await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+            else if (adminUser.FullName == "Super Administrator")
+            {
+                adminUser.FullName = "Jordan Lee";
+                await userManager.UpdateAsync(adminUser);
             }
 
             // 3. Seed Trainer User & Specialists

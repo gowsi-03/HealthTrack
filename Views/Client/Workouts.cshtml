@@ -844,99 +844,150 @@
             <!-- ================================================= -->
             <!-- ACTIVE PLAN HERO BANNER (Matching Screenshot)     -->
             <!-- ================================================= -->
-            <div class="active-plan-banner">
-                <div class="banner-left-content">
-                    <div class="banner-icon-box">
-                        <i class="bi bi-activity"></i>
-                    </div>
-                    <div>
-                        <div class="active-pill-badge">
-                            <span class="active-green-dot"></span>
-                            <span>ACTIVE PLAN</span>
+            @if (Model.HasActivePlan)
+            {
+                <!-- ================================================= -->
+                <!-- ACTIVE PLAN HERO BANNER (Matching Screenshot)     -->
+                <!-- ================================================= -->
+                <div class="active-plan-banner">
+                    <div class="banner-left-content">
+                        <div class="banner-icon-box">
+                            <i class="bi bi-activity"></i>
                         </div>
-                        <h2 class="banner-title">@Model.ProgramTitle</h2>
-                        <p class="banner-desc">@Model.ProgramDescription</p>
+                        <div>
+                            <div class="active-pill-badge">
+                                <span class="active-green-dot"></span>
+                                <span>ACTIVE PLAN</span>
+                            </div>
+                            <h2 class="banner-title">@Model.ProgramTitle</h2>
+                            <p class="banner-desc">@Model.ProgramDescription</p>
 
-                        <div class="banner-metrics-row">
-                            <div class="banner-metric-item">
-                                <span class="banner-metric-num">@Model.DaysPerWeek</span>
-                                <span class="banner-metric-label">days / week</span>
+                            <div class="banner-metrics-row">
+                                <div class="banner-metric-item">
+                                    <span class="banner-metric-num">@Model.DaysPerWeek</span>
+                                    <span class="banner-metric-label">days / week</span>
+                                </div>
+                                <div class="banner-metric-item">
+                                    <span class="banner-metric-num">@Model.MinutesPerSession</span>
+                                    <span class="banner-metric-label">min / session</span>
+                                </div>
+                                <div class="banner-metric-item">
+                                    <span class="banner-metric-num" id="completionRateText">@Model.CompletionPercentage%</span>
+                                    <span class="banner-metric-label">completed</span>
+                                </div>
                             </div>
-                            <div class="banner-metric-item">
-                                <span class="banner-metric-num">@Model.MinutesPerSession</span>
-                                <span class="banner-metric-label">min / session</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="button" class="btn-view-full-plan" onclick="openPlanModal()">
+                            View full plan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ================================================= -->
+                <!-- THIS WEEK'S SESSIONS (Matching Screenshot)        -->
+                <!-- ================================================= -->
+                <div>
+                    <h3 class="section-header-title">This week's sessions</h3>
+                    <div class="section-header-sub">@Model.CurrentWeekText</div>
+
+                    <div class="row g-4">
+                        @foreach (var session in Model.WeeklySessions)
+                        {
+                            <div class="col-lg-6">
+                                <div class="session-card" onclick="openSessionModal('@session.Title', '@session.DaySchedule', '@session.ExerciseCount')">
+                                    <div class="session-time-eyebrow">@session.DaySchedule</div>
+
+                                    <div class="session-body-row">
+                                        <div class="session-left-group">
+                                            <div class="session-icon-box @(session.IsActiveSession ? "icon-box-active" : "icon-box-upcoming")">
+                                                <i class="bi bi-activity"></i>
+                                            </div>
+                                            <div>
+                                                <div class="session-title">@session.Title</div>
+                                                <div class="session-exercises-count">@session.ExerciseCount exercises</div>
+                                                <div class="session-meta-row">
+                                                    <span><i class="bi bi-clock me-1"></i>@session.DurationMinutes min</span>
+                                                    <span>•</span>
+                                                    <span>@session.Intensity</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="session-right-group">
+                                            @if (session.Status == "In progress")
+                                            {
+                                                <span class="status-badge badge-in-progress">
+                                                    <span class="status-dot-green"></span>
+                                                    <span>In progress</span>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge badge-upcoming">
+                                                    <span class="status-dot-gray"></span>
+                                                    <span>Upcoming</span>
+                                                </span>
+                                            }
+
+                                            <div class="btn-circle-arrow">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="banner-metric-item">
-                                <span class="banner-metric-num" id="completionRateText">@Model.CompletionPercentage%</span>
-                                <span class="banner-metric-label">completed</span>
-                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- ================================================= -->
+                <!-- EMPTY STATE: AWAITING TRAINER WORKOUT PLAN        -->
+                <!-- ================================================= -->
+                <div class="active-plan-banner mb-4" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 3rem 2rem; border-radius: 20px;">
+                    <div class="d-flex flex-column align-items-center text-center mx-auto" style="max-width: 580px;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem;">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="active-pill-badge mb-2" style="background: rgba(255,255,255,0.1); color: #94A3B8;">
+                            <span class="active-green-dot" style="background: #94A3B8;"></span>
+                            <span>NO ACTIVE PROGRAM</span>
+                        </div>
+                        <h2 class="banner-title mb-2 text-white" style="font-size: 1.5rem; font-weight: 700;">No Workout Plan Assigned Yet</h2>
+                        <p class="banner-desc mb-4 text-white-50" style="font-size: 0.92rem; line-height: 1.6;">
+                            Your coach will design a personalized training program tailored to your fitness goals. In the meantime, you can record your own workout sessions anytime.
+                        </p>
+                        <div class="d-flex align-items-center gap-3">
+                            <button type="button" class="btn btn-success px-4 py-2.5 fw-semibold rounded-3 shadow-sm" style="background: #10B981; border: none;" onclick="openLogWorkoutModal()">
+                                <i class="bi bi-plus-lg me-1"></i> Log a Workout Session
+                            </button>
+                            <a href="/Client/Appointments" class="btn btn-outline-light px-4 py-2.5 fw-semibold rounded-3">
+                                <i class="bi bi-calendar2-plus me-1"></i> Consult Coach
+                            </a>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <button type="button" class="btn-view-full-plan" onclick="openPlanModal()">
-                        View full plan
-                    </button>
-                </div>
-            </div>
-
-            <!-- ================================================= -->
-            <!-- THIS WEEK'S SESSIONS (Matching Screenshot)        -->
-            <!-- ================================================= -->
-            <div>
-                <h3 class="section-header-title">This week's sessions</h3>
-                <div class="section-header-sub">@Model.CurrentWeekText</div>
-
-                <div class="row g-4">
-                    @foreach (var session in Model.WeeklySessions)
-                    {
-                        <div class="col-lg-6">
-                            <div class="session-card" onclick="openSessionModal('@session.Title', '@session.DaySchedule', '@session.ExerciseCount')">
-                                <div class="session-time-eyebrow">@session.DaySchedule</div>
-
-                                <div class="session-body-row">
-                                    <div class="session-left-group">
-                                        <div class="session-icon-box @(session.IsActiveSession ? "icon-box-active" : "icon-box-upcoming")">
-                                            <i class="bi bi-activity"></i>
-                                        </div>
-                                        <div>
-                                            <div class="session-title">@session.Title</div>
-                                            <div class="session-exercises-count">@session.ExerciseCount exercises</div>
-                                            <div class="session-meta-row">
-                                                <span><i class="bi bi-clock me-1"></i>@session.DurationMinutes min</span>
-                                                <span>•</span>
-                                                <span>@session.Intensity</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="session-right-group">
-                                        @if (session.Status == "In progress")
-                                        {
-                                            <span class="status-badge badge-in-progress">
-                                                <span class="status-dot-green"></span>
-                                                <span>In progress</span>
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="status-badge badge-upcoming">
-                                                <span class="status-dot-gray"></span>
-                                                <span>Upcoming</span>
-                                            </span>
-                                        }
-
-                                        <div class="btn-circle-arrow">
-                                            <i class="bi bi-chevron-right"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <h3 class="section-header-title">This week's sessions</h3>
+                    <div class="section-header-sub">Awaiting trainer assignments</div>
+                    
+                    <div class="card border-0 rounded-4 shadow-sm p-5 text-center mt-3" style="background: #FFFFFF;">
+                        <div style="font-size: 2rem; color: #CBD5E1; margin-bottom: 0.5rem;"><i class="bi bi-calendar-x"></i></div>
+                        <div class="fw-bold text-dark fs-5 mb-1">No scheduled sessions this week</div>
+                        <div class="text-muted small mb-3">Once your coach creates a routine for you from the Trainer portal, your sessions will appear here in real time.</div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-3 px-3 fw-bold" onclick="openLogWorkoutModal()">
+                                <i class="bi bi-plus-lg me-1"></i> Log custom workout
+                            </button>
                         </div>
-                    }
+                    </div>
                 </div>
-            </div>
+            }
 
         </main>
     </div>

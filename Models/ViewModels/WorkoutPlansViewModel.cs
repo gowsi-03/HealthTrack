@@ -9,6 +9,7 @@ namespace HealthTrack.Models.ViewModels
         public string FullName { get; set; } = "John Doe";
         public string Email { get; set; } = "client@healthtrack.com";
         public string TrainerName { get; set; } = "Alex Henderson";
+        public bool HasActivePlan { get; set; } = true;
 
         // Active Program Banner
         public string ProgramTitle { get; set; } = "Foundation Strength • 8 Weeks";
@@ -17,9 +18,7 @@ namespace HealthTrack.Models.ViewModels
         public int MinutesPerSession { get; set; } = 45;
         public int TotalExercisesCount { get; set; } = 8;
         public int CompletedExercisesCount { get; set; } = 5;
-        public int CompletionPercentage => TotalExercisesCount > 0 
-            ? (int)Math.Round((double)CompletedExercisesCount / TotalExercisesCount * 100) 
-            : 68;
+        public int CompletionPercentage { get; set; } = 62;
 
         public string CurrentWeekText { get; set; } = "Week 5 of 8 • Stay consistent";
 

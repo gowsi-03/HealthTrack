@@ -565,6 +565,8 @@ namespace HealthTrack.Controllers
                 Email = user.Email ?? string.Empty
             };
 
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+
             // Fetch trainer info
             if (!string.IsNullOrEmpty(user.TrainerId))
             {
@@ -580,65 +582,113 @@ namespace HealthTrack.Controllers
 
             if (plan != null)
             {
-                vm.ProgramTitle = "Foundation Strength • 8 Weeks";
+                vm.HasActivePlan = true;
+                vm.ProgramTitle = plan.Title;
                 if (!string.IsNullOrEmpty(plan.Description)) vm.ProgramDescription = plan.Description;
                 vm.Exercises = plan.Exercises.ToList();
                 vm.TotalExercisesCount = plan.Exercises.Count;
                 vm.CompletedExercisesCount = plan.Exercises.Count(e => e.IsCompleted);
-            }
+                vm.CompletionPercentage = vm.TotalExercisesCount > 0 
+                    ? (int)Math.Round((double)vm.CompletedExercisesCount / vm.TotalExercisesCount * 100) 
+                    : 0;
+                vm.CurrentWeekText = $"Week 1 of 8 • {vm.CompletedExercisesCount} of {vm.TotalExercisesCount} exercises completed";
 
-            // Assemble the weekly training sessions matching uploaded reference design
-            vm.WeeklySessions = new List<WorkoutSessionItem>
+                vm.WeeklySessions = new List<WorkoutSessionItem>
+                {
+                    new WorkoutSessionItem
+                    {
+                        Id = plan.Id,
+                        DaySchedule = "Today • 5:30 PM",
+                        Title = plan.Title,
+                        ExerciseCount = plan.Exercises.Count,
+                        DurationMinutes = 45,
+                        Intensity = "3 sets • 8-12 reps",
+                        Status = vm.CompletionPercentage == 100 ? "Completed" : (vm.CompletionPercentage > 0 ? "In progress" : "Upcoming"),
+                        IsActiveSession = true,
+                        ExerciseNames = plan.Exercises.Select(e => $"{e.Name} ({e.Sets}x{e.Reps})").ToList()
+                    }
+                };
+            }
+            else if (isDemoUser)
             {
-                new WorkoutSessionItem
+                // Pre-populated mockup view only for demo client
+                vm.HasActivePlan = true;
+                vm.ProgramTitle = "Foundation Strength • 8 Weeks";
+                vm.ProgramDescription = "A progressive full-body program designed to improve strength, mobility and endurance.";
+                vm.DaysPerWeek = 4;
+                vm.MinutesPerSession = 45;
+                vm.TotalExercisesCount = 8;
+                vm.CompletedExercisesCount = 5;
+                vm.CompletionPercentage = 62;
+                vm.CurrentWeekText = "Week 5 of 8 • Stay consistent";
+
+                vm.WeeklySessions = new List<WorkoutSessionItem>
                 {
-                    Id = 1,
-                    DaySchedule = "Today • 5:30 PM",
-                    Title = "Upper body strength",
-                    ExerciseCount = 8,
-                    DurationMinutes = 45,
-                    Intensity = "3 sets • 8-12 reps",
-                    Status = "In progress",
-                    IsActiveSession = true,
-                    ExerciseNames = new List<string> { "Barbell Bench Press (4x10)", "Incline Dumbbell Rows (3x12)", "Overhead DB Press (3x10)", "Tricep Pushdowns (3x15)" }
-                },
-                new WorkoutSessionItem
-                {
-                    Id = 2,
-                    DaySchedule = "Wednesday",
-                    Title = "Lower body & core",
-                    ExerciseCount = 7,
-                    DurationMinutes = 50,
-                    Intensity = "3 sets • 8-12 reps",
-                    Status = "Upcoming",
-                    IsActiveSession = false,
-                    ExerciseNames = new List<string> { "Barbell Back Squats (4x8)", "Romanian Deadlifts (3x10)", "Bulgarian Split Squats (3x10)", "Plank Holds (3x60s)" }
-                },
-                new WorkoutSessionItem
-                {
-                    Id = 3,
-                    DaySchedule = "Friday",
-                    Title = "Full body mobility",
-                    ExerciseCount = 10,
-                    DurationMinutes = 35,
-                    Intensity = "3 sets • 8-12 reps",
-                    Status = "Upcoming",
-                    IsActiveSession = false,
-                    ExerciseNames = new List<string> { "World's Greatest Stretch (3x5)", "Goblet Squat Pause (3x8)", "Face Pulls (3x15)", "Hanging Knee Raises (3x12)" }
-                },
-                new WorkoutSessionItem
-                {
-                    Id = 4,
-                    DaySchedule = "Sunday",
-                    Title = "Active recovery & core",
-                    ExerciseCount = 6,
-                    DurationMinutes = 30,
-                    Intensity = "2 sets • 15 reps",
-                    Status = "Upcoming",
-                    IsActiveSession = false,
-                    ExerciseNames = new List<string> { "Zone 2 Incline Walk (20 min)", "Hamstring Flossing (2x10)", "Thoracic Spine Rotations (2x10)" }
-                }
-            };
+                    new WorkoutSessionItem
+                    {
+                        Id = 1,
+                        DaySchedule = "Today • 5:30 PM",
+                        Title = "Upper body strength",
+                        ExerciseCount = 8,
+                        DurationMinutes = 45,
+                        Intensity = "3 sets • 8-12 reps",
+                        Status = "In progress",
+                        IsActiveSession = true,
+                        ExerciseNames = new List<string> { "Barbell Bench Press (4x10)", "Incline Dumbbell Rows (3x12)", "Overhead DB Press (3x10)", "Tricep Pushdowns (3x15)" }
+                    },
+                    new WorkoutSessionItem
+                    {
+                        Id = 2,
+                        DaySchedule = "Wednesday",
+                        Title = "Lower body & core",
+                        ExerciseCount = 7,
+                        DurationMinutes = 50,
+                        Intensity = "3 sets • 8-12 reps",
+                        Status = "Upcoming",
+                        IsActiveSession = false,
+                        ExerciseNames = new List<string> { "Barbell Back Squats (4x8)", "Romanian Deadlifts (3x10)", "Bulgarian Split Squats (3x10)", "Plank Holds (3x60s)" }
+                    },
+                    new WorkoutSessionItem
+                    {
+                        Id = 3,
+                        DaySchedule = "Friday",
+                        Title = "Full body mobility",
+                        ExerciseCount = 10,
+                        DurationMinutes = 35,
+                        Intensity = "3 sets • 8-12 reps",
+                        Status = "Upcoming",
+                        IsActiveSession = false,
+                        ExerciseNames = new List<string> { "World's Greatest Stretch (3x5)", "Goblet Squat Pause (3x8)", "Face Pulls (3x15)", "Hanging Knee Raises (3x12)" }
+                    },
+                    new WorkoutSessionItem
+                    {
+                        Id = 4,
+                        DaySchedule = "Sunday",
+                        Title = "Active recovery & core",
+                        ExerciseCount = 6,
+                        DurationMinutes = 30,
+                        Intensity = "2 sets • 15 reps",
+                        Status = "Upcoming",
+                        IsActiveSession = false,
+                        ExerciseNames = new List<string> { "Zone 2 Incline Walk (20 min)", "Hamstring Flossing (2x10)", "Thoracic Spine Rotations (2x10)" }
+                    }
+                };
+            }
+            else
+            {
+                // Clean state for fresh new client awaiting trainer assignment
+                vm.HasActivePlan = false;
+                vm.ProgramTitle = "No active workout plan assigned";
+                vm.ProgramDescription = "Your trainer will design a customized workout program tailored to your fitness goals. You can also log individual workouts anytime.";
+                vm.DaysPerWeek = 0;
+                vm.MinutesPerSession = 0;
+                vm.TotalExercisesCount = 0;
+                vm.CompletedExercisesCount = 0;
+                vm.CompletionPercentage = 0;
+                vm.CurrentWeekText = "Awaiting trainer program";
+                vm.WeeklySessions = new List<WorkoutSessionItem>();
+                vm.Exercises = new List<WorkoutExercise>();
+            }
 
             return View(vm);
         }

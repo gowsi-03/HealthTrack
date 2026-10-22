@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -18,6 +19,7 @@ namespace HealthTrack.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<TrainerController> _logger;
+        private static readonly ConcurrentDictionary<string, List<TrainerMeasurementHistoryItem>> _customMeasurements = new();
 
         public TrainerController(
             ApplicationDbContext context,
@@ -1481,20 +1483,169 @@ namespace HealthTrack.Controllers
                 };
             }
 
+            // Merge custom logged measurements or database records for this client
+            var customKey = _customMeasurements.ContainsKey(selectedClient.Id) ? selectedClient.Id :
+                            _customMeasurements.ContainsKey(selectedClient.Name) ? selectedClient.Name : null;
+
+            if (!string.IsNullOrEmpty(customKey) && _customMeasurements.TryGetValue(customKey, out var customList) && customList.Any())
+            {
+                vm.MeasurementHistory.InsertRange(0, customList);
+                var latest = customList.First();
+                vm.CurrentWeightKg = latest.WeightKg;
+
+                var latestDateLabel = latest.Date.ToString("MMM dd");
+                var existingIndex = vm.WeightLabels.IndexOf(latestDateLabel);
+                if (existingIndex >= 0)
+                {
+                    vm.WeightValues[existingIndex] = latest.WeightKg;
+                }
+                else
+                {
+                    vm.WeightLabels.Add(latestDateLabel);
+                    vm.WeightValues.Add(latest.WeightKg);
+                }
+            }
+
+            // Also merge any database health logs if client user exists in DB
+            var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == selectedClient.Id || u.Email == selectedClient.Email);
+            if (dbClient != null)
+            {
+                var dbLogs = await _context.HealthLogs
+                    .Where(h => h.ClientId == dbClient.Id)
+                    .OrderByDescending(h => h.LogDate)
+                    .ToListAsync();
+
+                foreach (var log in dbLogs)
+                {
+                    if (!vm.MeasurementHistory.Any(m => m.Date.Date == log.LogDate.Date && Math.Abs(m.WeightKg - log.WeightKg) < 0.05))
+                    {
+                        int waist = 80;
+                        if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
+                        {
+                            var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
+                            if (int.TryParse(parts[0], out var parsedWaist)) waist = parsedWaist;
+                        }
+
+                        vm.MeasurementHistory.Insert(0, new TrainerMeasurementHistoryItem
+                        {
+                            Id = log.Id,
+                            Date = log.LogDate,
+                            DateText = log.LogDate.ToString("MMM dd, yyyy"),
+                            WeightKg = log.WeightKg,
+                            HeightCm = (int)(dbClient.HeightCm ?? 175),
+                            Bmi = log.CalculatedBmi,
+                            WaistCm = waist,
+                            Notes = log.Notes ?? "Database log"
+                        });
+                    }
+                }
+            }
+
             return View(vm);
+        }
+
+        // POST: /Trainer/LogMeasurement
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LogMeasurement(
+            string clientId,
+            DateTime? logDate,
+            double weightKg,
+            int? heightCm,
+            int? waistCm,
+            string? notes)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null) return Challenge();
+
+            if (weightKg <= 0)
+            {
+                TempData["ErrorMessage"] = "Please enter a valid weight in kilograms.";
+                return RedirectToAction(nameof(Reports), new { clientId });
+            }
+
+            var date = logDate.HasValue && logDate.Value != default ? logDate.Value : DateTime.Today;
+            var height = heightCm.HasValue && heightCm.Value > 0 ? heightCm.Value : 178;
+            var waist = waistCm.HasValue && waistCm.Value > 0 ? waistCm.Value : 82;
+            var heightM = height / 100.0;
+            var bmi = Math.Round(weightKg / (heightM * heightM), 1);
+
+            // Persist to database if client exists in DB (or associate with default client)
+            var targetClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == clientId || u.Email == clientId || u.FullName == clientId);
+            if (targetClient == null)
+            {
+                targetClient = await _context.Users.FirstOrDefaultAsync(u => u.Role == "Client");
+            }
+
+            if (targetClient != null)
+            {
+                targetClient.CurrentWeight = weightKg;
+                if (height > 0) targetClient.HeightCm = height;
+
+                var healthLog = new HealthLog
+                {
+                    ClientId = targetClient.Id,
+                    LogDate = date,
+                    WeightKg = weightKg,
+                    CalculatedBmi = bmi,
+                    CaloriesBurned = 450,
+                    WaterIntakeLiters = 2.5,
+                    Notes = string.IsNullOrWhiteSpace(notes) ? $"waist:{waist} cm" : $"waist:{waist} cm - {notes.Trim()}"
+                };
+                _context.HealthLogs.Add(healthLog);
+                await _context.SaveChangesAsync();
+            }
+
+            // Always add to memory dictionary so it displays immediately regardless of client filter
+            var historyItem = new TrainerMeasurementHistoryItem
+            {
+                Id = new Random().Next(1000, 9999),
+                Date = date,
+                DateText = date.ToString("MMM dd, yyyy"),
+                WeightKg = weightKg,
+                HeightCm = height,
+                Bmi = bmi,
+                WaistCm = waist,
+                Notes = string.IsNullOrWhiteSpace(notes) ? "Manual weigh-in recorded by trainer" : notes.Trim()
+            };
+
+            _customMeasurements.AddOrUpdate(
+                clientId,
+                new List<TrainerMeasurementHistoryItem> { historyItem },
+                (key, list) =>
+                {
+                    list.Insert(0, historyItem);
+                    return list;
+                });
+
+            TempData["SuccessMessage"] = $"New measurement recorded successfully: {weightKg:0.0} kg (BMI {bmi:0.0}).";
+            return RedirectToAction(nameof(Reports), new { clientId });
         }
 
         // GET: /Trainer/ExportReportCsv
         public async Task<IActionResult> ExportReportCsv(string? clientId = null)
         {
             var clientName = string.IsNullOrEmpty(clientId) ? "Alex Morgan" : clientId;
-            var csv = "Date,Client,Weight(kg),Height(cm),BMI,Waist(cm),Notes\n" +
-                      $"2025-04-12,{clientName},72.4,178,22.8,82,High energy muscle mass sustained\n" +
-                      $"2025-03-29,{clientName},73.1,178,23.1,83,Waist measurement reduced by 1cm\n" +
-                      $"2025-03-15,{clientName},73.8,178,23.3,84,Core and lumbar endurance high\n" +
-                      $"2025-03-01,{clientName},74.0,178,23.4,84,Initial assessment benchmark\n";
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Date,Client,Weight(kg),Height(cm),BMI,Waist(cm),Notes");
 
-            var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+            var customKey = _customMeasurements.ContainsKey(clientName) ? clientName :
+                            _customMeasurements.Keys.FirstOrDefault(k => k.Contains(clientName, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(customKey) && _customMeasurements.TryGetValue(customKey, out var items))
+            {
+                foreach (var item in items)
+                {
+                    sb.AppendLine($"{item.Date:yyyy-MM-dd},{clientName},{item.WeightKg:0.0},{item.HeightCm},{item.Bmi:0.0},{item.WaistCm},\"{item.Notes.Replace("\"", "\"\"")}\"");
+                }
+            }
+
+            sb.AppendLine($"2025-04-12,{clientName},72.4,178,22.8,82,\"High energy muscle mass sustained\"");
+            sb.AppendLine($"2025-03-29,{clientName},73.1,178,23.1,83,\"Waist measurement reduced by 1cm\"");
+            sb.AppendLine($"2025-03-15,{clientName},73.8,178,23.3,84,\"Core and lumbar endurance high\"");
+            sb.AppendLine($"2025-03-01,{clientName},74.0,178,23.4,84,\"Initial assessment benchmark\"");
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
             return File(bytes, "text/csv", $"ClientProgress_{clientName.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
 

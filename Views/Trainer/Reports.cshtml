@@ -1123,20 +1123,11 @@
                         </div>
                     </div>
 
-                    <div class="activity-bars-box">
-                        @for (int i = 0; i < Model.ActivityDays.Count; i++)
-                        {
-                            var day = Model.ActivityDays[i];
-                            var pct = Model.ActivityPercentages[i];
-                            var isSunday = (i == Model.ActivityDays.Count - 1);
+                    <div style="height: 48px;"></div> <!-- Spacing alignment with left card's metric highlight -->
 
-                            <div class="bar-col-item">
-                                <div class="bar-col-track" title="@day: @pct% completed">
-                                    <div class="bar-col-fill @(isSunday ? "active-day" : "")" style="height: @(pct)%;"></div>
-                                </div>
-                                <div class="bar-col-label">@day</div>
-                            </div>
-                        }
+                    <!-- Interactive Chart.js Workout Activity Bar Graph (Hoverable bars & tooltip) -->
+                    <div class="trend-chart-box">
+                        <canvas id="trainerWorkoutActivityChart"></canvas>
                     </div>
                 </div>
 
@@ -1285,6 +1276,90 @@
                 }
             }
         });
+
+        // 2. Interactive Workout Activity Weekly Bar Chart
+        const activityCanvas = document.getElementById('trainerWorkoutActivityChart');
+        if (activityCanvas) {
+            const activityCtx = activityCanvas.getContext('2d');
+            const activityDays = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActivityDays));
+            const activityData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActivityPercentages));
+
+            // Soft mint for Monday-Saturday, solid dark teal for Sunday
+            const barColors = [
+                '#D1FAE5', // M
+                '#D1FAE5', // T
+                '#D1FAE5', // W
+                '#D1FAE5', // T
+                '#D1FAE5', // F
+                '#D1FAE5', // S
+                '#0D9488'  // S (Sunday active teal)
+            ];
+
+            const hoverBarColors = [
+                '#0D9488',
+                '#0D9488',
+                '#0D9488',
+                '#0D9488',
+                '#0D9488',
+                '#0D9488',
+                '#0F766E'
+            ];
+
+            new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: activityDays,
+                    datasets: [{
+                        label: 'Completion',
+                        data: activityData,
+                        backgroundColor: barColors,
+                        hoverBackgroundColor: hoverBarColors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barThickness: 28
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12, weight: '500' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                title: function (context) {
+                                    const fullDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                                    const idx = context[0].dataIndex;
+                                    return fullDays[idx] || context[0].label;
+                                },
+                                label: function (context) {
+                                    return context.parsed.y + '% workout completion';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '700' }
+                            }
+                        },
+                        y: {
+                            display: false,
+                            min: 0,
+                            max: 110
+                        }
+                    }
+                }
+            });
+        }
     });
 </script>
 </body>

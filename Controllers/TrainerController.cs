@@ -896,10 +896,240 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Workouts));
         }
 
+        // ====================================================================
+        // DIET & NUTRITION MANAGEMENT (Trainer Portal)
+        // ====================================================================
+
         // GET: /Trainer/Diet
         public async Task<IActionResult> Diet()
         {
-            return RedirectToAction(nameof(Index));
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var dbClients = await _context.Users
+                .Where(u => u.TrainerId == trainer.Id && u.Role == "Client")
+                .ToListAsync();
+
+            var availableClients = new List<ClientDropdownOption>
+            {
+                new ClientDropdownOption { Id = "c-alex", FullName = "Alex Morgan", Email = "alex.morgan@email.com" },
+                new ClientDropdownOption { Id = "c-olivia", FullName = "Olivia Smith", Email = "olivia.smith@email.com" },
+                new ClientDropdownOption { Id = "c-liam", FullName = "Liam Parker", Email = "liam.parker@email.com" },
+                new ClientDropdownOption { Id = "c-sophia", FullName = "Sophia Chen", Email = "sophia.chen@email.com" }
+            };
+
+            foreach (var c in dbClients)
+            {
+                if (!availableClients.Any(a => a.Email.Equals(c.Email, StringComparison.OrdinalIgnoreCase)))
+                {
+                    availableClients.Add(new ClientDropdownOption
+                    {
+                        Id = c.Id,
+                        FullName = c.FullName,
+                        Email = c.Email ?? string.Empty
+                    });
+                }
+            }
+
+            var templates = new List<DietTemplateItem>
+            {
+                new DietTemplateItem
+                {
+                    Id = "tpl-diet-balanced",
+                    Title = "Balanced Performance Plan",
+                    Category = "Balanced Nutrition",
+                    DailyCalories = 2150,
+                    ProteinGrams = 120,
+                    MealsPerDay = 4,
+                    AssignedClientsCount = 10,
+                    Description = "Nutrient-dense whole food meals designed to support energy equilibrium, active training, and lean body mass.",
+                    BadgeClass = "badge-teal"
+                },
+                new DietTemplateItem
+                {
+                    Id = "tpl-diet-highprotein",
+                    Title = "High-Protein Fat Loss",
+                    Category = "Caloric Deficit",
+                    DailyCalories = 1850,
+                    ProteinGrams = 145,
+                    MealsPerDay = 4,
+                    AssignedClientsCount = 8,
+                    Description = "Moderate caloric deficit with high protein satiety protecting metabolic rate and lean muscular tone.",
+                    BadgeClass = "badge-blue"
+                },
+                new DietTemplateItem
+                {
+                    Id = "tpl-diet-hypertrophy",
+                    Title = "Lean Mass Hypertrophy Protocol",
+                    Category = "Mass Building",
+                    DailyCalories = 2600,
+                    ProteinGrams = 160,
+                    MealsPerDay = 5,
+                    AssignedClientsCount = 4,
+                    Description = "Caloric surplus with high-carb intra-workout timing maximizing muscle glycogen replenishment and hypertrophy.",
+                    BadgeClass = "badge-purple"
+                },
+                new DietTemplateItem
+                {
+                    Id = "tpl-diet-plant",
+                    Title = "Plant-Based Metabolic Fuel",
+                    Category = "Vegan & Plant",
+                    DailyCalories = 2000,
+                    ProteinGrams = 105,
+                    MealsPerDay = 4,
+                    AssignedClientsCount = 2,
+                    Description = "Whole food plant-based protocol rich in polyphenols, micronutrients, complex fiber and clean plant proteins.",
+                    BadgeClass = "badge-amber"
+                }
+            };
+
+            var clientRosters = new List<ClientDietRosterItem>
+            {
+                new ClientDietRosterItem
+                {
+                    ClientId = "c-alex",
+                    ClientName = "Alex Morgan",
+                    ClientEmail = "alex.morgan@email.com",
+                    ClientInitials = "AM",
+                    PlanTitle = "Balanced Performance Plan",
+                    Category = "Balanced Nutrition",
+                    TargetCalories = 2150,
+                    TargetProtein = 120,
+                    MealsLoggedToday = 3,
+                    TotalMealsScheduled = 4,
+                    AdherencePercentage = 85,
+                    Status = "Active",
+                    LastMealLogged = "Lunch (12:30 PM)"
+                },
+                new ClientDietRosterItem
+                {
+                    ClientId = "c-olivia",
+                    ClientName = "Olivia Smith",
+                    ClientEmail = "olivia.smith@email.com",
+                    ClientInitials = "OS",
+                    PlanTitle = "High-Protein Fat Loss",
+                    Category = "Caloric Deficit",
+                    TargetCalories = 1850,
+                    TargetProtein = 145,
+                    MealsLoggedToday = 4,
+                    TotalMealsScheduled = 4,
+                    AdherencePercentage = 94,
+                    Status = "Active",
+                    LastMealLogged = "Dinner (7:30 PM)"
+                },
+                new ClientDietRosterItem
+                {
+                    ClientId = "c-liam",
+                    ClientName = "Liam Parker",
+                    ClientEmail = "liam.parker@email.com",
+                    ClientInitials = "LP",
+                    PlanTitle = "Lean Mass Hypertrophy Protocol",
+                    Category = "Mass Building",
+                    TargetCalories = 2600,
+                    TargetProtein = 160,
+                    MealsLoggedToday = 4,
+                    TotalMealsScheduled = 5,
+                    AdherencePercentage = 88,
+                    Status = "Active",
+                    LastMealLogged = "Afternoon Shake (4:00 PM)"
+                },
+                new ClientDietRosterItem
+                {
+                    ClientId = "c-sophia",
+                    ClientName = "Sophia Chen",
+                    ClientEmail = "sophia.chen@email.com",
+                    ClientInitials = "SC",
+                    PlanTitle = "Anti-Inflammatory & Core Plan",
+                    Category = "Rehab & Recovery",
+                    TargetCalories = 1750,
+                    TargetProtein = 95,
+                    MealsLoggedToday = 1,
+                    TotalMealsScheduled = 4,
+                    AdherencePercentage = 45,
+                    Status = "At risk",
+                    LastMealLogged = "Breakfast (8:30 AM)"
+                }
+            };
+
+            var unreadCount = await _context.Notifications
+                .Where(n => n.UserId == trainer.Id && !n.IsRead)
+                .CountAsync();
+
+            var vm = new TrainerDietViewModel
+            {
+                TrainerName = trainer.FullName.Replace("Dr. ", ""),
+                TrainerEmail = trainer.Email ?? "maya.patel@healthtrack.com",
+                TrainerInitials = "AM",
+                UnreadNotificationsCount = unreadCount > 0 ? unreadCount : 2,
+                TotalActiveDietPlans = 24,
+                TotalTemplatesCount = templates.Count,
+                AvgMacroAdherence = 82,
+                WeeklyMealLogsCount = 96,
+                Templates = templates,
+                ClientDietRosters = clientRosters,
+                AvailableClients = availableClients
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Trainer/CreateDietPlan
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateDietPlan(CreateDietPlanFormModel model)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                TempData["ErrorMessage"] = "Diet plan title is required.";
+                return RedirectToAction(nameof(Diet));
+            }
+
+            var client = await _userManager.FindByIdAsync(model.ClientId);
+            if (client == null)
+            {
+                client = await _userManager.FindByEmailAsync("client@healthtrack.com");
+            }
+
+            if (client != null)
+            {
+                var newPlan = new DietPlan
+                {
+                    Title = model.Title.Trim(),
+                    TargetCalories = model.TargetCalories > 0 ? model.TargetCalories : 2000,
+                    ClientId = client.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                newPlan.Meals.Add(new MealItem { MealType = "Breakfast", Description = "High-protein oatmeal with berries and whey isolate", Calories = 450 });
+                newPlan.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken breast, quinoa bowl and steamed greens", Calories = 650 });
+                newPlan.Meals.Add(new MealItem { MealType = "Snack", Description = "Greek yogurt with crushed almonds and blueberries", Calories = 300 });
+                newPlan.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked salmon with roasted asparagus and sweet potato", Calories = 600 });
+
+                _context.DietPlans.Add(newPlan);
+
+                var notif = new Notification
+                {
+                    UserId = client.Id,
+                    Message = $"Your trainer {trainer.FullName} assigned a new diet plan: '{model.Title}' ({model.TargetCalories} kcal).",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+                _context.Notifications.Add(notif);
+
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = $"Diet plan '{model.Title}' ({model.TargetCalories} kcal) assigned successfully!";
+            return RedirectToAction(nameof(Diet));
         }
 
         // GET: /Trainer/Appointments

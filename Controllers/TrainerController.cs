@@ -1343,10 +1343,159 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Appointments));
         }
 
+        // ====================================================================
+        // CLIENT PROGRESS & REPORTS (Matching media_1792660312801_523fdadb.png and media_1792660315490_3d5a7f46.png)
+        // ====================================================================
+
         // GET: /Trainer/Reports
-        public async Task<IActionResult> Reports()
+        public async Task<IActionResult> Reports(string? clientId = null, string? metric = null, string? timeframe = null)
         {
-            return RedirectToAction(nameof(Index));
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            // Available Clients
+            var clientOptions = new List<TrainerClientFilterOption>
+            {
+                new TrainerClientFilterOption { Id = "c-alex", Name = "Alex Morgan", Email = "alex.morgan@email.com", Initials = "AM" },
+                new TrainerClientFilterOption { Id = "c-olivia", Name = "Olivia Smith", Email = "olivia.smith@email.com", Initials = "OS" },
+                new TrainerClientFilterOption { Id = "c-liam", Name = "Liam Parker", Email = "liam.parker@email.com", Initials = "LP" },
+                new TrainerClientFilterOption { Id = "c-sophia", Name = "Sophia Chen", Email = "sophia.chen@email.com", Initials = "SC" }
+            };
+
+            // Include any database clients assigned or registered
+            var dbClients = await _context.Users
+                .Where(u => u.Role == "Client")
+                .ToListAsync();
+
+            foreach (var dbc in dbClients)
+            {
+                if (!clientOptions.Any(c => c.Email.Equals(dbc.Email, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var names = (dbc.FullName ?? "Client User").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var inits = names.Length >= 2 ? $"{names[0][0]}{names[1][0]}".ToUpper() : (dbc.FullName ?? "CL")[..Math.Min(2, (dbc.FullName ?? "CL").Length)].ToUpper();
+                    clientOptions.Add(new TrainerClientFilterOption
+                    {
+                        Id = dbc.Id,
+                        Name = dbc.FullName ?? "Client User",
+                        Email = dbc.Email ?? "",
+                        Initials = inits
+                    });
+                }
+            }
+
+            // Default to Alex Morgan or matched client
+            var selectedClient = clientOptions.FirstOrDefault(c => c.Id == clientId || c.Name.Equals(clientId, StringComparison.OrdinalIgnoreCase)) ?? clientOptions[0];
+
+            var unreadCount = await _context.Notifications
+                .Where(n => n.UserId == trainer.Id && !n.IsRead)
+                .CountAsync();
+
+            var vm = new TrainerReportsViewModel
+            {
+                TrainerName = trainer.FullName.Replace("Dr. ", ""),
+                TrainerEmail = trainer.Email ?? "maya.patel@healthtrack.com",
+                TrainerInitials = "AM",
+                UnreadNotificationsCount = unreadCount > 0 ? unreadCount : 2,
+                SelectedClientId = selectedClient.Id,
+                SelectedClientName = selectedClient.Name,
+                SelectedMetric = metric ?? "All metrics",
+                SelectedTimeframe = timeframe ?? "Monthly",
+                Clients = clientOptions
+            };
+
+            // Customization per client
+            if (selectedClient.Id == "c-olivia" || selectedClient.Name.Contains("Olivia"))
+            {
+                vm.WeightChange = "-2.1 kg";
+                vm.WeightChangeSubtext = "Since Feb 02";
+                vm.WorkoutCompletionRate = "92%";
+                vm.WorkoutCompletionSubtext = "+11% this month";
+                vm.ActiveMinutes = 810;
+                vm.ActiveMinutesSubtext = "Last 30 days";
+                vm.AverageCalories = "1,940";
+                vm.AverageCaloriesSubtext = "Daily intake";
+                vm.CurrentWeightKg = 59.8;
+                vm.WeightTrendStatus = "On track";
+                vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
+                vm.WeightValues = new List<double> { 58.0, 58.8, 59.3, 59.8, 60.2 };
+                vm.ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" };
+                vm.ActivityPercentages = new List<int> { 80, 85, 90, 75, 85, 95, 100 };
+                vm.MeasurementHistory = new List<TrainerMeasurementHistoryItem>
+                {
+                    new TrainerMeasurementHistoryItem { Id = 1, Date = new DateTime(2025, 4, 12), DateText = "Apr 12, 2025", WeightKg = 59.8, HeightCm = 165, Bmi = 22.0, WaistCm = 68, Notes = "Optimal stamina" },
+                    new TrainerMeasurementHistoryItem { Id = 2, Date = new DateTime(2025, 3, 29), DateText = "Mar 29, 2025", WeightKg = 60.4, HeightCm = 165, Bmi = 22.2, WaistCm = 69, Notes = "Aerobic threshold met" },
+                    new TrainerMeasurementHistoryItem { Id = 3, Date = new DateTime(2025, 3, 15), DateText = "Mar 15, 2025", WeightKg = 61.1, HeightCm = 165, Bmi = 22.4, WaistCm = 70, Notes = "Endurance pacing" },
+                    new TrainerMeasurementHistoryItem { Id = 4, Date = new DateTime(2025, 3, 1), DateText = "Mar 01, 2025", WeightKg = 61.9, HeightCm = 165, Bmi = 22.7, WaistCm = 71, Notes = "Initial assessment" }
+                };
+            }
+            else if (selectedClient.Id == "c-liam" || selectedClient.Name.Contains("Liam"))
+            {
+                vm.WeightChange = "-5.4 kg";
+                vm.WeightChangeSubtext = "Since Jan 05";
+                vm.WorkoutCompletionRate = "81%";
+                vm.WorkoutCompletionSubtext = "+4% this month";
+                vm.ActiveMinutes = 690;
+                vm.ActiveMinutesSubtext = "Last 30 days";
+                vm.AverageCalories = "2,350";
+                vm.AverageCaloriesSubtext = "Daily intake";
+                vm.CurrentWeightKg = 81.2;
+                vm.WeightTrendStatus = "On track";
+                vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
+                vm.WeightValues = new List<double> { 76.0, 78.5, 79.8, 81.0, 82.5 };
+                vm.ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" };
+                vm.ActivityPercentages = new List<int> { 60, 70, 75, 80, 85, 90, 88 };
+                vm.MeasurementHistory = new List<TrainerMeasurementHistoryItem>
+                {
+                    new TrainerMeasurementHistoryItem { Id = 1, Date = new DateTime(2025, 4, 12), DateText = "Apr 12, 2025", WeightKg = 81.2, HeightCm = 182, Bmi = 24.5, WaistCm = 89, Notes = "Consistent calorie deficit" },
+                    new TrainerMeasurementHistoryItem { Id = 2, Date = new DateTime(2025, 3, 29), DateText = "Mar 29, 2025", WeightKg = 82.3, HeightCm = 182, Bmi = 24.8, WaistCm = 90, Notes = "Cardio progression" },
+                    new TrainerMeasurementHistoryItem { Id = 3, Date = new DateTime(2025, 3, 15), DateText = "Mar 15, 2025", WeightKg = 83.5, HeightCm = 182, Bmi = 25.2, WaistCm = 91, Notes = "Macro balancing" },
+                    new TrainerMeasurementHistoryItem { Id = 4, Date = new DateTime(2025, 3, 1), DateText = "Mar 01, 2025", WeightKg = 84.8, HeightCm = 182, Bmi = 25.6, WaistCm = 93, Notes = "Baseline log" }
+                };
+            }
+            else
+            {
+                // Default matches Image 1 and Image 2 precisely (Alex Morgan)
+                vm.WeightChange = "-3.8 kg";
+                vm.WeightChangeSubtext = "Since Jan 14";
+                vm.WorkoutCompletionRate = "87%";
+                vm.WorkoutCompletionSubtext = "+6% this month";
+                vm.ActiveMinutes = 742;
+                vm.ActiveMinutesSubtext = "Last 30 days";
+                vm.AverageCalories = "2,120";
+                vm.AverageCaloriesSubtext = "Daily intake";
+                vm.CurrentWeightKg = 72.4;
+                vm.WeightTrendStatus = "On track";
+                vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
+                vm.WeightValues = new List<double> { 66.5, 70.8, 73.2, 76.5, 78.4 };
+                vm.ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" };
+                vm.ActivityPercentages = new List<int> { 65, 80, 72, 88, 85, 88, 96 };
+                vm.MeasurementHistory = new List<TrainerMeasurementHistoryItem>
+                {
+                    new TrainerMeasurementHistoryItem { Id = 1, Date = new DateTime(2025, 4, 12), DateText = "Apr 12, 2025", WeightKg = 72.4, HeightCm = 178, Bmi = 22.8, WaistCm = 82, Notes = "High energy, muscle mass sustained" },
+                    new TrainerMeasurementHistoryItem { Id = 2, Date = new DateTime(2025, 3, 29), DateText = "Mar 29, 2025", WeightKg = 73.1, HeightCm = 178, Bmi = 23.1, WaistCm = 83, Notes = "Waist measurement reduced by 1cm" },
+                    new TrainerMeasurementHistoryItem { Id = 3, Date = new DateTime(2025, 3, 15), DateText = "Mar 15, 2025", WeightKg = 73.8, HeightCm = 178, Bmi = 23.3, WaistCm = 84, Notes = "Core and lumbar endurance high" },
+                    new TrainerMeasurementHistoryItem { Id = 4, Date = new DateTime(2025, 3, 1), DateText = "Mar 01, 2025", WeightKg = 74.0, HeightCm = 178, Bmi = 23.4, WaistCm = 84, Notes = "Initial assessment benchmark" }
+                };
+            }
+
+            return View(vm);
+        }
+
+        // GET: /Trainer/ExportReportCsv
+        public async Task<IActionResult> ExportReportCsv(string? clientId = null)
+        {
+            var clientName = string.IsNullOrEmpty(clientId) ? "Alex Morgan" : clientId;
+            var csv = "Date,Client,Weight(kg),Height(cm),BMI,Waist(cm),Notes\n" +
+                      $"2025-04-12,{clientName},72.4,178,22.8,82,High energy muscle mass sustained\n" +
+                      $"2025-03-29,{clientName},73.1,178,23.1,83,Waist measurement reduced by 1cm\n" +
+                      $"2025-03-15,{clientName},73.8,178,23.3,84,Core and lumbar endurance high\n" +
+                      $"2025-03-01,{clientName},74.0,178,23.4,84,Initial assessment benchmark\n";
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+            return File(bytes, "text/csv", $"ClientProgress_{clientName.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
 
         // Helper to retrieve current trainer or fallback to Dr. Maya Patel for preview

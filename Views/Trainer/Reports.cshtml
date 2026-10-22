@@ -1,0 +1,1213 @@
+@model HealthTrack.Models.ViewModels.TrainerReportsViewModel
+@{
+    ViewData["Title"] = "Client Progress & Reports - Trainer Portal";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Client Progress & Reports - HealthTrack Trainer</title>
+    <!-- Fonts & Bootstrap 5 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        :root {
+            --primary-teal: #0D9488;
+            --primary-teal-dark: #0F766E;
+            --primary-teal-light: #CCFBF1;
+            --primary-teal-subtle: #F0FDFA;
+            --text-dark: #0F172A;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --bg-page: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --border-color: #E2E8F0;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-page);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ========================================================= */
+        /* 1. SIDEBAR                                                */
+        /* ========================================================= */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1020;
+        }
+
+        .sidebar-brand {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-logo-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #0D9488, #14B8A6);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+        }
+
+        .brand-text {
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--text-dark);
+            letter-spacing: -0.02em;
+        }
+
+        .brand-text span {
+            color: var(--primary-teal);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 24px 16px;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu-category {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 0 12px 10px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .sidebar-item {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 9px;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-link-left i {
+            font-size: 1.15rem;
+            width: 20px;
+            text-align: center;
+            color: #94A3B8;
+            transition: color 0.15s;
+        }
+
+        .sidebar-link:hover {
+            color: var(--text-dark);
+            background-color: #F1F5F9;
+        }
+
+        .sidebar-link:hover .sidebar-link-left i {
+            color: var(--primary-teal);
+        }
+
+        .sidebar-link.active {
+            color: var(--primary-teal-dark);
+            background-color: #F0FDF4;
+            font-weight: 600;
+            border-left: 3px solid var(--primary-teal);
+            border-radius: 0 9px 9px 0;
+            margin-left: -16px;
+            padding-left: 27px;
+        }
+
+        .sidebar-link.active .sidebar-link-left i {
+            color: var(--primary-teal);
+        }
+
+        .sidebar-badge {
+            background-color: var(--primary-teal-light);
+            color: var(--primary-teal-dark);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 999px;
+        }
+
+        .sidebar-bottom-section {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .support-card {
+            background-color: #F8FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .support-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-teal);
+            font-size: 1.05rem;
+        }
+
+        .support-info {
+            flex: 1;
+        }
+
+        .support-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .support-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* ========================================================= */
+        /* 2. MAIN LAYOUT & TOP NAVBAR                               */
+        /* ========================================================= */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-width: 0;
+        }
+
+        .top-navbar {
+            height: 70px;
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1010;
+        }
+
+        .search-box {
+            position: relative;
+            width: 320px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 40px;
+            background-color: #F8FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            padding: 0 16px 0 38px;
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.15s;
+        }
+
+        .search-input:focus {
+            background-color: #FFFFFF;
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .top-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-notification {
+            width: 40px;
+            height: 40px;
+            border-radius: 9px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            position: relative;
+            transition: all 0.15s;
+        }
+
+        .btn-notification:hover {
+            color: var(--text-dark);
+            background-color: #F8FAFC;
+        }
+
+        .notify-dot {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background-color: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+
+        .user-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 8px 5px 6px;
+            border-radius: 999px;
+            background-color: #F8FAFC;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .user-profile-pill:hover {
+            background-color: #F1F5F9;
+        }
+
+        .avatar-initials {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0D9488, #14B8A6);
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ========================================================= */
+        /* 3. DASHBOARD BODY & HEADER (Matching Mockup 1)            */
+        /* ========================================================= */
+        .dashboard-body {
+            padding: 32px;
+            flex: 1;
+        }
+
+        .page-header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748B;
+            margin-bottom: 4px;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #0F172A;
+            letter-spacing: -0.025em;
+            margin-bottom: 4px;
+        }
+
+        .page-subtitle {
+            font-size: 0.95rem;
+            color: #64748B;
+            margin-bottom: 0;
+        }
+
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #FFFFFF;
+            color: #0F172A;
+            border: 1px solid var(--border-color);
+            padding: 9px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .btn-export:hover {
+            background-color: #F8FAFC;
+            border-color: #CBD5E1;
+            color: var(--primary-teal-dark);
+        }
+
+        /* Filter Controls Row (Alex Morgan ⌵ | All metrics ⌵ | Apply filters) */
+        .filter-controls-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .select-filter-box {
+            position: relative;
+            min-width: 160px;
+        }
+
+        .select-filter-box select {
+            width: 100%;
+            height: 42px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0 36px 0 16px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #0F172A;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .select-filter-box select:focus {
+            border-color: var(--primary-teal);
+            box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+        }
+
+        .select-filter-box .select-chevron {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748B;
+            pointer-events: none;
+            font-size: 0.75rem;
+        }
+
+        .btn-apply-filters {
+            height: 42px;
+            padding: 0 20px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #0F172A;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .btn-apply-filters:hover {
+            background-color: #F8FAFC;
+            border-color: #CBD5E1;
+            color: var(--primary-teal-dark);
+        }
+
+        /* ========================================================= */
+        /* 4. FOUR KPI CARDS (Matching Mockup 1)                     */
+        /* ========================================================= */
+        .kpi-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .kpi-metric-cell {
+            padding: 24px 28px;
+            position: relative;
+        }
+
+        .kpi-metric-cell:not(:last-child)::after {
+            content: "";
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+            right: 0;
+            width: 1px;
+            background-color: var(--border-color);
+        }
+
+        .kpi-metric-label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #64748B;
+            margin-bottom: 8px;
+        }
+
+        .kpi-metric-value {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: #0F172A;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+
+        .kpi-metric-subtext {
+            font-size: 0.78rem;
+            color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 5. VISUAL ANALYTICS SECTION (Weight trend + Activity)     */
+        /* ========================================================= */
+        .analytics-charts-grid {
+            display: grid;
+            grid-template-columns: 7fr 5fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .chart-card-panel {
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .chart-card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 2px;
+        }
+
+        .chart-card-subtitle {
+            font-size: 0.82rem;
+            color: #64748B;
+        }
+
+        .timeframe-pill-select {
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #0F172A;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .weight-metric-highlight {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .weight-metric-number {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0F172A;
+            letter-spacing: -0.02em;
+        }
+
+        .badge-on-track {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: #ECFDF5;
+            color: #059669;
+        }
+
+        .badge-on-track-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #059669;
+        }
+
+        /* SVG Line Graph Container */
+        .trend-chart-box {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin-top: 10px;
+        }
+
+        .trend-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        /* Workout Activity Bar Chart */
+        .activity-bars-box {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 10px 12px 0;
+            margin-top: 24px;
+        }
+
+        .bar-col-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar-col-track {
+            width: 100%;
+            max-width: 44px;
+            height: 160px;
+            display: flex;
+            align-items: flex-end;
+            background: transparent;
+        }
+
+        .bar-col-fill {
+            width: 100%;
+            border-radius: 8px 8px 0 0;
+            background-color: #D1FAE5; /* Light mint/teal from mockup */
+            transition: all 0.3s ease;
+        }
+
+        .bar-col-fill.active-day {
+            background-color: #0D9488; /* Sunday darker highlighted bar */
+        }
+
+        .bar-col-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748B;
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* ========================================================= */
+        /* 6. MEASUREMENT HISTORY TABLE (Matching Mockup 2)          */
+        /* ========================================================= */
+        .history-card-panel {
+            background-color: #FFFFFF;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+
+        .history-card-header {
+            padding: 24px 28px 20px;
+        }
+
+        .history-card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 2px;
+        }
+
+        .history-card-subtitle {
+            font-size: 0.84rem;
+            color: #64748B;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #64748B;
+            padding: 14px 28px;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            background-color: #FAFAFA;
+            text-align: left;
+        }
+
+        .history-table td {
+            font-size: 0.88rem;
+            color: #0F172A;
+            padding: 18px 28px;
+            border-bottom: 1px solid #F1F5F9;
+            vertical-align: middle;
+        }
+
+        .history-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-table tr:hover td {
+            background-color: #F8FAFC;
+        }
+
+        .btn-row-action {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: #94A3B8;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-row-action:hover {
+            color: #0F172A;
+            background-color: #E2E8F0;
+        }
+
+        /* Success banner alert */
+        .custom-alert-success {
+            background-color: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #065F46;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        @@media (max-width: 1100px) {
+            .analytics-charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .kpi-metric-cell:nth-child(2)::after {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-wrapper {
+                margin-left: 0;
+            }
+            .kpi-metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-metric-cell::after {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================= -->
+    <!-- 1. LEFT SIDEBAR                                           -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo-icon">
+                <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+            <div class="brand-text">Health<span>Track</span></div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-menu-category">Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="/Trainer" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/Trainer/Clients" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>Clients</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/Trainer/Workouts" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-lightning-charge"></i>
+                            <span>Workout Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/Trainer/Diet" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-egg-fried"></i>
+                            <span>Diet Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/Trainer/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="/Trainer/Reports" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Progress & Reports</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom-section">
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-question-circle"></i>
+                </div>
+                <div class="support-info">
+                    <div class="support-title">Need assistance?</div>
+                    <div class="support-subtitle">Contact client support</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT AREA                                      -->
+    <!-- ========================================================= -->
+    <div class="main-wrapper">
+        
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="search-box">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search reports, metrics..." />
+            </div>
+
+            <div class="top-controls">
+                <!-- Notifications Bell -->
+                <a href="/Client/Notifications" class="btn-notification" title="Notifications">
+                    <i class="bi bi-bell"></i>
+                    @if (Model.UnreadNotificationsCount > 0)
+                    {
+                        <span class="notify-dot"></span>
+                    }
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="user-profile-pill btn p-0 border-0 d-flex align-items-center" type="button" id="trainerReportsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials">@Model.TrainerInitials</div>
+                        <div class="user-meta d-none d-sm-block text-start ms-2">
+                            <span class="fw-bold small text-dark d-block">@Model.TrainerName</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">Trainer</span>
+                        </div>
+                        <i class="bi bi-chevron-down ms-2 text-muted" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="trainerReportsDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.TrainerName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@Model.TrainerEmail</div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer">
+                                <i class="bi bi-grid text-secondary"></i> Trainer Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Clients">
+                                <i class="bi bi-people text-secondary"></i> My Clients
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Workouts">
+                                <i class="bi bi-shield-check text-secondary"></i> Workout Plans
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Diet">
+                                <i class="bi bi-egg-fried text-secondary"></i> Diet Plans
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Appointments">
+                                <i class="bi bi-calendar2-event text-secondary"></i> Appointments
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active text-white" style="background-color: var(--primary-teal);" href="/Trainer/Reports">
+                                <i class="bi bi-graph-up-arrow"></i> Progress & Reports
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Body Content -->
+        <main class="dashboard-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="custom-alert-success">
+                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                    <div>@TempData["SuccessMessage"]</div>
+                </div>
+            }
+
+            <!-- 1. Header (Matching Mockup 1) -->
+            <div class="page-header-row">
+                <div>
+                    <div class="page-eyebrow">INSIGHTS</div>
+                    <h1 class="page-title">Client progress & reports</h1>
+                    <p class="page-subtitle">Track meaningful trends and make informed health decisions.</p>
+                </div>
+                <div>
+                    <a href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId" class="btn-export">
+                        <i class="bi bi-download"></i>
+                        <span>Export report</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. Filters Row (Matching Mockup 1: Alex Morgan ⌵ | All metrics ⌵ | Apply filters) -->
+            <form method="get" asp-action="Reports" asp-controller="Trainer" class="filter-controls-row">
+                <!-- Client Dropdown -->
+                <div class="select-filter-box">
+                    <select name="clientId" onchange="this.form.submit()">
+                        @foreach (var c in Model.Clients)
+                        {
+                            if (c.Id == Model.SelectedClientId || c.Name.Equals(Model.SelectedClientName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@c.Id" selected>@c.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        }
+                    </select>
+                    <i class="bi bi-chevron-down select-chevron"></i>
+                </div>
+
+                <!-- Metrics Dropdown -->
+                <div class="select-filter-box">
+                    <select name="metric">
+                        <option value="All metrics" selected>All metrics</option>
+                        <option value="Weight">Weight</option>
+                        <option value="Workouts">Workouts</option>
+                        <option value="Nutrition">Nutrition</option>
+                    </select>
+                    <i class="bi bi-chevron-down select-chevron"></i>
+                </div>
+
+                <!-- Apply Filters Button -->
+                <button type="submit" class="btn-apply-filters">Apply filters</button>
+            </form>
+
+            <!-- 3. Four KPI Metric Cards (Matching Mockup 1) -->
+            <div class="kpi-metrics-grid">
+                <!-- Card 1: Weight change -->
+                <div class="kpi-metric-cell">
+                    <div class="kpi-metric-label">Weight change</div>
+                    <div class="kpi-metric-value">@Model.WeightChange</div>
+                    <div class="kpi-metric-subtext">@Model.WeightChangeSubtext</div>
+                </div>
+
+                <!-- Card 2: Workout completion -->
+                <div class="kpi-metric-cell">
+                    <div class="kpi-metric-label">Workout completion</div>
+                    <div class="kpi-metric-value">@Model.WorkoutCompletionRate</div>
+                    <div class="kpi-metric-subtext">@Model.WorkoutCompletionSubtext</div>
+                </div>
+
+                <!-- Card 3: Active minutes -->
+                <div class="kpi-metric-cell">
+                    <div class="kpi-metric-label">Active minutes</div>
+                    <div class="kpi-metric-value">@Model.ActiveMinutes</div>
+                    <div class="kpi-metric-subtext">@Model.ActiveMinutesSubtext</div>
+                </div>
+
+                <!-- Card 4: Average calories -->
+                <div class="kpi-metric-cell">
+                    <div class="kpi-metric-label">Average calories</div>
+                    <div class="kpi-metric-value">@Model.AverageCalories</div>
+                    <div class="kpi-metric-subtext">@Model.AverageCaloriesSubtext</div>
+                </div>
+            </div>
+
+            <!-- 4. Visual Analytics Section (Matching Mockup 1: Weight trend + Workout activity) -->
+            <div class="analytics-charts-grid">
+                
+                <!-- Left: Weight trend -->
+                <div class="chart-card-panel">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-card-title">Weight trend</div>
+                            <div class="chart-card-subtitle">Kilograms over time</div>
+                        </div>
+                        <select class="timeframe-pill-select" onchange="window.location.href='/Trainer/Reports?clientId=@Model.SelectedClientId&timeframe='+this.value">
+                            <option value="Monthly" selected>Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+
+                    <div class="weight-metric-highlight">
+                        <span class="weight-metric-number">@Model.CurrentWeightKg.ToString("0.0") kg</span>
+                        <span class="badge-on-track">
+                            <span class="badge-on-track-dot"></span>
+                            <span>@Model.WeightTrendStatus</span>
+                        </span>
+                    </div>
+
+                    <!-- Clean SVG Line Graph replicating mockup -->
+                    <div class="trend-chart-box">
+                        <svg class="trend-svg" viewBox="0 0 540 180" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="weightAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#0D9488" stop-opacity="0.18" />
+                                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0.01" />
+                                </linearGradient>
+                            </defs>
+
+                            <!-- Horizontal Grid lines & Y labels (80, 75, 70, 65) -->
+                            <!-- 80 -->
+                            <text x="5" y="24" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">80</text>
+                            <line x1="32" y1="20" x2="530" y2="20" stroke="#F1F5F9" stroke-width="1.2" />
+
+                            <!-- 75 -->
+                            <text x="5" y="64" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">75</text>
+                            <line x1="32" y1="60" x2="530" y2="60" stroke="#F1F5F9" stroke-width="1.2" />
+
+                            <!-- 70 -->
+                            <text x="5" y="104" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">70</text>
+                            <line x1="32" y1="100" x2="530" y2="100" stroke="#F1F5F9" stroke-width="1.2" />
+
+                            <!-- 65 -->
+                            <text x="5" y="144" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">65</text>
+                            <line x1="32" y1="140" x2="530" y2="140" stroke="#F1F5F9" stroke-width="1.2" />
+
+                            <!-- Smooth Curve & Area Fill -->
+                            <!-- Points: (40, 140) -> (150, 115) -> (270, 85) -> (390, 70) -> (510, 48) -->
+                            <path d="M 40,140 C 100,135 120,118 150,115 C 210,110 240,88 270,85 C 330,80 360,72 390,70 C 450,68 480,50 510,48 L 510,145 L 40,145 Z" fill="url(#weightAreaGrad)" />
+                            
+                            <path d="M 40,140 C 100,135 120,118 150,115 C 210,110 240,88 270,85 C 330,80 360,72 390,70 C 450,68 480,50 510,48" 
+                                  fill="none" stroke="#0D9488" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                            <!-- Marker Circles -->
+                            <circle cx="40" cy="140" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
+                            <circle cx="150" cy="115" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
+                            <circle cx="270" cy="85" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
+                            <circle cx="390" cy="70" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
+                            <circle cx="510" cy="48" r="4.5" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5" />
+
+                            <!-- X Axis Date Labels -->
+                            <text x="32" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 01</text>
+                            <text x="142" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 08</text>
+                            <text x="262" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 15</text>
+                            <text x="382" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 22</text>
+                            <text x="500" y="168" fill="#94A3B8" font-size="11" font-family="Inter, sans-serif">Mar 29</text>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Right: Workout activity (Completion by week) -->
+                <div class="chart-card-panel">
+                    <div class="chart-card-header">
+                        <div>
+                            <div class="chart-card-title">Workout activity</div>
+                            <div class="chart-card-subtitle">Completion by week</div>
+                        </div>
+                    </div>
+
+                    <div class="activity-bars-box">
+                        @for (int i = 0; i < Model.ActivityDays.Count; i++)
+                        {
+                            var day = Model.ActivityDays[i];
+                            var pct = Model.ActivityPercentages[i];
+                            var isSunday = (i == Model.ActivityDays.Count - 1);
+
+                            <div class="bar-col-item">
+                                <div class="bar-col-track" title="@day: @pct% completed">
+                                    <div class="bar-col-fill @(isSunday ? "active-day" : "")" style="height: @(pct)%;"></div>
+                                </div>
+                                <div class="bar-col-label">@day</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 5. Measurement History Table (Matching Mockup 2) -->
+            <div class="history-card-panel">
+                <div class="history-card-header">
+                    <div class="history-card-title">Measurement history</div>
+                    <div class="history-card-subtitle">Your latest recorded health metrics</div>
+                </div>
+
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>WEIGHT</th>
+                            <th>HEIGHT</th>
+                            <th>BMI</th>
+                            <th>WAIST</th>
+                            <th style="width: 60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.MeasurementHistory)
+                        {
+                            <tr>
+                                <td class="fw-medium text-dark">@row.DateText</td>
+                                <td>@row.WeightKg.ToString("0.0") kg</td>
+                                <td>@row.HeightCm cm</td>
+                                <td>@row.Bmi.ToString("0.0")</td>
+                                <td>@row.WaistCm cm</td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn-row-action" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Row options">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 py-1">
+                                            <li>
+                                                <button class="dropdown-item py-1.5 small d-flex align-items-center gap-2" onclick="alert('Viewing measurement details for @row.DateText:\nWeight: @row.WeightKg kg\nHeight: @row.HeightCm cm\nBMI: @row.Bmi\nWaist: @row.WaistCm cm\nNotes: @row.Notes');">
+                                                    <i class="bi bi-eye text-secondary"></i> View details
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2" href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId">
+                                                    <i class="bi bi-file-earmark-arrow-down text-secondary"></i> Download CSV
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

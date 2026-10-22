@@ -1906,8 +1906,10 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+
             // Determine assigned trainer
-            string trainerName = "Maya Patel";
+            string trainerName = "Not assigned yet";
             if (!string.IsNullOrEmpty(user.TrainerId))
             {
                 var trainer = await _userManager.FindByIdAsync(user.TrainerId);
@@ -1916,14 +1918,9 @@ namespace HealthTrack.Controllers
                     trainerName = trainer.FullName.Replace("Dr. ", "");
                 }
             }
-            else
+            else if (isDemoUser)
             {
-                // Find Dr. Maya Patel if seeded
-                var maya = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
-                if (maya != null)
-                {
-                    trainerName = maya.FullName.Replace("Dr. ", "");
-                }
+                trainerName = "Maya Patel";
             }
 
             // Fetch latest health log to inspect waist & body fat
@@ -1956,11 +1953,11 @@ namespace HealthTrack.Controllers
                 .Where(n => n.UserId == user.Id && !n.IsRead)
                 .CountAsync();
 
-            // Calculate BMI
-            double heightCm = user.HeightCm ?? 178.0;
-            double weightKg = user.CurrentWeight ?? 72.4;
+            bool hasLoggedMeasurements = latestLog != null || (user.CurrentWeight.HasValue && user.CurrentWeight.Value > 0);
+            double heightCm = user.HeightCm ?? (isDemoUser ? 175.0 : 0);
+            double weightKg = user.CurrentWeight ?? (isDemoUser ? 72.4 : 0);
             double heightMeters = heightCm / 100.0;
-            double bmi = heightMeters > 0 ? Math.Round(weightKg / (heightMeters * heightMeters), 1) : 22.8;
+            double bmi = (heightMeters > 0 && weightKg > 0) ? Math.Round(weightKg / (heightMeters * heightMeters), 1) : 0;
 
             // Fetch available trainers for modal
             var trainers = await _userManager.GetUsersInRoleAsync("Trainer");
@@ -1971,16 +1968,19 @@ namespace HealthTrack.Controllers
                 RoleOrSpecialty = t.FitnessGoal ?? "Fitness Coach"
             }).ToList();
 
+            string memberSince = isDemoUser ? "January 2025" : DateTime.UtcNow.ToString("MMMM yyyy");
+
             var vm = new ProfileHealthViewModel
             {
                 UserId = user.Id,
-                FullName = string.IsNullOrWhiteSpace(user.FullName) ? "Alex Morgan" : user.FullName,
-                Email = user.Email ?? "alex.morgan@email.com",
-                MemberSince = "January 2025",
+                FullName = string.IsNullOrWhiteSpace(user.FullName) ? (user.UserName ?? "Client") : user.FullName,
+                Email = user.Email ?? string.Empty,
+                MemberSince = memberSince,
                 AssignedTrainer = trainerName,
                 TrainerId = user.TrainerId,
-                PrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "Strength & wellness",
+                PrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "General Fitness & Health",
                 MembershipStatus = "Active member",
+                HasLoggedMeasurements = hasLoggedMeasurements,
 
                 WeightKg = weightKg,
                 HeightCm = heightCm,
@@ -1988,12 +1988,12 @@ namespace HealthTrack.Controllers
                 BodyFatPercentage = latestBodyFat,
 
                 CalculatedBmi = bmi,
-                BmiCategory = GetBmiCategory(bmi),
-                TargetWeight = user.TargetWeight ?? 70.0,
+                BmiCategory = bmi > 0 ? GetBmiCategory(bmi) : "Pending measurements",
+                TargetWeight = user.TargetWeight ?? (isDemoUser ? 70.0 : 0),
 
-                EditFullName = string.IsNullOrWhiteSpace(user.FullName) ? "Alex Morgan" : user.FullName,
-                EditPrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "Strength & wellness",
-                EditTargetWeight = user.TargetWeight ?? 70.0,
+                EditFullName = user.FullName ?? string.Empty,
+                EditPrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "General Fitness & Health",
+                EditTargetWeight = user.TargetWeight ?? (isDemoUser ? 70.0 : 0),
                 EditTrainerId = user.TrainerId,
                 AvailableTrainers = trainerOptions,
 

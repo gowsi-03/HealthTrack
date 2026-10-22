@@ -256,6 +256,12 @@ namespace HealthTrack.Controllers
             {
                 appt.Status = "Approved";
 
+                // Automatically link client to this trainer if not already assigned
+                if (appt.Client != null && string.IsNullOrEmpty(appt.Client.TrainerId))
+                {
+                    appt.Client.TrainerId = trainer.Id;
+                }
+
                 // Notify client
                 var notif = new Notification
                 {
@@ -1323,10 +1329,14 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> ReviewAllAppointments()
         {
             var trainer = await GetCurrentTrainerUserAsync();
-            var pendingAppts = await _context.Appointments.Where(a => a.TrainerId == trainer.Id && a.Status == "Pending").ToListAsync();
+            var pendingAppts = await _context.Appointments.Include(a => a.Client).Where(a => a.TrainerId == trainer.Id && a.Status == "Pending").ToListAsync();
             foreach (var a in pendingAppts)
             {
                 a.Status = "Approved";
+                if (a.Client != null && string.IsNullOrEmpty(a.Client.TrainerId))
+                {
+                    a.Client.TrainerId = trainer.Id;
+                }
                 _context.Notifications.Add(new Notification
                 {
                     UserId = a.ClientId,

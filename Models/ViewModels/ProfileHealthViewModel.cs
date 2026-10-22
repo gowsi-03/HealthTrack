@@ -10,10 +10,11 @@ namespace HealthTrack.Models.ViewModels
         public string FullName { get; set; } = "Alex Morgan";
         public string Email { get; set; } = "alex.morgan@email.com";
         public string MemberSince { get; set; } = "January 2025";
-        public string AssignedTrainer { get; set; } = "Maya Patel";
+        public string AssignedTrainer { get; set; } = "None";
         public string? TrainerId { get; set; }
-        public string PrimaryGoal { get; set; } = "Strength & wellness";
+        public string PrimaryGoal { get; set; } = "General Fitness & Health";
         public string MembershipStatus { get; set; } = "Active member";
+        public bool HasLoggedMeasurements { get; set; } = false;
 
         // Biometrics / measurements form (matches right card in image)
         [Display(Name = "Weight (kg)")]

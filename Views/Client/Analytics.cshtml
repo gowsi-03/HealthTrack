@@ -1041,32 +1041,45 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.MeasurementHistory)
+                            @if (Model.MeasurementHistory != null && Model.MeasurementHistory.Any())
+                            {
+                                @foreach (var item in Model.MeasurementHistory)
+                                {
+                                    <tr>
+                                        <td>@item.DateText</td>
+                                        <td>@item.WeightKg.ToString("F1") kg</td>
+                                        <td>@item.HeightCm cm</td>
+                                        <td>@item.Bmi.ToString("F1")</td>
+                                        <td>@item.WaistCm cm</td>
+                                        <td style="text-align: right;">
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn-dots-menu" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3">
+                                                    <li>
+                                                        <a class="dropdown-item small" href="javascript:void(0)" onclick="alert('Measurement on @item.DateText: Weight @item.WeightKg kg, BMI @item.Bmi, Waist @item.WaistCm cm. Notes: @item.Notes')">
+                                                            <i class="bi bi-eye me-2 text-secondary"></i> View Details
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="alert('To modify this biometric entry, contact your coach or submit a new log.')">
+                                                            <i class="bi bi-trash me-2"></i> Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
                             {
                                 <tr>
-                                    <td>@item.DateText</td>
-                                    <td>@item.WeightKg.ToString("F1") kg</td>
-                                    <td>@item.HeightCm cm</td>
-                                    <td>@item.Bmi.ToString("F1")</td>
-                                    <td>@item.WaistCm cm</td>
-                                    <td style="text-align: right;">
-                                        <div class="dropdown d-inline-block">
-                                            <button class="btn-dots-menu" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3">
-                                                <li>
-                                                    <a class="dropdown-item small" href="javascript:void(0)" onclick="alert('Measurement on @item.DateText: Weight @item.WeightKg kg, BMI @item.Bmi, Waist @item.WaistCm cm. Notes: @item.Notes')">
-                                                        <i class="bi bi-eye me-2 text-secondary"></i> View Details
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item small text-danger" href="javascript:void(0)" onclick="alert('To modify this biometric entry, contact Trainer Alex or submit a new log.')">
-                                                        <i class="bi bi-trash me-2"></i> Delete
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <div style="font-size: 2rem; color: #CBD5E1; margin-bottom: 0.5rem;"><i class="bi bi-clipboard2-pulse"></i></div>
+                                        <strong style="color: #475569;">No biometric measurements recorded yet.</strong><br />
+                                        <span class="small text-muted">Click "Record measurement" above to log your first entry.</span>
                                     </td>
                                 </tr>
                             }
@@ -1214,8 +1227,8 @@
                         }
                     },
                     y: {
-                        min: 65,
-                        max: 80,
+                        min: (weightData && weightData.length > 0) ? Math.max(0, Math.floor(Math.min(...weightData) - 3)) : undefined,
+                        max: (weightData && weightData.length > 0) ? Math.ceil(Math.max(...weightData) + 3) : undefined,
                         grid: {
                             color: '#F1F5F9',
                             drawBorder: false

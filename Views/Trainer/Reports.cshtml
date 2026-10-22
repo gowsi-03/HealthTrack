@@ -1152,32 +1152,45 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var row in Model.MeasurementHistory)
+                        @if (Model.MeasurementHistory != null && Model.MeasurementHistory.Any())
+                        {
+                            @foreach (var row in Model.MeasurementHistory)
+                            {
+                                <tr>
+                                    <td class="fw-medium text-dark">@row.DateText</td>
+                                    <td>@row.WeightKg.ToString("0.0") kg</td>
+                                    <td>@row.HeightCm cm</td>
+                                    <td>@row.Bmi.ToString("0.0")</td>
+                                    <td>@row.WaistCm cm</td>
+                                    <td class="text-end">
+                                        <div class="dropdown">
+                                            <button class="btn-row-action" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Row options">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 py-1">
+                                                <li>
+                                                    <button class="dropdown-item py-1.5 small d-flex align-items-center gap-2" onclick="alert('Viewing measurement details for @row.DateText:\nWeight: @row.WeightKg kg\nHeight: @row.HeightCm cm\nBMI: @row.Bmi\nWaist: @row.WaistCm cm\nNotes: @row.Notes');">
+                                                        <i class="bi bi-eye text-secondary"></i> View details
+                                                    </button>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2" href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId">
+                                                        <i class="bi bi-file-earmark-arrow-down text-secondary"></i> Download CSV
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="fw-medium text-dark">@row.DateText</td>
-                                <td>@row.WeightKg.ToString("0.0") kg</td>
-                                <td>@row.HeightCm cm</td>
-                                <td>@row.Bmi.ToString("0.0")</td>
-                                <td>@row.WaistCm cm</td>
-                                <td class="text-end">
-                                    <div class="dropdown">
-                                        <button class="btn-row-action" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Row options">
-                                            <i class="bi bi-three-dots"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 py-1">
-                                            <li>
-                                                <button class="dropdown-item py-1.5 small d-flex align-items-center gap-2" onclick="alert('Viewing measurement details for @row.DateText:\nWeight: @row.WeightKg kg\nHeight: @row.HeightCm cm\nBMI: @row.Bmi\nWaist: @row.WaistCm cm\nNotes: @row.Notes');">
-                                                    <i class="bi bi-eye text-secondary"></i> View details
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item py-1.5 small d-flex align-items-center gap-2" href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId">
-                                                    <i class="bi bi-file-earmark-arrow-down text-secondary"></i> Download CSV
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <div style="font-size: 1.8rem; color: #CBD5E1; margin-bottom: 0.5rem;"><i class="bi bi-clipboard2-pulse"></i></div>
+                                    <strong style="color: #475569;">No biometric measurements recorded yet.</strong><br />
+                                    <span class="small text-muted">When this client records weigh-ins or biometric scans, they will appear here in real time.</span>
                                 </td>
                             </tr>
                         }

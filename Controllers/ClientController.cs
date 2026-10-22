@@ -72,6 +72,8 @@ namespace HealthTrack.Controllers
                 FitnessGoal = user.FitnessGoal ?? "General Health & Fitness"
             };
 
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+
             // 1. Fetch Health Logs for Analytics & KPIs
             var logs = await _context.HealthLogs
                 .Where(l => l.ClientId == user.Id)
@@ -82,7 +84,7 @@ namespace HealthTrack.Controllers
             {
                 var latestLog = logs.Last();
                 vm.CurrentWeight = latestLog.WeightKg;
-                vm.CaloriesBurned = latestLog.CaloriesBurned > 0 ? latestLog.CaloriesBurned : 1842;
+                vm.CaloriesBurned = latestLog.CaloriesBurned;
 
                 // BMI Calculation
                 double heightInMeters = vm.HeightCm / 100.0;
@@ -99,6 +101,15 @@ namespace HealthTrack.Controllers
 
                     double bmiDiff = Math.Round(vm.CurrentBmi - prevLog.CalculatedBmi, 1);
                     vm.BmiTrendText = $"{(bmiDiff >= 0 ? "+" : "")}{bmiDiff} points from last month";
+
+                    double pctDiff = Math.Round(((latestLog.WeightKg - prevLog.WeightKg) / prevLog.WeightKg) * 100, 1);
+                    vm.WeightChangeThisMonth = $"{(pctDiff >= 0 ? "+" : "")}{pctDiff}% this month";
+                }
+                else
+                {
+                    vm.WeightTrendText = "Initial weigh-in recorded";
+                    vm.BmiTrendText = "Baseline calculation";
+                    vm.WeightChangeThisMonth = "Initial record";
                 }
 
                 // Populate Chart Data
@@ -108,15 +119,43 @@ namespace HealthTrack.Controllers
                     vm.ChartWeights.Add(log.WeightKg);
                 }
             }
-            else
+            else if (isDemoUser)
             {
-                // Fallback default sample data if fresh account
+                // Fallback default sample data ONLY for seeded demo account
                 vm.CurrentWeight = user.CurrentWeight ?? 72.4;
                 double hM = vm.HeightCm / 100.0;
                 vm.CurrentBmi = Math.Round(vm.CurrentWeight / (hM * hM), 1);
                 vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
+                vm.CaloriesBurned = 510;
+                vm.CaloriesTrendText = "+12.5% from last month";
+                vm.WeightTrendText = "-0.7 kg from last month";
+                vm.BmiTrendText = "+0.5 points from last month";
+                vm.WeightChangeThisMonth = "-1.6% this month";
                 vm.ChartLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
                 vm.ChartWeights = new List<double> { 74.5, 73.8, 73.2, 72.8, 72.4 };
+            }
+            else
+            {
+                // Fresh real user: clean zero / initial state
+                vm.CurrentWeight = user.CurrentWeight ?? 0;
+                if (vm.CurrentWeight > 0 && vm.HeightCm > 0)
+                {
+                    double hM = vm.HeightCm / 100.0;
+                    vm.CurrentBmi = Math.Round(vm.CurrentWeight / (hM * hM), 1);
+                    vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
+                }
+                else
+                {
+                    vm.CurrentBmi = 0;
+                    vm.BmiCategory = "--";
+                }
+                vm.CaloriesBurned = 0;
+                vm.CaloriesTrendText = "0 kcal today";
+                vm.WeightTrendText = vm.CurrentWeight > 0 ? "Profile baseline weight" : "No weigh-in recorded";
+                vm.BmiTrendText = vm.CurrentBmi > 0 ? "Baseline BMI" : "Set height & weight";
+                vm.WeightChangeThisMonth = "New account";
+                vm.ChartLabels = new List<string>();
+                vm.ChartWeights = new List<double>();
             }
 
             // 2. Fetch Active Workout Plan
@@ -145,7 +184,7 @@ namespace HealthTrack.Controllers
             // 5. Fetch Upcoming Appointment
             var nextAppointment = await _context.Appointments
                 .Include(a => a.Trainer)
-                .Where(a => a.ClientId == user.Id && a.AppointmentDate >= DateTime.Today)
+                .Where(a => a.ClientId == user.Id && a.AppointmentDate >= DateTime.Today && a.Status != "Cancelled")
                 .OrderBy(a => a.AppointmentDate)
                 .FirstOrDefaultAsync();
 
@@ -161,7 +200,7 @@ namespace HealthTrack.Controllers
                 vm.AppointmentStatus = nextAppointment.Status;
                 vm.AppointmentNotes = nextAppointment.Notes;
             }
-            else
+            else if (isDemoUser)
             {
                 // Sample placeholder appointment for preview
                 vm.HasUpcomingAppointment = true;
@@ -171,6 +210,10 @@ namespace HealthTrack.Controllers
                 vm.AppointmentProvider = "Dr. Maya Patel";
                 vm.AppointmentType = "Health consultation";
                 vm.AppointmentNotes = "Routine form check & technique review";
+            }
+            else
+            {
+                vm.HasUpcomingAppointment = false;
             }
 
             // 6. Assemble Today's Plan items
@@ -807,8 +850,10 @@ namespace HealthTrack.Controllers
                 .OrderBy(a => a.AppointmentDate)
                 .ToListAsync();
 
-            // If user has 0 or only 1 legacy appointment, auto-seed the reference items for them so it matches the design
-            if (dbAppointments.Count <= 1)
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+
+            // If demo user has 0 or only 1 legacy appointment, auto-seed the reference items for them so it matches the design
+            if (isDemoUser && dbAppointments.Count <= 1)
             {
                 var maya = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
                 var chris = await _userManager.FindByEmailAsync("chris.williams@healthtrack.com");
@@ -1074,7 +1119,9 @@ namespace HealthTrack.Controllers
         {
             var user = await GetCurrentClientUserAsync();
 
-            if (user.HeightCm == null || user.HeightCm == 180)
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+
+            if (isDemoUser && (user.HeightCm == null || user.HeightCm == 180))
             {
                 user.HeightCm = 178;
                 await _userManager.UpdateAsync(user);
@@ -1087,36 +1134,30 @@ namespace HealthTrack.Controllers
                 Email = user.Email ?? "client@healthtrack.com",
                 SelectedTimeRange = timeRange ?? "Last 30 days",
                 SelectedMetric = metric ?? "All metrics",
-                HeightCm = (int)(user.HeightCm ?? 178),
-                CurrentWeightKg = user.CurrentWeight ?? 72.4,
-                WeightChange = "-3.8 kg",
-                WeightChangePeriod = "Since Jan 14",
-                WorkoutCompletionRate = "87%",
-                WorkoutCompletionChange = "+8% this month",
-                ActiveMinutes = 742,
-                ActiveMinutesPeriod = "Last 30 days",
-                AverageCalories = "2,120",
-                AverageCaloriesPeriod = "Daily intake",
-                WeightTrendStatus = "On track"
+                HeightCm = (int)(user.HeightCm ?? 175),
+                CurrentWeightKg = user.CurrentWeight ?? 0
             };
 
-            // Ensure client has the 4 reference measurements matching media_1792560803059_1970f462.png
-            var hasRefLogs = await _context.HealthLogs.AnyAsync(l => l.ClientId == user.Id && l.Notes != null && l.Notes.Contains("waist:82"));
-            if (!hasRefLogs)
+            // Ensure demo client has the 4 reference measurements matching media_1792560803059_1970f462.png
+            if (isDemoUser)
             {
-                var oldLogs = await _context.HealthLogs.Where(l => l.ClientId == user.Id).ToListAsync();
-                if (oldLogs.Any())
+                var hasRefLogs = await _context.HealthLogs.AnyAsync(l => l.ClientId == user.Id && l.Notes != null && l.Notes.Contains("waist:82"));
+                if (!hasRefLogs)
                 {
-                    _context.HealthLogs.RemoveRange(oldLogs);
-                }
+                    var oldLogs = await _context.HealthLogs.Where(l => l.ClientId == user.Id).ToListAsync();
+                    if (oldLogs.Any())
+                    {
+                        _context.HealthLogs.RemoveRange(oldLogs);
+                    }
 
-                _context.HealthLogs.AddRange(
-                    new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 1), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline sprint phase measurement - waist:84 cm" },
-                    new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 15), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle body composition scan - waist:84 cm" },
-                    new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 29), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month progress evaluation - waist:83 cm" },
-                    new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 4, 12), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout biometric weigh-in - waist:82 cm" }
-                );
-                await _context.SaveChangesAsync();
+                    _context.HealthLogs.AddRange(
+                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 1), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline sprint phase measurement - waist:84 cm" },
+                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 15), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle body composition scan - waist:84 cm" },
+                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 29), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month progress evaluation - waist:83 cm" },
+                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 4, 12), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout biometric weigh-in - waist:82 cm" }
+                    );
+                    await _context.SaveChangesAsync();
+                }
             }
 
             var logs = await _context.HealthLogs
@@ -1143,26 +1184,94 @@ namespace HealthTrack.Controllers
                     Date = l.LogDate,
                     DateText = l.LogDate.ToString("MMM dd, yyyy"),
                     WeightKg = l.WeightKg,
-                    HeightCm = (int)(user.HeightCm ?? 178),
-                    Bmi = l.CalculatedBmi > 0 ? l.CalculatedBmi : Math.Round(l.WeightKg / Math.Pow((user.HeightCm ?? 178) / 100.0, 2), 1),
+                    HeightCm = (int)(user.HeightCm ?? 175),
+                    Bmi = l.CalculatedBmi > 0 ? l.CalculatedBmi : Math.Round(l.WeightKg / Math.Pow((user.HeightCm ?? 175) / 100.0, 2), 1),
                     WaistCm = waist,
                     Notes = l.Notes ?? ""
                 };
             }).ToList();
 
-            vm.WeightChange = "-3.8 kg";
-            vm.WeightChangePeriod = "Since Jan 14";
-            vm.WorkoutCompletionRate = "87%";
-            vm.WorkoutCompletionChange = "+8% this month";
-            vm.ActiveMinutes = 742;
-            vm.ActiveMinutesPeriod = "Last 30 days";
-            vm.AverageCalories = "2,120";
-            vm.AverageCaloriesPeriod = "Daily intake";
-            vm.CurrentWeightKg = 72.4;
-            vm.WeightTrendStatus = "On track";
+            if (isDemoUser)
+            {
+                vm.WeightChange = "-3.8 kg";
+                vm.WeightChangePeriod = "Since Jan 14";
+                vm.WorkoutCompletionRate = "87%";
+                vm.WorkoutCompletionChange = "+8% this month";
+                vm.ActiveMinutes = 742;
+                vm.ActiveMinutesPeriod = "Last 30 days";
+                vm.AverageCalories = "2,120";
+                vm.AverageCaloriesPeriod = "Daily intake";
+                vm.CurrentWeightKg = 72.4;
+                vm.WeightTrendStatus = "On track";
 
-            vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
-            vm.WeightValues = new List<double> { 68.2, 70.4, 73.1, 75.8, 77.4 };
+                vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
+                vm.WeightValues = new List<double> { 68.2, 70.4, 73.1, 75.8, 77.4 };
+            }
+            else
+            {
+                // Real user dynamic calculations
+                if (logs.Any())
+                {
+                    var latest = logs.First();
+                    vm.CurrentWeightKg = latest.WeightKg;
+
+                    if (logs.Count >= 2)
+                    {
+                        var oldest = logs.Last();
+                        double diff = Math.Round(latest.WeightKg - oldest.WeightKg, 1);
+                        vm.WeightChange = $"{(diff >= 0 ? "+" : "")}{diff} kg";
+                        vm.WeightChangePeriod = $"Since {oldest.LogDate:MMM dd}";
+                        vm.WeightTrendStatus = diff <= 0 ? "On track" : "Progressing";
+                    }
+                    else
+                    {
+                        vm.WeightChange = "0.0 kg";
+                        vm.WeightChangePeriod = "Initial entry";
+                        vm.WeightTrendStatus = "Baseline set";
+                    }
+
+                    var ascLogs = logs.OrderBy(l => l.LogDate).ToList();
+                    vm.WeightLabels = ascLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
+                    vm.WeightValues = ascLogs.Select(l => l.WeightKg).ToList();
+                }
+                else
+                {
+                    vm.CurrentWeightKg = user.CurrentWeight ?? 0;
+                    vm.WeightChange = "0.0 kg";
+                    vm.WeightChangePeriod = "Awaiting first log";
+                    vm.WeightTrendStatus = "Awaiting weigh-in";
+                    vm.WeightLabels = new List<string>();
+                    vm.WeightValues = new List<double>();
+                }
+
+                // Workout completion rate from real database workouts
+                var userWorkouts = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
+                    .Where(w => w.ClientId == user.Id)
+                    .ToListAsync();
+
+                var allExercises = userWorkouts.SelectMany(w => w.Exercises).ToList();
+                if (allExercises.Any())
+                {
+                    int done = allExercises.Count(e => e.IsCompleted);
+                    int total = allExercises.Count;
+                    int pct = (int)Math.Round((double)done / total * 100);
+                    vm.WorkoutCompletionRate = $"{pct}%";
+                    vm.WorkoutCompletionChange = $"{done}/{total} exercises done";
+                }
+                else
+                {
+                    vm.WorkoutCompletionRate = "0%";
+                    vm.WorkoutCompletionChange = "No routines assigned";
+                }
+
+                vm.ActiveMinutes = logs.Count * 45;
+                vm.ActiveMinutesPeriod = "Recorded sessions";
+                vm.AverageCalories = logs.Any() && logs.Any(l => l.CaloriesBurned > 0)
+                    ? ((int)logs.Where(l => l.CaloriesBurned > 0).Average(l => l.CaloriesBurned)).ToString("N0")
+                    : "0";
+                vm.AverageCaloriesPeriod = "Daily average";
+            }
 
             return View(vm);
         }
@@ -1276,47 +1385,67 @@ namespace HealthTrack.Controllers
                 Email = user.Email ?? "client@healthtrack.com"
             };
 
-            // Ensure user has notifications matching media_1792593460829_608ca178.png
-            var hasRefNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id && n.Message.Contains("Workout starts in 2 hours"));
-            if (!hasRefNotifs)
-            {
-                var oldNotifs = await _context.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
-                if (oldNotifs.Any())
-                {
-                    _context.Notifications.RemoveRange(oldNotifs);
-                }
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
 
-                _context.Notifications.AddRange(
-                    new Notification
+            // Ensure demo user has notifications matching media_1792593460829_608ca178.png
+            if (isDemoUser)
+            {
+                var hasRefNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id && n.Message.Contains("Workout starts in 2 hours"));
+                if (!hasRefNotifs)
+                {
+                    var oldNotifs = await _context.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
+                    if (oldNotifs.Any())
                     {
-                        UserId = user.Id,
-                        Message = "Workout starts in 2 hours: Upper Body Strength is scheduled for 5:30 PM today.",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow.AddMinutes(-10)
-                    },
-                    new Notification
-                    {
-                        UserId = user.Id,
-                        Message = "Appointment confirmed: Dr. Maya Patel approved your health consultation.",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow.AddHours(-1)
-                    },
-                    new Notification
-                    {
-                        UserId = user.Id,
-                        Message = "Time to log lunch: Keep your nutrition goals on track by logging your meal.",
-                        IsRead = true,
-                        CreatedAt = DateTime.UtcNow.AddHours(-2)
-                    },
-                    new Notification
-                    {
-                        UserId = user.Id,
-                        Message = "New progress insight: You've improved workout consistency by 12% this month.",
-                        IsRead = true,
-                        CreatedAt = DateTime.UtcNow.AddDays(-1)
+                        _context.Notifications.RemoveRange(oldNotifs);
                     }
-                );
-                await _context.SaveChangesAsync();
+
+                    _context.Notifications.AddRange(
+                        new Notification
+                        {
+                            UserId = user.Id,
+                            Message = "Workout starts in 2 hours: Upper Body Strength is scheduled for 5:30 PM today.",
+                            IsRead = false,
+                            CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+                        },
+                        new Notification
+                        {
+                            UserId = user.Id,
+                            Message = "Appointment confirmed: Dr. Maya Patel approved your health consultation.",
+                            IsRead = false,
+                            CreatedAt = DateTime.UtcNow.AddHours(-1)
+                        },
+                        new Notification
+                        {
+                            UserId = user.Id,
+                            Message = "Time to log lunch: Keep your nutrition goals on track by logging your meal.",
+                            IsRead = true,
+                            CreatedAt = DateTime.UtcNow.AddHours(-2)
+                        },
+                        new Notification
+                        {
+                            UserId = user.Id,
+                            Message = "New progress insight: You've improved workout consistency by 12% this month.",
+                            IsRead = true,
+                            CreatedAt = DateTime.UtcNow.AddDays(-1)
+                        }
+                    );
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                var hasAnyNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id);
+                if (!hasAnyNotifs)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = user.Id,
+                        Message = $"Welcome to HealthTrack, {user.FullName}! Get started by recording your measurements or booking your first consultation.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    await _context.SaveChangesAsync();
+                }
             }
 
             var dbNotifs = await _context.Notifications

@@ -1083,7 +1083,14 @@
                         </div>
                         <div class="stat-label">Current weight</div>
                         <div class="stat-value">
-                            @Model.CurrentWeight<span class="stat-unit">kg</span>
+                            @if (Model.CurrentWeight > 0)
+                            {
+                                @Model.CurrentWeight<span class="stat-unit">kg</span>
+                            }
+                            else
+                            {
+                                <span style="color: #94A3B8;">--</span><span class="stat-unit">kg</span>
+                            }
                         </div>
                         <div class="trend-pill @(Model.IsWeightTrendPositive ? "" : "negative")">
                             <i class="bi bi-graph-up-arrow"></i>
@@ -1103,7 +1110,14 @@
                         </div>
                         <div class="stat-label">Body mass index</div>
                         <div class="stat-value">
-                            @Model.CurrentBmi<span class="stat-unit">BMI</span>
+                            @if (Model.CurrentBmi > 0)
+                            {
+                                @Model.CurrentBmi<span class="stat-unit">BMI</span>
+                            }
+                            else
+                            {
+                                <span style="color: #94A3B8;">--</span><span class="stat-unit">BMI</span>
+                            }
                         </div>
                         <div class="trend-pill">
                             <i class="bi bi-arrow-up-right"></i>
@@ -1126,7 +1140,7 @@
                             @Model.CaloriesBurned.ToString("N0")<span class="stat-unit">kcal</span>
                         </div>
                         <div class="trend-pill">
-                            <i class="bi bi-arrow-up-right"></i>
+                            <i class="bi bi-clock"></i>
                             <span>@Model.CaloriesTrendText</span>
                         </div>
                     </div>
@@ -1151,15 +1165,33 @@
                         </div>
                         <div class="section-subtitle">Your weight trend over the last 30 days</div>
 
-                        <div class="weight-hero-row">
-                            <span class="weight-hero-val">@Model.CurrentWeight kg</span>
-                            <span class="badge-month-trend">@Model.WeightChangeThisMonth</span>
-                        </div>
+                        @if (Model.ChartWeights != null && Model.ChartWeights.Count > 0)
+                        {
+                            <div class="weight-hero-row">
+                                <span class="weight-hero-val">@Model.CurrentWeight kg</span>
+                                <span class="badge-month-trend">@Model.WeightChangeThisMonth</span>
+                            </div>
 
-                        <!-- Chart.js Canvas -->
-                        <div style="position: relative; width: 100%; height: 190px;">
-                            <canvas id="weightProgressChart"></canvas>
-                        </div>
+                            <!-- Chart.js Canvas -->
+                            <div style="position: relative; width: 100%; height: 190px;">
+                                <canvas id="weightProgressChart"></canvas>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-items-center justify-content-center text-center py-4" style="min-height: 200px;">
+                                <div style="width: 50px; height: 50px; border-radius: 50%; background: #ECFDF5; color: #10B981; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 0.65rem;">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <div style="font-size: 1rem; font-weight: 700; color: #0F172A; margin-bottom: 0.25rem;">Start tracking your progress</div>
+                                <div style="font-size: 0.82rem; color: #64748B; margin-bottom: 1rem; max-width: 320px;">
+                                    Log your current weight today to start charting your journey over time.
+                                </div>
+                                <button type="button" class="btn btn-sm px-3 py-2 text-white" style="background: #10B981; border-radius: 8px; font-weight: 600;" onclick="openMeasurementModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Log first measurement
+                                </button>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -1172,36 +1204,60 @@
                                 <span class="stat-dots" onclick="openBookingModal()" title="Reschedule">•••</span>
                             </div>
 
-                            <div class="appointment-badge-box">
-                                <div class="date-square">
-                                    <span class="date-square-num">@Model.AppointmentDay</span>
-                                    <span class="date-square-month">@Model.AppointmentMonth</span>
-                                </div>
-                                <div class="appt-info-right">
-                                    <span class="appt-category-pill">
-                                        <span class="appt-cat-dot"></span>
-                                        <span>@Model.AppointmentType</span>
-                                    </span>
-                                    <div class="appt-provider-name">@Model.AppointmentProvider</div>
-                                    <div class="appt-meta-item">
-                                        <i class="bi bi-clock"></i>
-                                        <span>Friday, @Model.AppointmentTime</span>
+                            @if (Model.HasUpcomingAppointment)
+                            {
+                                <div class="appointment-badge-box">
+                                    <div class="date-square">
+                                        <span class="date-square-num">@Model.AppointmentDay</span>
+                                        <span class="date-square-month">@Model.AppointmentMonth</span>
                                     </div>
-                                    <div class="appt-meta-item">
-                                        <i class="bi bi-camera-video"></i>
-                                        <span>Online video call</span>
+                                    <div class="appt-info-right">
+                                        <span class="appt-category-pill">
+                                            <span class="appt-cat-dot"></span>
+                                            <span>@Model.AppointmentType</span>
+                                        </span>
+                                        <div class="appt-provider-name">@Model.AppointmentProvider</div>
+                                        <div class="appt-meta-item">
+                                            <i class="bi bi-clock"></i>
+                                            <span>Friday, @Model.AppointmentTime</span>
+                                        </div>
+                                        <div class="appt-meta-item">
+                                            <i class="bi bi-camera-video"></i>
+                                            <span>Online video call</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-items-center justify-content-center text-center py-3" style="min-height: 160px;">
+                                    <div style="width: 46px; height: 46px; border-radius: 50%; background: #F1F5F9; color: #64748B; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 0.65rem;">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+                                    <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin-bottom: 0.25rem;">No upcoming appointments</div>
+                                    <div style="font-size: 0.8rem; color: #64748B; margin-bottom: 0.85rem; max-width: 230px;">
+                                        Schedule your next check-in or training session with a coach.
+                                    </div>
+                                </div>
+                            }
                         </div>
 
                         <div class="appt-btn-row">
-                            <button type="button" class="btn-appt-details" onclick="openBookingModal()">
-                                View details
-                            </button>
-                            <a href="javascript:void(0)" onclick="alert('Starting video consultation session with @Model.AppointmentProvider...')" class="btn-appt-join">
-                                Join call
-                            </a>
+                            @if (Model.HasUpcomingAppointment)
+                            {
+                                <button type="button" class="btn-appt-details" onclick="openBookingModal()">
+                                    View details
+                                </button>
+                                <a href="javascript:void(0)" onclick="alert('Starting video consultation session with @Model.AppointmentProvider...')" class="btn-appt-join">
+                                    Join call
+                                </a>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn-appt-join w-100" onclick="openBookingModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Book consultation
+                                </button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -1572,7 +1628,9 @@
 
     // Chart.js Configuration Matching Uploaded Design Reference
     document.addEventListener("DOMContentLoaded", function () {
-        const ctx = document.getElementById('weightProgressChart').getContext('2d');
+        const canvas = document.getElementById('weightProgressChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         
         // Gradient Area Fill
         const gradient = ctx.createLinearGradient(0, 0, 0, 180);

@@ -1489,6 +1489,26 @@ namespace HealthTrack.Controllers
                 dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Email == "client@healthtrack.com");
             }
 
+            if (dbClient != null && !string.Equals(dbClient.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase))
+            {
+                // Real registered client - clean slate instead of Alex Morgan's dummy stats
+                vm.MeasurementHistory = new List<TrainerMeasurementHistoryItem>();
+                vm.CurrentWeightKg = dbClient.CurrentWeight ?? 0;
+                vm.WeightChange = "0.0 kg";
+                vm.WeightChangeSubtext = "Registered client";
+                vm.WeightLabels = new List<string>();
+                vm.WeightValues = new List<double>();
+                vm.WorkoutCompletionRate = "0%";
+                vm.WorkoutCompletionSubtext = "0 exercises completed";
+                vm.ActiveMinutes = 0;
+                vm.ActiveMinutesSubtext = "0 sessions";
+                vm.AverageCalories = "0";
+                vm.AverageCaloriesSubtext = "Daily intake";
+                vm.WeightTrendStatus = "Awaiting initial log";
+                vm.ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" };
+                vm.ActivityPercentages = new List<int> { 0, 0, 0, 0, 0, 0, 0 };
+            }
+
             if (dbClient != null)
             {
                 // Live sync workout completion rate from real client exercises

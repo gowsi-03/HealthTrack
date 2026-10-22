@@ -83,25 +83,32 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User {Email} logged in successfully.", Input.Email);
 
-                    // Check user role for seamless redirection
+                    // Check user role for strict, seamless redirection:
+                    // If user is Trainer -> go to Trainer Dashboard (/Trainer)
+                    // If user is Client  -> go to Client Dashboard (/Client)
                     var user = await _userManager.FindByEmailAsync(Input.Email);
                     if (user != null)
                     {
                         var roles = await _userManager.GetRolesAsync(user);
-                        if (returnUrl == "/" || returnUrl == "~/" || string.IsNullOrEmpty(returnUrl))
+                        var isTrainer = roles.Contains("Trainer") || roles.Contains("Admin") || user.Role == "Trainer" || user.Role == "Admin";
+
+                        if (isTrainer)
                         {
-                            if (roles.Contains("Trainer"))
+                            // If they requested a specific Trainer URL, honor it; otherwise always send to Trainer Dashboard
+                            if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Trainer", StringComparison.OrdinalIgnoreCase))
                             {
-                                return RedirectToAction("Index", "Trainer");
+                                return LocalRedirect(returnUrl);
                             }
-                            if (roles.Contains("Admin"))
+                            return RedirectToAction("Index", "Trainer");
+                        }
+                        else
+                        {
+                            // Client user: if they requested a specific Client URL, honor it; otherwise always send to Client Dashboard
+                            if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Client", StringComparison.OrdinalIgnoreCase))
                             {
-                                return RedirectToAction("Index", "Trainer");
+                                return LocalRedirect(returnUrl);
                             }
-                            if (roles.Contains("Client"))
-                            {
-                                return RedirectToAction("Index", "Client");
-                            }
+                            return RedirectToAction("Index", "Client");
                         }
                     }
 

@@ -299,35 +299,7 @@
             gap: 16px;
         }
 
-        /* Role Switcher Pill */
-        .role-switcher {
-            display: flex;
-            align-items: center;
-            background-color: #F1F5F9;
-            border: 1px solid var(--ht-border);
-            border-radius: 9999px;
-            padding: 3px;
-            gap: 2px;
-        }
 
-        .role-pill {
-            padding: 0.3rem 0.85rem;
-            border-radius: 9999px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #64748B;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-        .role-pill:hover {
-            color: #0F172A;
-        }
-        .role-pill.active {
-            background-color: #FFFFFF;
-            color: #0F172A;
-            font-weight: 700;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        }
 
         .btn-notification {
             position: relative;
@@ -920,13 +892,6 @@
             </div>
 
             <div class="top-controls">
-                <!-- Role Switcher Segmented Pill -->
-                <div class="role-switcher">
-                    <a href="/Client" class="role-pill">Client</a>
-                    <a href="/Trainer" class="role-pill active">Trainer</a>
-                    <a href="/Trainer" class="role-pill">Admin</a>
-                </div>
-
                 <!-- Notifications Bell -->
                 <a href="/Client/Notifications" class="btn-notification" title="Notifications">
                     <i class="bi bi-bell"></i>
@@ -942,7 +907,7 @@
                         <div class="avatar-initials">@initials</div>
                         <div class="user-meta d-none d-sm-block text-start ms-2">
                             <span class="fw-bold small text-dark d-block">@Model.TrainerFullName</span>
-                            <span class="text-muted" style="font-size: 0.75rem;">Trainer & Specialist</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">Trainer</span>
                         </div>
                         <i class="bi bi-chevron-down ms-2 text-muted" style="font-size: 0.75rem;"></i>
                     </button>
@@ -957,8 +922,8 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client">
-                                <i class="bi bi-person-badge text-secondary"></i> View Client View
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Clients">
+                                <i class="bi bi-people text-secondary"></i> My Clients
                             </a>
                         </li>
                         <li>

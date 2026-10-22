@@ -29,9 +29,37 @@ namespace HealthTrack.Controllers
             _logger = logger;
         }
 
+        public override void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context)
+        {
+            base.OnActionExecuting(context);
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var roleClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var isTrainer = roleClaim == "Trainer" || roleClaim == "Admin" || User.IsInRole("Trainer") || User.IsInRole("Admin");
+                if (!isTrainer && (roleClaim == "Client" || User.IsInRole("Client")))
+                {
+                    context.Result = RedirectToAction("Index", "Client");
+                }
+            }
+        }
+
         // GET: /Trainer or /Trainer/Index
         public async Task<IActionResult> Index()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var authUser = await _userManager.GetUserAsync(User);
+                if (authUser != null)
+                {
+                    var isTrainer = await _userManager.IsInRoleAsync(authUser, "Trainer") || await _userManager.IsInRoleAsync(authUser, "Admin") || authUser.Role == "Trainer" || authUser.Role == "Admin";
+                    if (!isTrainer)
+                    {
+                        // Client user attempted to access Trainer page -> redirect to Client dashboard
+                        return RedirectToAction("Index", "Client");
+                    }
+                }
+            }
+
             var trainer = await GetCurrentTrainerUserAsync();
             if (trainer == null)
             {
@@ -363,6 +391,20 @@ namespace HealthTrack.Controllers
         // GET: /Trainer/Clients or /Trainer/MyClients
         public async Task<IActionResult> Clients(string? search = null, string? status = null, string? plan = null, int page = 1)
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var authUser = await _userManager.GetUserAsync(User);
+                if (authUser != null)
+                {
+                    var isTrainer = await _userManager.IsInRoleAsync(authUser, "Trainer") || await _userManager.IsInRoleAsync(authUser, "Admin") || authUser.Role == "Trainer" || authUser.Role == "Admin";
+                    if (!isTrainer)
+                    {
+                        // Client user attempted to access Trainer page -> redirect to Client dashboard
+                        return RedirectToAction("Index", "Client");
+                    }
+                }
+            }
+
             var trainer = await GetCurrentTrainerUserAsync();
             if (trainer == null)
             {
@@ -653,12 +695,17 @@ namespace HealthTrack.Controllers
         }
 
         // Helper to retrieve current trainer or fallback to Dr. Maya Patel for preview
-        private async Task<ApplicationUser> GetCurrentTrainerUserAsync()
+        private async Task<ApplicationUser?> GetCurrentTrainerUserAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user != null) return user;
+            if (user != null)
+            {
+                var isTrainer = await _userManager.IsInRoleAsync(user, "Trainer") || await _userManager.IsInRoleAsync(user, "Admin") || user.Role == "Trainer" || user.Role == "Admin";
+                if (isTrainer) return user;
+                return null;
+            }
 
-            // Preview fallback for Dr. Maya Patel
+            // Preview fallback for Dr. Maya Patel when not logged in
             var maya = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
             if (maya != null) return maya;
 

@@ -184,6 +184,28 @@
             border-radius: 999px;
         }
 
+        .badge-counter {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-neutral {
+            background-color: #F1F5F9;
+            color: #475569;
+        }
+
+        .badge-attention {
+            background-color: #FEF3C7;
+            color: #B45309;
+            font-weight: 800;
+        }
+
         .sidebar-bottom-section {
             padding: 16px 20px;
             border-top: 1px solid var(--border-color);
@@ -809,8 +831,9 @@
         </div>
 
         <div class="sidebar-content">
-            <div class="sidebar-menu-category">Menu</div>
-            <ul class="sidebar-menu">
+            <!-- 1. WORKSPACE -->
+            <div class="sidebar-menu-category">WORKSPACE</div>
+            <ul class="sidebar-menu mb-3">
                 <li class="sidebar-item">
                     <a href="/Trainer" class="sidebar-link">
                         <div class="sidebar-link-left">
@@ -823,10 +846,16 @@
                     <a href="/Trainer/Clients" class="sidebar-link">
                         <div class="sidebar-link-left">
                             <i class="bi bi-people"></i>
-                            <span>Clients</span>
+                            <span>My Clients</span>
                         </div>
+                        <span class="badge-counter badge-neutral">24</span>
                     </a>
                 </li>
+            </ul>
+
+            <!-- 2. COACHING PLANS -->
+            <div class="sidebar-menu-category">COACHING PLANS</div>
+            <ul class="sidebar-menu mb-3">
                 <li class="sidebar-item">
                     <a href="/Trainer/Workouts" class="sidebar-link">
                         <div class="sidebar-link-left">
@@ -843,12 +872,18 @@
                         </div>
                     </a>
                 </li>
+            </ul>
+
+            <!-- 3. SCHEDULE & INSIGHTS -->
+            <div class="sidebar-menu-category">SCHEDULE & INSIGHTS</div>
+            <ul class="sidebar-menu">
                 <li class="sidebar-item">
                     <a href="/Trainer/Appointments" class="sidebar-link">
                         <div class="sidebar-link-left">
                             <i class="bi bi-calendar2-event"></i>
                             <span>Appointments</span>
                         </div>
+                        <span class="badge-counter badge-attention">4</span>
                     </a>
                 </li>
                 <li class="sidebar-item">

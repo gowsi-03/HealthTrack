@@ -425,30 +425,6 @@
             color: var(--ht-teal-hover);
         }
 
-        .btn-log-measurement {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--ht-teal);
-            color: #FFFFFF;
-            border: 1px solid var(--ht-teal);
-            padding: 9px 20px;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
-            text-decoration: none;
-        }
-
-        .btn-log-measurement:hover {
-            background-color: var(--ht-teal-hover);
-            border-color: var(--ht-teal-hover);
-            color: #FFFFFF;
-            box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
-        }
-
         /* Filter Controls Row (Alex Morgan ⌵ | All metrics ⌵ | Apply filters) */
         .filter-controls-row {
             display: flex;
@@ -1033,15 +1009,11 @@
                     <h1 class="page-title">Client progress & reports</h1>
                     <p class="page-subtitle">Track meaningful trends and make informed health decisions.</p>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div>
                     <a href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId" class="btn-export">
                         <i class="bi bi-download"></i>
                         <span>Export report</span>
                     </a>
-                    <button type="button" class="btn-log-measurement" data-bs-toggle="modal" data-bs-target="#logMeasurementModal">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        <span>Log measurement</span>
-                    </button>
                 </div>
             </div>
 
@@ -1172,15 +1144,9 @@
 
             <!-- 5. Measurement History Table (Matching Mockup 2) -->
             <div class="history-card-panel">
-                <div class="history-card-header d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="history-card-title">Measurement history</div>
-                        <div class="history-card-subtitle">Your latest recorded health metrics</div>
-                    </div>
-                    <button type="button" class="btn-log-measurement" style="padding: 6px 14px; font-size: 0.82rem;" data-bs-toggle="modal" data-bs-target="#logMeasurementModal">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Add new</span>
-                    </button>
+                <div class="history-card-header">
+                    <div class="history-card-title">Measurement history</div>
+                    <div class="history-card-subtitle">Your latest recorded health metrics</div>
                 </div>
 
                 <table class="history-table">
@@ -1229,114 +1195,6 @@
             </div>
 
         </main>
-    </div>
-</div>
-
-<!-- Modal: Log Client Measurement -->
-<div class="modal fade" id="logMeasurementModal" tabindex="-1" aria-labelledby="logMeasurementModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content rounded-4 border-0 shadow-lg">
-            <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div style="width: 42px; height: 42px; border-radius: 12px; background: #CCFBF1; color: #0D9488; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                        <i class="bi bi-speedometer2"></i>
-                    </div>
-                    <div>
-                        <h5 class="modal-title fw-bold text-dark mb-0" id="logMeasurementModalLabel">Log Biometric Measurement</h5>
-                        <p class="text-muted small mb-0">Record updated weight, waist, and body composition</p>
-                    </div>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form asp-action="LogMeasurement" asp-controller="Trainer" method="post" id="logMeasurementForm">
-                @Html.AntiForgeryToken()
-                <div class="modal-body px-4 py-4">
-                    <div class="row g-3">
-                        <!-- Client Select -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small text-dark">Client <span class="text-danger">*</span></label>
-                            <select name="clientId" id="modalClientId" class="form-select rounded-3 py-2" required>
-                                @foreach (var client in Model.Clients)
-                                {
-                                    if (client.Id == Model.SelectedClientId)
-                                    {
-                                        <option value="@client.Id" selected>@client.Name (@client.Email)</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@client.Id">@client.Name (@client.Email)</option>
-                                    }
-                                }
-                            </select>
-                        </div>
-
-                        <!-- Date -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-dark">Measurement Date <span class="text-danger">*</span></label>
-                            <input type="date" name="logDate" class="form-control rounded-3 py-2" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
-                        </div>
-
-                        <!-- Weight (kg) -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-dark">Weight (kg) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="number" step="0.1" min="30" max="300" name="weightKg" id="modalWeightInput" class="form-control rounded-start-3 py-2" value="@Model.CurrentWeightKg.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)" required />
-                                <span class="input-group-text bg-light text-muted rounded-end-3">kg</span>
-                            </div>
-                        </div>
-
-                        <!-- Height (cm) -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-dark">Height (cm) <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="number" step="1" min="100" max="250" name="heightCm" id="modalHeightInput" class="form-control rounded-start-3 py-2" value="178" required />
-                                <span class="input-group-text bg-light text-muted rounded-end-3">cm</span>
-                            </div>
-                        </div>
-
-                        <!-- Waist (cm) -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold small text-dark">Waist Circumference <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <input type="number" step="0.5" min="40" max="180" name="waistCm" class="form-control rounded-start-3 py-2" value="82" required />
-                                <span class="input-group-text bg-light text-muted rounded-end-3">cm</span>
-                            </div>
-                        </div>
-
-                        <!-- Real-time BMI Indicator Card -->
-                        <div class="col-12">
-                            <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between" style="background-color: #F8FAFC;">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-calculator text-teal fs-5" style="color: #0D9488;"></i>
-                                    <div>
-                                        <div class="small fw-semibold text-dark">Calculated BMI</div>
-                                        <div class="text-muted" style="font-size: 0.78rem;">Automatically computed from height & weight</div>
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge px-3 py-2 rounded-pill fw-bold" id="modalBmiBadge" style="background-color: #CCFBF1; color: #0D9488; font-size: 0.92rem;">
-                                        22.8 &bull; Normal weight
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Notes / Observations -->
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small text-dark">Trainer Notes / Biometric Observations</label>
-                            <textarea name="notes" rows="2" class="form-control rounded-3 py-2" placeholder="E.g. Fasted morning check-in, decreased body fat %, good recovery..."></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="modal-footer border-top px-4 py-3 bg-light rounded-bottom-4">
-                    <button type="button" class="btn btn-outline-secondary px-4 rounded-3 fw-semibold" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold" style="background-color: var(--ht-teal); border: none;">
-                        <i class="bi bi-check2-circle me-1"></i> Save Measurement
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -1427,45 +1285,6 @@
                 }
             }
         });
-
-        // 2. Real-time BMI calculation in Log Measurement Modal
-        const weightInput = document.getElementById('modalWeightInput');
-        const heightInput = document.getElementById('modalHeightInput');
-        const bmiBadge = document.getElementById('modalBmiBadge');
-
-        function updateModalBmi() {
-            if (!weightInput || !heightInput || !bmiBadge) return;
-            const w = parseFloat(weightInput.value);
-            const h = parseFloat(heightInput.value) / 100.0;
-            if (w > 0 && h > 0) {
-                const bmi = (w / (h * h)).toFixed(1);
-                let cat = 'Normal weight';
-                let bg = '#CCFBF1';
-                let col = '#0D9488';
-                if (bmi < 18.5) {
-                    cat = 'Underweight';
-                    bg = '#FEF3C7';
-                    col = '#B45309';
-                } else if (bmi >= 25 && bmi < 30) {
-                    cat = 'Overweight';
-                    bg = '#FEF3C7';
-                    col = '#B45309';
-                } else if (bmi >= 30) {
-                    cat = 'Obese';
-                    bg = '#FEE2E2';
-                    col = '#B91C1C';
-                }
-                bmiBadge.style.backgroundColor = bg;
-                bmiBadge.style.color = col;
-                bmiBadge.innerHTML = `${bmi} &bull; ${cat}`;
-            }
-        }
-
-        if (weightInput && heightInput) {
-            weightInput.addEventListener('input', updateModalBmi);
-            heightInput.addEventListener('input', updateModalBmi);
-            updateModalBmi();
-        }
     });
 </script>
 </body>

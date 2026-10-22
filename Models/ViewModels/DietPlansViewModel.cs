@@ -10,6 +10,8 @@ namespace HealthTrack.Models.ViewModels
         public string Email { get; set; } = "client@healthtrack.com";
         public string TrainerName { get; set; } = "Alex Henderson";
 
+        public bool HasActivePlan { get; set; } = false;
+
         // Active Banner
         public string PlanTitle { get; set; } = "Balanced Performance Plan";
         public string PlanDescription { get; set; } = "Nutrient-dense meals to support training, recovery and steady energy.";
@@ -19,8 +21,8 @@ namespace HealthTrack.Models.ViewModels
 
         // Schedule
         public string ScheduleDateText { get; set; } = string.Empty;
-        public int LoggedMealsCount { get; set; } = 2;
-        public int TotalMealsCount { get; set; } = 4;
+        public int LoggedMealsCount { get; set; } = 0;
+        public int TotalMealsCount { get; set; } = 0;
         public List<MealScheduleItem> ScheduledMeals { get; set; } = new();
 
         // Form for logging a meal

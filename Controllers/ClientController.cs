@@ -241,16 +241,9 @@ namespace HealthTrack.Controllers
 
                 hasHydrationToday = todayLogs.Any(l => l.WaterIntakeLiters > 0);
 
-                // Check meals in DietPlans
-                var userDiet = await _context.DietPlans
-                    .Include(d => d.Meals)
-                    .Where(d => d.ClientId == user.Id)
-                    .FirstOrDefaultAsync();
-
-                if (userDiet != null && userDiet.Meals.Any())
+                if (isDemoUser)
                 {
-                    hasBreakfastToday = userDiet.Meals.Any(m => m.MealType.Equals("Breakfast", StringComparison.OrdinalIgnoreCase));
-                    hasEveningMealToday = userDiet.Meals.Any(m => m.MealType.Equals("Dinner", StringComparison.OrdinalIgnoreCase) || m.MealType.Contains("Evening", StringComparison.OrdinalIgnoreCase));
+                    hasBreakfastToday = true;
                 }
 
                 // Check if any meals were logged in HealthLog notes today
@@ -732,14 +725,27 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Diet()
         {
             var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
 
             var vm = new DietPlansViewModel
             {
                 ClientId = user.Id,
                 FullName = user.FullName ?? user.UserName ?? "John Doe",
-                Email = user.Email ?? "client@healthtrack.com",
+                Email = user.Email ?? string.Empty,
                 TrainerName = "Alex Henderson"
             };
+
+            // Fetch trainer info
+            if (!string.IsNullOrEmpty(user.TrainerId))
+            {
+                var trainer = await _userManager.FindByIdAsync(user.TrainerId);
+                if (trainer != null)
+                {
+                    vm.TrainerName = trainer.FullName ?? trainer.UserName ?? "Alex Henderson";
+                }
+            }
 
             // Query active Diet Plan from database
             var activePlan = await _context.DietPlans
@@ -747,8 +753,8 @@ namespace HealthTrack.Controllers
                 .OrderByDescending(d => d.CreatedAt)
                 .FirstOrDefaultAsync(d => d.ClientId == user.Id);
 
-            // Auto-upgrade legacy seed to match user design if needed
-            if (activePlan != null && (activePlan.Title == "Lean Cut & Muscle Preservation" || activePlan.Meals.Count < 4))
+            // Auto-upgrade legacy seed for demo client to match user design if needed
+            if (isDemoUser && activePlan != null && (activePlan.Title == "Lean Cut & Muscle Preservation" || activePlan.Meals.Count < 4))
             {
                 activePlan.Title = "Balanced Performance Plan";
                 activePlan.TargetCalories = 2150;
@@ -765,9 +771,11 @@ namespace HealthTrack.Controllers
 
             if (activePlan != null && activePlan.Meals.Any())
             {
-                vm.PlanTitle = string.IsNullOrWhiteSpace(activePlan.Title) ? "Balanced Performance Plan" : activePlan.Title;
-                vm.DailyTargetCalories = activePlan.TargetCalories > 0 ? activePlan.TargetCalories : 2150;
-                vm.TargetProteinGrams = 120;
+                vm.HasActivePlan = true;
+                vm.PlanTitle = string.IsNullOrWhiteSpace(activePlan.Title) ? "Personalized Nutrition Plan" : activePlan.Title;
+                vm.PlanDescription = "Nutrient-dense meals to support training, recovery and steady energy.";
+                vm.DailyTargetCalories = activePlan.TargetCalories > 0 ? activePlan.TargetCalories : 2000;
+                vm.TargetProteinGrams = (int)Math.Round((vm.DailyTargetCalories * 0.25) / 4.0);
                 vm.MealsPerDay = activePlan.Meals.Count;
 
                 var defaultTimes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -789,7 +797,7 @@ namespace HealthTrack.Controllers
                 foreach (var meal in activePlan.Meals)
                 {
                     string time = defaultTimes.ContainsKey(meal.MealType) ? defaultTimes[meal.MealType] : $"{8 + (idx * 3)}:00 PM";
-                    bool isLogged = idx == 1 || todayMealLogs.Any(n => n != null && n.Contains(meal.MealType));
+                    bool isLogged = todayMealLogs.Any(n => n != null && n.Contains(meal.MealType, StringComparison.OrdinalIgnoreCase));
 
                     string ingredients = meal.MealType switch
                     {
@@ -815,10 +823,15 @@ namespace HealthTrack.Controllers
                     });
                     idx++;
                 }
+
+                vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
+                vm.TotalMealsCount = vm.ScheduledMeals.Count;
+                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
             }
-            else
+            else if (isDemoUser)
             {
-                // Exact match to user reference design: media_1792516155246_4c1992a0.png
+                // Pre-populated mockup view only for demo client
+                vm.HasActivePlan = true;
                 vm.PlanTitle = "Balanced Performance Plan";
                 vm.PlanDescription = "Nutrient-dense meals to support training, recovery and steady energy.";
                 vm.DailyTargetCalories = 2150;
@@ -880,12 +893,91 @@ namespace HealthTrack.Controllers
                         IsLogged = false
                     }
                 };
-            }
 
-            vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
-            vm.TotalMealsCount = vm.ScheduledMeals.Count;
-            // Monday, April 14 format or dynamic
-            vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
+                vm.LoggedMealsCount = vm.ScheduledMeals.Count(m => m.IsLogged);
+                vm.TotalMealsCount = vm.ScheduledMeals.Count;
+                vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} of {vm.TotalMealsCount} logged";
+            }
+            else
+            {
+                // Clean empty state for new client with no assigned diet plan
+                vm.HasActivePlan = false;
+                vm.PlanTitle = "No Diet Plan Assigned Yet";
+                vm.PlanDescription = "Your coach or nutritionist will design a custom nutrition regimen for you.";
+                vm.DailyTargetCalories = 0;
+                vm.TargetProteinGrams = 0;
+                vm.MealsPerDay = 0;
+
+                var today = DateTime.UtcNow.Date;
+                var customLogs = await _context.HealthLogs
+                    .Where(l => l.ClientId == user.Id && l.LogDate >= today && l.Notes != null && l.Notes.StartsWith("Meal:"))
+                    .OrderBy(l => l.LogDate)
+                    .ToListAsync();
+
+                if (customLogs.Any())
+                {
+                    foreach (var cl in customLogs)
+                    {
+                        string mealType = "Custom Meal";
+                        string desc = cl.Notes ?? "";
+                        int cal = 0;
+                        int protein = 0;
+
+                        var noteText = cl.Notes ?? "";
+                        if (noteText.StartsWith("Meal:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var afterMeal = noteText.Substring(5).Trim();
+                            var dashIdx = afterMeal.IndexOf('-');
+                            if (dashIdx > 0)
+                            {
+                                mealType = afterMeal.Substring(0, dashIdx).Trim();
+                                var rest = afterMeal.Substring(dashIdx + 1).Trim();
+                                var parenIdx = rest.LastIndexOf('(');
+                                if (parenIdx > 0)
+                                {
+                                    desc = rest.Substring(0, parenIdx).Trim();
+                                    var calMatch = System.Text.RegularExpressions.Regex.Match(rest, @"(\d+)\s*kcal");
+                                    if (calMatch.Success) int.TryParse(calMatch.Groups[1].Value, out cal);
+                                    var proMatch = System.Text.RegularExpressions.Regex.Match(rest, @"(\d+)g?\s*protein");
+                                    if (proMatch.Success) int.TryParse(proMatch.Groups[1].Value, out protein);
+                                }
+                                else
+                                {
+                                    desc = rest;
+                                }
+                            }
+                            else
+                            {
+                                desc = afterMeal;
+                            }
+                        }
+
+                        vm.ScheduledMeals.Add(new MealScheduleItem
+                        {
+                            Id = cl.Id,
+                            MealTime = cl.LogDate.ToLocalTime().ToString("h:mm tt"),
+                            MealType = mealType,
+                            Description = desc,
+                            Calories = cal,
+                            ProteinGrams = protein,
+                            CarbsGrams = 0,
+                            FatsGrams = 0,
+                            Ingredients = desc,
+                            IsLogged = true
+                        });
+                    }
+
+                    vm.LoggedMealsCount = vm.ScheduledMeals.Count;
+                    vm.TotalMealsCount = vm.ScheduledMeals.Count;
+                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · {vm.LoggedMealsCount} meal{(vm.LoggedMealsCount == 1 ? "" : "s")} logged today";
+                }
+                else
+                {
+                    vm.LoggedMealsCount = 0;
+                    vm.TotalMealsCount = 0;
+                    vm.ScheduleDateText = $"{DateTime.Now:dddd, MMMM d} · Awaiting nutritionist schedule";
+                }
+            }
 
             return View(vm);
         }

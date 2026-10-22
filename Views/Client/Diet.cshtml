@@ -929,43 +929,74 @@
                 </button>
             </div>
 
-            <!-- 2. Hero Banner Card (Matching Screenshot media_1792516155246_4c1992a0.png) -->
-            <section class="diet-hero-banner">
-                <div class="banner-left-group">
-                    <div class="banner-fork-box">
-                        <svg class="banner-fork-svg"><use href="#icon-cutlery"/></svg>
+            @if (Model.HasActivePlan)
+            {
+                <!-- 2. Hero Banner Card (Active Trainer Plan or Demo) -->
+                <section class="diet-hero-banner">
+                    <div class="banner-left-group">
+                        <div class="banner-fork-box">
+                            <svg class="banner-fork-svg"><use href="#icon-cutlery"/></svg>
+                        </div>
+                        <div>
+                            <div class="menu-pill-badge">
+                                <span class="menu-green-dot"></span>
+                                <span>TODAY'S MENU</span>
+                            </div>
+                            <h2 class="banner-plan-title">@Model.PlanTitle</h2>
+                            <p class="banner-plan-desc">@Model.PlanDescription</p>
+
+                            <div class="banner-metrics-row">
+                                <div class="banner-metric-col">
+                                    <span class="banner-metric-val">@Model.DailyTargetCalories.ToString("N0")</span>
+                                    <span class="banner-metric-lbl">daily kcal</span>
+                                </div>
+                                <div class="banner-metric-col">
+                                    <span class="banner-metric-val">@Model.TargetProteinGrams</span>
+                                    <span class="banner-metric-lbl">g protein</span>
+                                </div>
+                                <div class="banner-metric-col">
+                                    <span class="banner-metric-val">@Model.MealsPerDay</span>
+                                    <span class="banner-metric-lbl">meals / day</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                     <div>
-                        <div class="menu-pill-badge">
-                            <span class="menu-green-dot"></span>
-                            <span>TODAY'S MENU</span>
+                        <button type="button" class="btn-view-plan" data-bs-toggle="modal" data-bs-target="#fullPlanModal">
+                            <span>View full plan</span>
+                        </button>
+                    </div>
+                </section>
+            }
+            else
+            {
+                <!-- Empty State Hero Banner (Awaiting Nutritionist / Coach Assignment) -->
+                <section class="diet-hero-banner mb-4" style="background: linear-gradient(135deg, #0C2333 0%, #081B28 100%); padding: 3rem 2rem; border-radius: 20px;">
+                    <div class="d-flex flex-column align-items-center text-center mx-auto" style="max-width: 580px;">
+                        <div class="banner-fork-box mb-3" style="width: 64px; height: 64px; border-radius: 18px; margin-top: 0; background: rgba(52, 211, 153, 0.15);">
+                            <svg class="banner-fork-svg" style="width: 32px; height: 32px; fill: #34D399;"><use href="#icon-cutlery"/></svg>
                         </div>
-                        <h2 class="banner-plan-title">@Model.PlanTitle</h2>
-                        <p class="banner-plan-desc">@Model.PlanDescription</p>
-
-                        <div class="banner-metrics-row">
-                            <div class="banner-metric-col">
-                                <span class="banner-metric-val">@Model.DailyTargetCalories.ToString("N0")</span>
-                                <span class="banner-metric-lbl">daily kcal</span>
-                            </div>
-                            <div class="banner-metric-col">
-                                <span class="banner-metric-val">@Model.TargetProteinGrams</span>
-                                <span class="banner-metric-lbl">g protein</span>
-                            </div>
-                            <div class="banner-metric-col">
-                                <span class="banner-metric-val">@Model.MealsPerDay</span>
-                                <span class="banner-metric-lbl">meals / day</span>
-                            </div>
+                        <div class="menu-pill-badge mb-2" style="background: rgba(255,255,255,0.1); color: #94A3B8;">
+                            <span class="menu-green-dot" style="background: #94A3B8;"></span>
+                            <span>NO ACTIVE DIET PLAN</span>
+                        </div>
+                        <h2 class="banner-plan-title mb-2 text-white" style="font-size: 1.55rem; font-weight: 700;">No Diet Plan Assigned Yet</h2>
+                        <p class="banner-plan-desc mb-4 text-white-50" style="font-size: 0.92rem; line-height: 1.6; max-width: 520px;">
+                            Your coach or nutritionist will design a custom nutrition plan and macro targets for you. In the meantime, you can record your meals anytime.
+                        </p>
+                        <div class="d-flex align-items-center gap-3">
+                            <button type="button" class="btn-log-meal-cta" data-bs-toggle="modal" data-bs-target="#logMealModal">
+                                <i class="bi bi-plus-lg"></i>
+                                <span>Log a Meal</span>
+                            </button>
+                            <a href="/Client/Appointments" class="btn btn-outline-light px-4 py-2.5 fw-semibold rounded-3">
+                                <i class="bi bi-calendar2-plus me-1"></i> Consult Coach
+                            </a>
                         </div>
                     </div>
-                </div>
-
-                <div>
-                    <button type="button" class="btn-view-plan" data-bs-toggle="modal" data-bs-target="#fullPlanModal">
-                        <span>View full plan</span>
-                    </button>
-                </div>
-            </section>
+                </section>
+            }
 
             <!-- 3. Today's meal schedule Section -->
             <section>
@@ -974,44 +1005,60 @@
                     <div class="schedule-subtitle">@Model.ScheduleDateText</div>
                 </div>
 
-                <!-- 2x2 Grid of Meal Cards -->
-                <div class="meals-grid">
-                    @foreach (var meal in Model.ScheduledMeals)
-                    {
-                        var isLogged = meal.IsLogged;
-                        var iconClass = isLogged ? "meal-icon-logged" : "meal-icon-upcoming";
-                        var pillClass = isLogged ? "pill-logged" : "pill-upcoming";
-                        var dotClass = isLogged ? "dot-green" : "dot-gray";
-                        var statusText = isLogged ? "Logged" : "Upcoming";
+                @if (Model.ScheduledMeals != null && Model.ScheduledMeals.Any())
+                {
+                    <!-- 2x2 Grid of Meal Cards -->
+                    <div class="meals-grid">
+                        @foreach (var meal in Model.ScheduledMeals)
+                        {
+                            var isLogged = meal.IsLogged;
+                            var iconClass = isLogged ? "meal-icon-logged" : "meal-icon-upcoming";
+                            var pillClass = isLogged ? "pill-logged" : "pill-upcoming";
+                            var dotClass = isLogged ? "dot-green" : "dot-gray";
+                            var statusText = isLogged ? "Logged" : "Upcoming";
 
-                        <div class="meal-card" onclick="openMealDetails('@meal.MealType', '@meal.MealTime', '@meal.Calories', '@meal.ProteinGrams', '@meal.CarbsGrams', '@meal.FatsGrams', '@meal.Description.Replace("'", "\\'")', '@meal.Ingredients.Replace("'", "\\'")', @(isLogged ? "true" : "false"))">
-                            <div class="meal-left-group">
-                                <div class="meal-icon-box @iconClass">
-                                    <svg class="meal-icon-svg"><use href="#icon-cutlery"/></svg>
+                            <div class="meal-card" onclick="openMealDetails('@meal.MealType', '@meal.MealTime', '@meal.Calories', '@meal.ProteinGrams', '@meal.CarbsGrams', '@meal.FatsGrams', '@meal.Description.Replace("'", "\\'")', '@meal.Ingredients.Replace("'", "\\'")', @(isLogged ? "true" : "false"))">
+                                <div class="meal-left-group">
+                                    <div class="meal-icon-box @iconClass">
+                                        <svg class="meal-icon-svg"><use href="#icon-cutlery"/></svg>
+                                    </div>
+                                    <div class="meal-text-details">
+                                        <span class="meal-time-tag">@meal.MealTime</span>
+                                        <h4 class="meal-title">@meal.MealType</h4>
+                                        <p class="meal-food-desc">@meal.Description</p>
+                                        <div class="meal-meta-row">
+                                            <i class="bi bi-clock"></i>
+                                            <span>@meal.Calories kcal</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="meal-text-details">
-                                    <span class="meal-time-tag">@meal.MealTime</span>
-                                    <h4 class="meal-title">@meal.MealType</h4>
-                                    <p class="meal-food-desc">@meal.Description</p>
-                                    <div class="meal-meta-row">
-                                        <i class="bi bi-clock"></i>
-                                        <span>@meal.Calories kcal</span>
+
+                                <div class="meal-right-group">
+                                    <span class="meal-status-pill @pillClass">
+                                        <span class="@dotClass"></span>
+                                        <span>@statusText</span>
+                                    </span>
+                                    <div class="btn-circle-chevron">
+                                        <i class="bi bi-chevron-right"></i>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="meal-right-group">
-                                <span class="meal-status-pill @pillClass">
-                                    <span class="@dotClass"></span>
-                                    <span>@statusText</span>
-                                </span>
-                                <div class="btn-circle-chevron">
-                                    <i class="bi bi-chevron-right"></i>
-                                </div>
-                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="card border-0 rounded-4 shadow-sm p-5 text-center mt-3" style="background: #FFFFFF;">
+                        <div style="font-size: 2.2rem; color: #CBD5E1; margin-bottom: 0.5rem;"><i class="bi bi-egg-fried"></i></div>
+                        <div class="fw-bold text-dark fs-5 mb-1">No scheduled meals for today</div>
+                        <div class="text-muted small mb-3">Once your coach or nutritionist assigns a personalized nutrition plan, your scheduled meals and macros will appear here.</div>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-3 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#logMealModal">
+                                <i class="bi bi-plus-lg me-1"></i> Log custom meal
+                            </button>
                         </div>
-                    }
-                </div>
+                    </div>
+                }
             </section>
 
         </main>

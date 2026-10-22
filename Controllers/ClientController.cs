@@ -246,6 +246,25 @@ namespace HealthTrack.Controllers
 
                 user.CurrentWeight = vm.QuickMeasurement.WeightKg;
                 _context.HealthLogs.Add(log);
+
+                // Live Sync: Notify trainer
+                var trainerId = user.TrainerId;
+                if (string.IsNullOrEmpty(trainerId))
+                {
+                    var defaultTrainer = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com") ?? await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                    trainerId = defaultTrainer?.Id;
+                }
+                if (!string.IsNullOrEmpty(trainerId))
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = trainerId,
+                        Message = $"{user.FullName} logged a new weigh-in: {vm.QuickMeasurement.WeightKg:0.0} kg (BMI {bmi:0.0}).",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = $"Measurement saved! Your current weight is now {vm.QuickMeasurement.WeightKg} kg (BMI: {bmi}).";
@@ -295,7 +314,7 @@ namespace HealthTrack.Controllers
 
             _context.Appointments.Add(appointment);
 
-            // Add notification
+            // Add notification for client
             _context.Notifications.Add(new Notification
             {
                 UserId = user.Id,
@@ -303,6 +322,18 @@ namespace HealthTrack.Controllers
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
             });
+
+            // Live Sync: Notify trainer
+            if (!string.IsNullOrEmpty(trainerId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = trainerId,
+                    Message = $"New consultation requested by {user.FullName} for {vm.QuickBooking.AppointmentDate:MMM dd} at {vm.QuickBooking.TimeSlot}.",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = $"Appointment booked successfully for {vm.QuickBooking.AppointmentDate:MMM dd} at {vm.QuickBooking.TimeSlot}!";
@@ -314,10 +345,42 @@ namespace HealthTrack.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleExercise(int id)
         {
-            var exercise = await _context.WorkoutExercises.FindAsync(id);
+            var exercise = await _context.WorkoutExercises.Include(e => e.WorkoutPlan).FirstOrDefaultAsync(e => e.Id == id);
             if (exercise == null) return NotFound();
 
             exercise.IsCompleted = !exercise.IsCompleted;
+
+            // Live Sync: If all exercises completed, notify assigned trainer
+            if (exercise.IsCompleted && exercise.WorkoutPlan != null)
+            {
+                var planExercises = await _context.WorkoutExercises
+                    .Where(e => e.WorkoutPlanId == exercise.WorkoutPlanId)
+                    .ToListAsync();
+
+                bool allDone = planExercises.All(e => e.Id == exercise.Id ? true : e.IsCompleted);
+                if (allDone)
+                {
+                    var user = await _userManager.FindByIdAsync(exercise.WorkoutPlan.ClientId);
+                    var trainerId = exercise.WorkoutPlan.TrainerId ?? user?.TrainerId;
+                    if (string.IsNullOrEmpty(trainerId))
+                    {
+                        var defaultTrainer = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com") ?? await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                        trainerId = defaultTrainer?.Id;
+                    }
+
+                    if (!string.IsNullOrEmpty(trainerId))
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId = trainerId,
+                            Message = $"{user?.FullName ?? "Client"} completed all exercises in '{exercise.WorkoutPlan.Title}'!",
+                            IsRead = false,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, isCompleted = exercise.IsCompleted });
@@ -941,7 +1004,7 @@ namespace HealthTrack.Controllers
 
             _context.Appointments.Add(appt);
 
-            // Add notification
+            // Add notification for client
             _context.Notifications.Add(new Notification
             {
                 UserId = user.Id,
@@ -949,6 +1012,18 @@ namespace HealthTrack.Controllers
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
             });
+
+            // Live Sync: Notify trainer of incoming consultation request
+            if (!string.IsNullOrEmpty(trainerId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = trainerId,
+                    Message = $"New appointment request from {user.FullName}: {form.Category} on {form.AppointmentDate:dd MMM yyyy} at {form.TimeSlot}.",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = $"Appointment for {form.Category} with {form.SpecialistName} on {form.AppointmentDate:dd MMM} requested successfully!";
@@ -974,6 +1049,19 @@ namespace HealthTrack.Controllers
                     IsRead = false,
                     CreatedAt = DateTime.UtcNow
                 });
+
+                // Live Sync: Notify trainer
+                if (!string.IsNullOrEmpty(appt.TrainerId))
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = appt.TrainerId,
+                        Message = $"{user.FullName} cancelled the consultation scheduled on {appt.AppointmentDate:dd MMM} at {appt.TimeSlot}.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Appointment has been cancelled successfully.";
             }
@@ -1119,6 +1207,24 @@ namespace HealthTrack.Controllers
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow
             });
+
+            // Live Sync: Notify assigned trainer
+            var trainerId = user.TrainerId;
+            if (string.IsNullOrEmpty(trainerId))
+            {
+                var defaultTrainer = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com") ?? await _userManager.FindByEmailAsync("trainer@healthtrack.com");
+                trainerId = defaultTrainer?.Id;
+            }
+            if (!string.IsNullOrEmpty(trainerId))
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = trainerId,
+                    Message = $"{user.FullName} logged new biometric scan: {form.WeightKg:0.0} kg, BMI {bmi:0.0}, Waist {form.WaistCm} cm.",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = $"Measurement recorded successfully! Weight: {form.WeightKg} kg, BMI: {bmi}.";

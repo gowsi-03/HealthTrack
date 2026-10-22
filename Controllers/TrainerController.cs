@@ -1491,6 +1491,25 @@ namespace HealthTrack.Controllers
 
             if (dbClient != null)
             {
+                // Live sync workout completion rate from real client exercises
+                var clientWorkouts = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
+                    .Where(w => w.ClientId == dbClient.Id)
+                    .ToListAsync();
+
+                if (clientWorkouts.Any())
+                {
+                    var allEx = clientWorkouts.SelectMany(w => w.Exercises).ToList();
+                    if (allEx.Any())
+                    {
+                        int done = allEx.Count(e => e.IsCompleted);
+                        int total = allEx.Count;
+                        int pct = (int)Math.Round((double)done / total * 100);
+                        vm.WorkoutCompletionRate = $"{pct}%";
+                        vm.WorkoutCompletionSubtext = $"{done}/{total} exercises completed";
+                    }
+                }
+
                 var dbLogs = await _context.HealthLogs
                     .Where(h => h.ClientId == dbClient.Id)
                     .OrderByDescending(h => h.LogDate)

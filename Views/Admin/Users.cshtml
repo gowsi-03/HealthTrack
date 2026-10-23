@@ -990,7 +990,16 @@
             <div class="users-table-card">
                 <div class="table-card-header">
                     <h2 class="table-card-title">All users</h2>
-                    <p class="table-card-sub">Showing @Model.StartItemIndex–@Model.EndItemIndex of @Model.TotalItems results</p>
+                    <p class="table-card-sub">
+                        @if (Model.TotalItems > 0)
+                        {
+                            <span>Showing @Model.StartItemIndex–@Model.EndItemIndex of @Model.TotalItems results</span>
+                        }
+                        else
+                        {
+                            <span>0 registered accounts</span>
+                        }
+                    </p>
                 </div>
 
                 <div class="table-responsive">
@@ -1087,52 +1096,55 @@
                 </div>
 
                 <!-- Table Pagination Footer (Matching Screenshot) -->
-                <div class="table-pagination-footer">
-                    <div class="pagination-info-text">
-                        Showing @Model.StartItemIndex to @Model.EndItemIndex of @Model.TotalItems
-                    </div>
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="table-pagination-footer">
+                        <div class="pagination-info-text">
+                            Showing @Model.StartItemIndex to @Model.EndItemIndex of @Model.TotalItems
+                        </div>
 
-                    <div class="pagination-nav">
-                        <!-- Previous Button -->
-                        @if (Model.CurrentPage > 1)
-                        {
-                            <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@(Model.CurrentPage - 1)" class="page-box">
-                                Previous
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="page-box disabled">Previous</span>
-                        }
-
-                        <!-- Page Numbers -->
-                        @for (int p = 1; p <= Math.Min(Model.TotalPages, 3); p++)
-                        {
-                            if (p == Model.CurrentPage)
+                        <div class="pagination-nav">
+                            <!-- Previous Button -->
+                            @if (Model.CurrentPage > 1)
                             {
-                                <span class="page-box active">@p</span>
+                                <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@(Model.CurrentPage - 1)" class="page-box">
+                                    Previous
+                                </a>
                             }
                             else
                             {
-                                <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@p" class="page-box">
-                                    @p
+                                <span class="page-box disabled">Previous</span>
+                            }
+
+                            <!-- Page Numbers -->
+                            @for (int p = 1; p <= Math.Min(Model.TotalPages, 3); p++)
+                            {
+                                if (p == Model.CurrentPage)
+                                {
+                                    <span class="page-box active">@p</span>
+                                }
+                                else
+                                {
+                                    <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@p" class="page-box">
+                                        @p
+                                    </a>
+                                }
+                            }
+
+                            <!-- Next Button -->
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@(Model.CurrentPage + 1)" class="page-box">
+                                    Next
                                 </a>
                             }
-                        }
-
-                        <!-- Next Button -->
-                        @if (Model.CurrentPage < Model.TotalPages)
-                        {
-                            <a href="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@(Model.CurrentPage + 1)" class="page-box">
-                                Next
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="page-box disabled">Next</span>
-                        }
+                            else
+                            {
+                                <span class="page-box disabled">Next</span>
+                            }
+                        </div>
                     </div>
-                </div>
+                }
 
             </div>
 

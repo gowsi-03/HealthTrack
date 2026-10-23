@@ -1024,7 +1024,7 @@
 
                         <div class="chart-kpi-highlight">
                             <div class="chart-kpi-number">@Model.TotalActiveUsers.ToString("N0") active</div>
-                            <div class="chart-kpi-badge">On track</div>
+                            <div class="chart-kpi-badge">@(Model.TotalActiveUsers > 0 ? "On track" : "No activity yet")</div>
                         </div>
 
                         <div style="height: 260px; position: relative;">
@@ -1044,8 +1044,8 @@
                         </div>
 
                         <div class="chart-kpi-highlight">
-                            <div class="chart-kpi-number">88.5%</div>
-                            <div class="chart-kpi-badge">+4.2% this week</div>
+                            <div class="chart-kpi-number">@Model.WeeklyActivityRate</div>
+                            <div class="chart-kpi-badge">@Model.WeeklyActivityTrendText</div>
                         </div>
 
                         <div style="height: 260px; position: relative;">
@@ -1198,8 +1198,14 @@
                         ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, color: '#94A3B8' }
                     },
                     y: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(5, @Model.TotalActiveUsers + 2),
                         grid: { color: '#F1F5F9' },
-                        ticks: { font: { family: 'Plus Jakarta Sans', size: 11 }, color: '#94A3B8' }
+                        ticks: {
+                            font: { family: 'Plus Jakarta Sans', size: 11 },
+                            color: '#94A3B8',
+                            precision: 0
+                        }
                     }
                 }
             }
@@ -1238,6 +1244,8 @@
                         ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, color: '#94A3B8' }
                     },
                     y: {
+                        beginAtZero: true,
+                        suggestedMax: 5,
                         display: false,
                         grid: { display: false }
                     }

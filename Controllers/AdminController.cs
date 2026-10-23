@@ -15,15 +15,18 @@ namespace HealthTrack.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
+        private readonly HealthTrack.Services.IEmailService _emailService;
 
         public AdminController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            HealthTrack.Services.IEmailService emailService)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _context = context;
+            _emailService = emailService;
         }
 
         // GET: /Admin or /Admin/Index
@@ -406,6 +409,16 @@ namespace HealthTrack.Controllers
             foreach (var t in dbTrainers)
             {
                 bool isActive = !t.LockoutEnd.HasValue || t.LockoutEnd.Value <= DateTimeOffset.UtcNow;
+                string statusStr;
+                if (!t.IsApproved)
+                {
+                    statusStr = "Pending";
+                }
+                else
+                {
+                    statusStr = isActive ? "Active" : "Inactive";
+                }
+
                 string tInitials = "TR";
                 if (!string.IsNullOrWhiteSpace(t.FullName))
                 {
@@ -424,7 +437,8 @@ namespace HealthTrack.Controllers
                     Email = t.Email ?? "",
                     Specialty = spec,
                     AssignedClientsCount = assignedCount,
-                    Status = isActive ? "Active" : "Inactive",
+                    IsApproved = t.IsApproved,
+                    Status = statusStr,
                     JoinedDate = "Jan 15, 2025",
                     Initials = tInitials,
                     AvatarBgColor = pastelBgs[colorIdx % pastelBgs.Length],
@@ -506,6 +520,49 @@ namespace HealthTrack.Controllers
             await _userManager.AddToRoleAsync(newTrainer, "Trainer");
 
             TempData["SuccessMessage"] = $"Trainer '{form.FullName}' onboarded successfully as a '{form.Specialty}'!";
+            return RedirectToAction(nameof(Trainers));
+        }
+
+        // POST: /Admin/ApproveTrainer
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveTrainer(string trainerId, string returnUrl = "")
+        {
+            if (string.IsNullOrWhiteSpace(trainerId))
+            {
+                TempData["ErrorMessage"] = "Invalid trainer identifier.";
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            var trainer = await _userManager.FindByIdAsync(trainerId);
+            if (trainer == null)
+            {
+                TempData["ErrorMessage"] = "Trainer not found.";
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            trainer.IsApproved = true;
+            var updateResult = await _userManager.UpdateAsync(trainer);
+            if (!updateResult.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Failed to approve trainer: " + string.Join("; ", updateResult.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            // Construct login URL
+            var loginUrl = Url.Page("/Account/Login", pageHandler: null, values: new { area = "Identity" }, protocol: Request.Scheme)
+                ?? "http://localhost:5258/Identity/Account/Login";
+
+            // Send instant email notification to trainer
+            await _emailService.SendTrainerApprovedEmailAsync(trainer.Email ?? "", trainer.FullName ?? "Coach", loginUrl);
+
+            TempData["SuccessMessage"] = $"Trainer '{trainer.FullName}' has been approved successfully! An instant email notification has been sent.";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
             return RedirectToAction(nameof(Trainers));
         }
 

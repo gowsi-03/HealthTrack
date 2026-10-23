@@ -28,6 +28,7 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<HealthTrack.Services.IEmailService, HealthTrack.Services.EmailService>();
 
 var app = builder.Build();
 

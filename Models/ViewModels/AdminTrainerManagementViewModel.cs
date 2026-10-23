@@ -38,7 +38,8 @@ namespace HealthTrack.Models.ViewModels
         public string Email { get; set; } = string.Empty;
         public string Specialty { get; set; } = "Certified Performance Coach";
         public int AssignedClientsCount { get; set; } = 0;
-        public string Status { get; set; } = "Active"; // Active, Inactive
+        public bool IsApproved { get; set; } = true;
+        public string Status { get; set; } = "Active"; // Active, Inactive, Pending
         public string JoinedDate { get; set; } = "Apr 12, 2025";
         public string Initials { get; set; } = "MP";
         public string AvatarBgColor { get; set; } = "#E0F2FE";

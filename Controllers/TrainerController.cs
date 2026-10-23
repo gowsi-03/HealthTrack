@@ -58,6 +58,10 @@ namespace HealthTrack.Controllers
                         // Client user attempted to access Trainer page -> redirect to Client dashboard
                         return RedirectToAction("Index", "Client");
                     }
+                    if (authUser.Role == "Trainer" && !authUser.IsApproved)
+                    {
+                        return RedirectToPage("/Account/TrainerPendingApproval", new { area = "Identity", email = authUser.Email, name = authUser.FullName, fromLogin = true });
+                    }
                 }
             }
 
@@ -389,6 +393,10 @@ namespace HealthTrack.Controllers
                     {
                         // Client user attempted to access Trainer page -> redirect to Client dashboard
                         return RedirectToAction("Index", "Client");
+                    }
+                    if (authUser.Role == "Trainer" && !authUser.IsApproved)
+                    {
+                        return RedirectToPage("/Account/TrainerPendingApproval", new { area = "Identity", email = authUser.Email, name = authUser.FullName, fromLogin = true });
                     }
                 }
             }
@@ -1496,7 +1504,11 @@ namespace HealthTrack.Controllers
             if (user != null)
             {
                 var isTrainer = await _userManager.IsInRoleAsync(user, "Trainer") || await _userManager.IsInRoleAsync(user, "Admin") || user.Role == "Trainer" || user.Role == "Admin";
-                if (isTrainer) return user;
+                if (isTrainer)
+                {
+                    if (user.Role == "Trainer" && !user.IsApproved) return null;
+                    return user;
+                }
             }
 
             return null;

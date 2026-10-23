@@ -695,6 +695,49 @@
             font-size: 0.76rem;
         }
 
+        .status-pill-pending {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            background: #FFFBEB;
+            color: #D97706;
+            font-weight: 700;
+            font-size: 0.76rem;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .status-dot-amber {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #F59E0B;
+        }
+
+        .btn-approve-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #10B981;
+            color: #FFFFFF;
+            border: none;
+            padding: 0.3rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 1px 3px rgba(16, 185, 129, 0.25);
+            white-space: nowrap;
+        }
+
+        .btn-approve-sm:hover {
+            background-color: #059669;
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
         .status-dot-green {
             width: 6px;
             height: 6px;
@@ -990,6 +1033,7 @@
                     <!-- Status Filter Dropdown -->
                     <select name="status" class="custom-filter-select" onchange="this.form.submit()">
                         <option value="All" selected="@(Model.StatusFilter == "All" ? "selected" : null)">All statuses</option>
+                        <option value="Pending" selected="@(Model.StatusFilter == "Pending" ? "selected" : null)">Pending Approval</option>
                         <option value="Active" selected="@(Model.StatusFilter == "Active" ? "selected" : null)">Active</option>
                         <option value="Inactive" selected="@(Model.StatusFilter == "Inactive" ? "selected" : null)">Inactive</option>
                     </select>
@@ -1058,7 +1102,14 @@
                                             </span>
                                         </td>
                                         <td>
-                                            @if (trainer.Status == "Active")
+                                            @if (trainer.Status == "Pending" || !trainer.IsApproved)
+                                            {
+                                                <span class="status-pill-pending">
+                                                    <span class="status-dot-amber"></span>
+                                                    <span>Pending</span>
+                                                </span>
+                                            }
+                                            else if (trainer.Status == "Active")
                                             {
                                                 <span class="status-pill-active">
                                                     <span class="status-dot-green"></span>
@@ -1075,32 +1126,60 @@
                                         </td>
                                         <td class="text-muted">@trainer.JoinedDate</td>
                                         <td class="text-end">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bi bi-three-dots"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3 py-1">
-                                                    <li>
-                                                        <form asp-action="ToggleUserStatus" method="post" style="display:inline;">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="userId" value="@trainer.Id" />
-                                                            <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
-                                                            <button type="submit" class="dropdown-item small py-1.5">
-                                                                <i class="bi bi-toggle-on me-2 text-secondary"></i> Toggle Status
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                    <li>
-                                                        <form asp-action="DeleteUser" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this trainer?');">
-                                                            @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="userId" value="@trainer.Id" />
-                                                            <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
-                                                            <button type="submit" class="dropdown-item small py-1.5 text-danger">
-                                                                <i class="bi bi-trash3 me-2"></i> Remove Trainer
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                </ul>
+                                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                                @if (trainer.Status == "Pending" || !trainer.IsApproved)
+                                                {
+                                                    <form asp-action="ApproveTrainer" method="post" style="display:inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="trainerId" value="@trainer.Id" />
+                                                        <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
+                                                        <button type="submit" class="btn-approve-sm" title="Approve trainer and send activation email">
+                                                            <i class="bi bi-check2"></i> Approve
+                                                        </button>
+                                                    </form>
+                                                }
+
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="bi bi-three-dots"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3 py-1">
+                                                        @if (trainer.Status == "Pending" || !trainer.IsApproved)
+                                                        {
+                                                            <li>
+                                                                <form asp-action="ApproveTrainer" method="post" style="display:inline;">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <input type="hidden" name="trainerId" value="@trainer.Id" />
+                                                                    <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
+                                                                    <button type="submit" class="dropdown-item small py-1.5 text-success fw-semibold">
+                                                                        <i class="bi bi-check-circle-fill me-2"></i> Approve Application
+                                                                    </button>
+                                                                </form>
+                                                            </li>
+                                                            <li><hr class="dropdown-divider my-1"></li>
+                                                        }
+                                                        <li>
+                                                            <form asp-action="ToggleUserStatus" method="post" style="display:inline;">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="userId" value="@trainer.Id" />
+                                                                <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
+                                                                <button type="submit" class="dropdown-item small py-1.5">
+                                                                    <i class="bi bi-toggle-on me-2 text-secondary"></i> Toggle Status
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        <li>
+                                                            <form asp-action="DeleteUser" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this trainer?');">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="userId" value="@trainer.Id" />
+                                                                <input type="hidden" name="returnUrl" value="/Admin/Trainers?search=@Model.SearchTerm&specialty=@Model.SpecialtyFilter&status=@Model.StatusFilter&page=@Model.CurrentPage" />
+                                                                <button type="submit" class="dropdown-item small py-1.5 text-danger">
+                                                                    <i class="bi bi-trash3 me-2"></i> Remove Trainer
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>

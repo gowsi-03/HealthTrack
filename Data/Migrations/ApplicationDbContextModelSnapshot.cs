@@ -56,6 +56,9 @@ namespace HealthTrack.Data.Migrations
                     b.Property<double?>("HeightCm")
                         .HasColumnType("float");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 

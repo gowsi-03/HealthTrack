@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using HealthTrack.Models;
+using HealthTrack.Services;
 
 namespace HealthTrack.Areas.Identity.Pages.Account
 {
@@ -13,17 +14,20 @@ namespace HealthTrack.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<RegisterModel> _logger;
+        private readonly IEmailService _emailService;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<RegisterModel> logger)
+            ILogger<RegisterModel> logger,
+            IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _logger = logger;
+            _emailService = emailService;
         }
 
         [BindProperty]
@@ -70,7 +74,8 @@ namespace HealthTrack.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 // Enforce that public self-registration is strictly restricted to Client or Trainer
-                var assignedRole = string.Equals(Input.Role, "Trainer", StringComparison.OrdinalIgnoreCase) ? "Trainer" : "Client";
+                var isTrainer = string.Equals(Input.Role, "Trainer", StringComparison.OrdinalIgnoreCase);
+                var assignedRole = isTrainer ? "Trainer" : "Client";
 
                 var user = new ApplicationUser
                 {
@@ -78,7 +83,8 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     Email = Input.Email,
                     FullName = Input.FullName,
                     Role = assignedRole,
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    IsApproved = !isTrainer // Clients are approved immediately; Trainers require Admin approval
                 };
 
                 var result = await _userManager.CreateAsync(user, Input.Password);
@@ -93,19 +99,23 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     }
                     await _userManager.AddToRoleAsync(user, assignedRole);
 
-                    await _signInManager.SignInAsync(user, isPersistent: false);
-
-                    if (Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "~/")
+                    if (isTrainer)
                     {
-                        return LocalRedirect(returnUrl);
-                    }
+                        // Send registration confirmation email
+                        await _emailService.SendTrainerRegistrationPendingEmailAsync(user.Email, user.FullName);
 
-                    if (assignedRole == "Trainer")
-                    {
-                        return RedirectToAction("Index", "Trainer");
+                        // Do not sign in trainer; redirect to dedicated Pending Approval confirmation page
+                        return RedirectToPage("./TrainerPendingApproval", new { email = user.Email, name = user.FullName });
                     }
                     else
                     {
+                        await _signInManager.SignInAsync(user, isPersistent: false);
+
+                        if (Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "~/")
+                        {
+                            return LocalRedirect(returnUrl);
+                        }
+
                         return RedirectToAction("Index", "Client");
                     }
                 }

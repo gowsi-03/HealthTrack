@@ -93,6 +93,13 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                         var isAdmin = roles.Contains("Admin") || user.Role == "Admin";
                         var isTrainer = roles.Contains("Trainer") || user.Role == "Trainer";
 
+                        // Block unapproved trainers from entering the portal
+                        if (isTrainer && !user.IsApproved)
+                        {
+                            await _signInManager.SignOutAsync();
+                            return RedirectToPage("./TrainerPendingApproval", new { email = user.Email, name = user.FullName, fromLogin = true });
+                        }
+
                         if (isAdmin)
                         {
                             if (!string.IsNullOrEmpty(returnUrl) && !returnUrl.Equals("/") && !returnUrl.Equals("~/") && returnUrl.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))

@@ -198,13 +198,32 @@ Dinner: Chickpea coconut curry with brown rice (640 kcal)",
                     Email = adminEmail,
                     FullName = adminName,
                     Role = "Admin",
-                    EmailConfirmed = true
+                    EmailConfirmed = true,
+                    IsApproved = true
                 };
                 var createResult = await userManager.CreateAsync(adminUser, adminPassword);
                 if (createResult.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin");
                 }
+            }
+            else if (!existingAdmin.IsApproved)
+            {
+                existingAdmin.IsApproved = true;
+                await userManager.UpdateAsync(existingAdmin);
+            }
+
+            // Ensure any existing non-trainer users (Admins, Clients) have IsApproved = true
+            var unapprovedNonTrainers = await context.Users
+                .Where(u => u.Role != "Trainer" && !u.IsApproved)
+                .ToListAsync();
+            if (unapprovedNonTrainers.Any())
+            {
+                foreach (var u in unapprovedNonTrainers)
+                {
+                    u.IsApproved = true;
+                }
+                await context.SaveChangesAsync();
             }
         }
     }

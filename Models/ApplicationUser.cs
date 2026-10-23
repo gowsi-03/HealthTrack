@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -15,6 +15,9 @@ namespace HealthTrack.Models
         [StringLength(20)]
         [Display(Name = "Account Role")]
         public string Role { get; set; } = "Client"; // Client, Trainer, Admin
+
+        [Display(Name = "Is Approved")]
+        public bool IsApproved { get; set; } = true;
 
         [Display(Name = "Height (cm)")]
         [Range(50, 250, ErrorMessage = "Please enter a valid height in cm.")]

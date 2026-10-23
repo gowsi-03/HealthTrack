@@ -4,12 +4,12 @@ namespace HealthTrack.Models.ViewModels
 {
     public class TrainerClientsViewModel
     {
-        public string TrainerName { get; set; } = "Maya Patel";
-        public string TrainerEmail { get; set; } = "maya.patel@healthtrack.com";
-        public string TrainerInitials { get; set; } = "AM"; // Matching reference AM avatar for Maya Patel
-        public int TotalClientsCount { get; set; } = 28;
-        public int ActiveClientsCount { get; set; } = 24;
-        public int AtRiskClientsCount { get; set; } = 4;
+        public string TrainerName { get; set; } = "Trainer";
+        public string TrainerEmail { get; set; } = string.Empty;
+        public string TrainerInitials { get; set; } = "TR";
+        public int TotalClientsCount { get; set; } = 0;
+        public int ActiveClientsCount { get; set; } = 0;
+        public int AtRiskClientsCount { get; set; } = 0;
 
         public string SearchTerm { get; set; } = string.Empty;
         public string SelectedStatus { get; set; } = "All";

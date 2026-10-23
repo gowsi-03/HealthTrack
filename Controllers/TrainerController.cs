@@ -80,17 +80,18 @@ namespace HealthTrack.Controllers
                 .Where(u => u.TrainerId == trainer.Id && u.Role == "Client")
                 .ToListAsync();
 
-            if (!clients.Any())
-            {
-                var apptClientIds = await _context.Appointments
-                    .Where(a => a.TrainerId == trainer.Id)
-                    .Select(a => a.ClientId)
-                    .Distinct()
-                    .ToListAsync();
+            var apptClientIds = await _context.Appointments
+                .Where(a => a.TrainerId == trainer.Id)
+                .Select(a => a.ClientId)
+                .Distinct()
+                .ToListAsync();
 
-                clients = await _context.Users
-                    .Where(u => u.Role == "Client" && (apptClientIds.Contains(u.Id) || string.IsNullOrEmpty(u.TrainerId) || u.TrainerId == trainer.Id))
+            if (apptClientIds.Any())
+            {
+                var apptClients = await _context.Users
+                    .Where(u => u.Role == "Client" && apptClientIds.Contains(u.Id) && !clients.Select(c => c.Id).Contains(u.Id))
                     .ToListAsync();
+                clients.AddRange(apptClients);
             }
 
             int clientCount = clients.Count;
@@ -108,6 +109,18 @@ namespace HealthTrack.Controllers
                 .ToListAsync();
 
             int upcomingVisits = upcomingAppts.Count;
+
+            // Query Available Clients for the Create Plan modal
+            var availableClients = await _context.Users
+                .Where(u => u.Role == "Client")
+                .OrderBy(u => u.FullName)
+                .Select(u => new TrainerClientLookupItem
+                {
+                    Id = u.Id,
+                    FullName = u.FullName ?? u.UserName ?? "Client",
+                    Email = u.Email ?? string.Empty
+                })
+                .ToListAsync();
 
             // Build Pending Requests List from database
             var pendingList = new List<TrainerPendingRequestItem>();
@@ -194,6 +207,10 @@ namespace HealthTrack.Controllers
                 .Where(n => n.UserId == trainer.Id && !n.IsRead)
                 .CountAsync();
 
+            string clientTrend = clientCount > 0 ? $"{clientCount} active client{(clientCount == 1 ? "" : "s")}" : "0 enrolled clients";
+            string plansTrend = totalPlans > 0 ? $"{totalPlans} active program{(totalPlans == 1 ? "" : "s")}" : "0 active programs";
+            string visitsTrend = upcomingVisits > 0 ? $"{upcomingVisits} upcoming session{(upcomingVisits == 1 ? "" : "s")}" : "0 upcoming sessions";
+
             var vm = new TrainerDashboardViewModel
             {
                 TrainerId = trainer.Id,
@@ -203,21 +220,22 @@ namespace HealthTrack.Controllers
                 DateFormatted = DateTime.UtcNow.ToString("dddd, MMMM d").ToUpper(),
 
                 AssignedClientsCount = clientCount,
-                AssignedClientsTrend = "+3 new clients from last month",
+                AssignedClientsTrend = clientTrend,
 
                 ActivePlansCount = totalPlans,
-                ActivePlansTrend = "+8.2% from last month",
+                ActivePlansTrend = plansTrend,
 
                 UpcomingVisitsCount = upcomingVisits,
-                UpcomingVisitsTrend = $"{upcomingVisits} upcoming visits",
+                UpcomingVisitsTrend = visitsTrend,
 
-                AverageCompletionRate = 82.6,
-                MonthlyChangeRate = "+6.4% this month",
-                ChartLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" },
-                ChartValues = new List<double> { 68.0, 71.5, 75.2, 78.8, 83.0 },
+                AverageCompletionRate = clientCount > 0 ? 82.6 : 0.0,
+                MonthlyChangeRate = clientCount > 0 ? "+6.4% this month" : "No activity yet",
+                ChartLabels = new List<string> { "Week 1", "Week 2", "Week 3", "Week 4", "Week 5" },
+                ChartValues = clientCount > 0 ? new List<double> { 68.0, 71.5, 75.2, 78.8, 83.0 } : new List<double> { 0, 0, 0, 0, 0 },
 
                 PendingRequests = pendingList,
                 RecentClients = recentClients,
+                AvailableClients = availableClients,
                 UnreadNotificationsCount = unreadCount,
                 ShowFirstTimeSetup = !trainer.IsProfileCompleted,
                 TrainerSpecialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "General Fitness & Health" : trainer.FitnessGoal
@@ -511,7 +529,7 @@ namespace HealthTrack.Controllers
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
-                TrainerInitials = "AM",
+                TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 TotalClientsCount = allClients.Count,
                 ActiveClientsCount = allClients.Count(c => c.Status == "Active"),
                 AtRiskClientsCount = allClients.Count(c => c.Status == "At risk"),
@@ -728,7 +746,7 @@ namespace HealthTrack.Controllers
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
-                TrainerInitials = "AM",
+                TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
                 TotalActiveProgramsCount = clientRoutines.Count,
                 TotalTemplatesCount = templates.Count,
@@ -1033,7 +1051,7 @@ namespace HealthTrack.Controllers
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
-                TrainerInitials = "AM",
+                TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
                 TotalActiveDietPlans = clientRosters.Count,
                 TotalTemplatesCount = templates.Count,
@@ -1240,7 +1258,7 @@ namespace HealthTrack.Controllers
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
-                TrainerInitials = "TR",
+                TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
                 PendingRequestsCount = items.Count(i => i.Status == "Pending"),
                 ApprovedRequestsCount = items.Count(i => i.Status == "Approved"),
@@ -1362,7 +1380,7 @@ namespace HealthTrack.Controllers
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
-                TrainerInitials = "AM",
+                TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
                 SelectedClientId = selectedClient.Id,
                 SelectedClientName = selectedClient.Name,
@@ -1608,6 +1626,15 @@ namespace HealthTrack.Controllers
             TempData["SuccessMessage"] = $"Welcome to HealthTrack! Your specialty is now set to '{trainer.FitnessGoal}'.";
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private string GetUserInitials(string? fullName, string fallback = "TR")
+        {
+            if (string.IsNullOrWhiteSpace(fullName)) return fallback;
+            var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var inits = string.Join("", parts.Select(w => w.Length > 0 ? w[0].ToString() : "")).ToUpper();
+            if (inits.Length > 2) inits = inits.Substring(0, 2);
+            return string.IsNullOrEmpty(inits) ? fallback : inits;
         }
 
         // Helper to retrieve current authenticated trainer user

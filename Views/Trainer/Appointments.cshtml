@@ -818,7 +818,6 @@
                             <i class="bi bi-people"></i>
                             <span>My Clients</span>
                         </div>
-                        <span class="badge-counter badge-neutral">24</span>
                     </a>
                 </li>
                 <li>
@@ -855,7 +854,10 @@
                             <span>Appointments</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge-counter badge-attention">4</span>
+                            @if (Model.PendingRequestsCount > 0)
+                            {
+                                <span class="badge-counter badge-attention">@Model.PendingRequestsCount</span>
+                            }
                             <span class="active-dot"></span>
                         </div>
                     </a>
@@ -1163,8 +1165,8 @@
             <div class="modal-body px-4 py-4">
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold text-uppercase">Client</label>
-                    <div class="fw-bold text-dark fs-6" id="viewModalClientName">Alex Morgan</div>
-                    <div class="text-muted small" id="viewModalClientEmail">alex.morgan@email.com</div>
+                    <div class="fw-bold text-dark fs-6" id="viewModalClientName">-</div>
+                    <div class="text-muted small" id="viewModalClientEmail">-</div>
                 </div>
                 <div class="row g-2 mb-3">
                     <div class="col-6">

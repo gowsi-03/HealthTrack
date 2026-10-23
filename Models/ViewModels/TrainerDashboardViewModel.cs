@@ -13,20 +13,20 @@ namespace HealthTrack.Models.ViewModels
         public string DateFormatted { get; set; } = "MONDAY, APRIL 14";
 
         // Top 3 Stat Cards
-        public int AssignedClientsCount { get; set; } = 24;
-        public string AssignedClientsTrend { get; set; } = "+3 new clients from last month";
+        public int AssignedClientsCount { get; set; } = 0;
+        public string AssignedClientsTrend { get; set; } = "0 clients enrolled";
 
-        public int ActivePlansCount { get; set; } = 18;
-        public string ActivePlansTrend { get; set; } = "+8.2% from last month";
+        public int ActivePlansCount { get; set; } = 0;
+        public string ActivePlansTrend { get; set; } = "0 active plans";
 
-        public int UpcomingVisitsCount { get; set; } = 7;
-        public string UpcomingVisitsTrend { get; set; } = "4 requests from last month";
+        public int UpcomingVisitsCount { get; set; } = 0;
+        public string UpcomingVisitsTrend { get; set; } = "0 upcoming visits";
 
         // Client Progress Overview Chart
-        public double AverageCompletionRate { get; set; } = 82.6;
-        public string MonthlyChangeRate { get; set; } = "+6.4% this month";
-        public List<string> ChartLabels { get; set; } = new() { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
-        public List<double> ChartValues { get; set; } = new() { 68.0, 71.5, 75.2, 78.8, 83.0 };
+        public double AverageCompletionRate { get; set; } = 0;
+        public string MonthlyChangeRate { get; set; } = "No activity yet";
+        public List<string> ChartLabels { get; set; } = new() { "Week 1", "Week 2", "Week 3", "Week 4", "Week 5" };
+        public List<double> ChartValues { get; set; } = new() { 0, 0, 0, 0, 0 };
 
         // Pending Requests
         public List<TrainerPendingRequestItem> PendingRequests { get; set; } = new();
@@ -34,8 +34,11 @@ namespace HealthTrack.Models.ViewModels
         // Client Progress Table
         public List<TrainerClientProgressItem> RecentClients { get; set; } = new();
 
+        // Available Clients for Assigning Workout/Diet Plans
+        public List<TrainerClientLookupItem> AvailableClients { get; set; } = new();
+
         // Unread Notifications Count
-        public int UnreadNotificationsCount { get; set; } = 2;
+        public int UnreadNotificationsCount { get; set; } = 0;
 
         // First-Time Setup
         public bool ShowFirstTimeSetup { get; set; } = false;
@@ -43,6 +46,13 @@ namespace HealthTrack.Models.ViewModels
 
         // Modal for Creating New Plan
         public CreatePlanFormModel CreatePlanForm { get; set; } = new();
+    }
+
+    public class TrainerClientLookupItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
     }
 
     public class TrainerPendingRequestItem

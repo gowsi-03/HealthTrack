@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using HealthTrack.Models;
 
 namespace HealthTrack.Data
@@ -179,8 +181,31 @@ Dinner: Chickpea coconut curry with brown rice (640 kcal)",
                 await context.SaveChangesAsync();
             }
 
-            // NOTE: Users are kept completely blank (zero users) as requested.
-            // Any new user will register directly from the registration portal.
+            // 5. Seed Dedicated Administrator Account (Configured in appsettings.json or fallback defaults)
+            // Note: Client and Trainer roles have ZERO seeded accounts; they register dynamically or are created by users.
+            var configuration = serviceProvider.GetService<IConfiguration>();
+            var adminEmail = configuration?["AdminAccount:Email"] ?? "admin@healthtrack.com";
+            var adminName = configuration?["AdminAccount:FullName"] ?? "System Administrator";
+            var adminPassword = configuration?["AdminAccount:Password"] ?? "Admin123!";
+
+            var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
+            if (existingAdmin == null)
+            {
+                var adminUser = new ApplicationUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    FullName = adminName,
+                    Role = "Admin",
+                    EmailConfirmed = true
+                };
+                var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+                if (createResult.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                }
+            }
         }
     }
 }

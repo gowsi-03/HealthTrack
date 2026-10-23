@@ -69,12 +69,15 @@ namespace HealthTrack.Areas.Identity.Pages.Account
             returnUrl ??= Url.Content("~/");
             if (ModelState.IsValid)
             {
+                // Enforce that public self-registration is strictly restricted to Client or Trainer
+                var assignedRole = string.Equals(Input.Role, "Trainer", StringComparison.OrdinalIgnoreCase) ? "Trainer" : "Client";
+
                 var user = new ApplicationUser
                 {
                     UserName = Input.Email,
                     Email = Input.Email,
                     FullName = Input.FullName,
-                    Role = Input.Role,
+                    Role = assignedRole,
                     EmailConfirmed = true
                 };
 
@@ -84,11 +87,11 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                 {
                     _logger.LogInformation("User created a new account with password.");
 
-                    if (!await _roleManager.RoleExistsAsync(Input.Role))
+                    if (!await _roleManager.RoleExistsAsync(assignedRole))
                     {
-                        await _roleManager.CreateAsync(new IdentityRole(Input.Role));
+                        await _roleManager.CreateAsync(new IdentityRole(assignedRole));
                     }
-                    await _userManager.AddToRoleAsync(user, Input.Role);
+                    await _userManager.AddToRoleAsync(user, assignedRole);
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
 
@@ -97,11 +100,7 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                         return LocalRedirect(returnUrl);
                     }
 
-                    if (string.Equals(Input.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return RedirectToAction("Index", "Admin");
-                    }
-                    else if (string.Equals(Input.Role, "Trainer", StringComparison.OrdinalIgnoreCase))
+                    if (assignedRole == "Trainer")
                     {
                         return RedirectToAction("Index", "Trainer");
                     }

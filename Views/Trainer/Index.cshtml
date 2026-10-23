@@ -876,6 +876,14 @@
                         </div>
                     </a>
                 </li>
+                <li>
+                    <a href="/Trainer/Profile" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-person-gear"></i>
+                            <span>Profile & Specialty</span>
+                        </div>
+                    </a>
+                </li>
             </ul>
         </div>
 
@@ -951,8 +959,8 @@
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Profile">
-                                <i class="bi bi-person text-secondary"></i> Profile & Health
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Profile">
+                                <i class="bi bi-person-gear text-secondary"></i> Trainer Profile
                             </a>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
@@ -993,7 +1001,15 @@
                 <div>
                     <div class="page-eyebrow">@Model.DateFormatted</div>
                     <h1 class="page-title">Welcome back, @Model.TrainerName</h1>
-                    <p class="page-subtitle">Here's what's happening with your clients today.</p>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                        <span class="badge rounded-pill bg-white text-dark border px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;">
+                            <i class="bi bi-award-fill text-success"></i> Specialization: <strong class="text-dark">@Model.TrainerSpecialty</strong>
+                        </span>
+                        <a href="/Trainer/Profile" class="text-decoration-none text-muted small fw-semibold d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-pencil-square"></i> Change
+                        </a>
+                    </div>
+                    <p class="page-subtitle mt-2">Here's what's happening with your clients today.</p>
                 </div>
                 <div>
                     <button type="button" class="btn-create-plan" data-bs-toggle="modal" data-bs-target="#createPlanModal">
@@ -1384,8 +1400,190 @@
     </div>
 </div>
 
+<!-- Modal: Welcome / First-Time Coaching Profile Setup -->
+@if (Model.ShowFirstTimeSetup)
+{
+    <div class="modal fade" id="welcomeSetupModal" tabindex="-1" aria-labelledby="welcomeSetupModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <!-- Header with Emerald Gradient -->
+                <div class="p-4 text-white" style="background: linear-gradient(135deg, #0B192C 0%, #0F766E 100%);">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; background: rgba(255, 255, 255, 0.15); font-size: 1.5rem;">
+                                🎯
+                            </div>
+                            <div>
+                                <span class="badge bg-success bg-opacity-75 text-white text-uppercase tracking-wider fw-bold px-2 py-1 mb-1" style="font-size: 0.68rem; letter-spacing: 0.08em;">Quick 20s Setup</span>
+                                <h4 class="fw-bold mb-0 text-white">Welcome, Coach @Model.TrainerName!</h4>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <p class="text-white-50 small mt-2 mb-0">
+                        Your coach account was approved by our administration! Choose your primary coaching specialization so clients and admins can match you with client goals.
+                    </p>
+                </div>
+
+                <form asp-action="CompleteFirstTimeSetup" method="post" id="firstTimeSetupForm">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body p-4 bg-light">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark mb-2 d-flex justify-content-between align-items-center">
+                                <span>1. Select Coaching Specialization <span class="text-danger">*</span></span>
+                                <span class="badge bg-white text-muted border fw-normal">Click a card or enter custom</span>
+                            </label>
+                            
+                            <!-- Hidden input holding chosen specialty -->
+                            <input type="hidden" name="specialty" id="setupSpecialtyInput" value="@(string.IsNullOrEmpty(Model.TrainerSpecialty) ? "Strength & Hypertrophy" : Model.TrainerSpecialty)" />
+
+                            <div class="row g-2 mb-2" id="setupSpecialtyGrid">
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(Model.TrainerSpecialty == "Strength & Hypertrophy" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Strength & Hypertrophy" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-fire text-danger fs-5"></i>
+                                            <span class="fw-bold text-dark small">Strength & Hypertrophy</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Heavy lifting, muscle building, powerlifting</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Weight Loss & Metabolic Conditioning" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-lightning-charge text-warning fs-5"></i>
+                                            <span class="fw-bold text-dark small">Weight Loss & HIIT</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Fat loss, metabolic conditioning, body composition</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Sports Nutrition & Dietetics" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-egg-fried text-success fs-5"></i>
+                                            <span class="fw-bold text-dark small">Sports Nutrition</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Macro coaching, meal planning, sports nutrition</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Functional Movement & Rehabilitation" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-activity text-info fs-5"></i>
+                                            <span class="fw-bold text-dark small">Rehab & Mobility</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Post-injury recovery, joint health, corrective exercise</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Endurance, Cardio & HIIT" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-stopwatch text-primary fs-5"></i>
+                                            <span class="fw-bold text-dark small">Endurance & Cardio</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Running, marathon prep, aerobic conditioning</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="General Fitness & Health" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-heart-pulse text-success fs-5"></i>
+                                            <span class="fw-bold text-dark small">General Fitness</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Holistic health, beginner coaching, daily wellness</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Custom Specialty Input toggle -->
+                            <div class="mt-2">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white text-muted border-end-0">
+                                        <i class="bi bi-pencil"></i>
+                                    </span>
+                                    <input type="text" id="customSpecialtyInput" class="form-control bg-white border-start-0" placeholder="Or enter custom specialty (e.g. Boxing Coach, Yoga & Flexibility, Pilates)..." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small mb-1">
+                                    2. Key Certifications <span class="text-muted fw-normal">(Optional)</span>
+                                </label>
+                                <input type="text" name="certifications" class="form-control bg-white" placeholder="e.g. NASM-CPT, Precision Nutrition L1, CSCS" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small mb-1">
+                                    3. Short Coach Bio <span class="text-muted fw-normal">(Optional)</span>
+                                </label>
+                                <textarea name="bio" rows="2" class="form-control bg-white" placeholder="Briefly describe your coaching philosophy or client target..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer px-4 py-3 bg-white border-top d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-2" data-bs-dismiss="modal">
+                            Skip for now
+                        </button>
+                        <button type="submit" class="btn btn-success px-4 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-2" style="background-color: var(--ht-green); border: none;">
+                            <i class="bi bi-check-circle-fill"></i> Save & Launch Dashboard
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Bootstrap 5 JS Bundle -->
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+@if (Model.ShowFirstTimeSetup)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var welcomeEl = document.getElementById('welcomeSetupModal');
+            if (welcomeEl) {
+                var welcomeModal = new bootstrap.Modal(welcomeEl);
+                welcomeModal.show();
+            }
+
+            var specCards = document.querySelectorAll('.setup-spec-card');
+            var hiddenInput = document.getElementById('setupSpecialtyInput');
+            var customInput = document.getElementById('customSpecialtyInput');
+
+            specCards.forEach(function (card) {
+                card.addEventListener('click', function () {
+                    specCards.forEach(function (c) {
+                        c.classList.remove('border-success', 'shadow-sm');
+                        c.style.borderColor = '#E2E8F0';
+                        c.style.backgroundColor = '#FFFFFF';
+                    });
+                    this.classList.add('border-success', 'shadow-sm');
+                    this.style.borderColor = '#10B981';
+                    this.style.backgroundColor = '#F0FDF4';
+
+                    var val = this.getAttribute('data-value');
+                    if (hiddenInput) hiddenInput.value = val;
+                    if (customInput) customInput.value = '';
+                });
+            });
+
+            if (customInput) {
+                customInput.addEventListener('input', function () {
+                    if (this.value.trim().length > 0) {
+                        specCards.forEach(function (c) {
+                            c.classList.remove('border-success', 'shadow-sm');
+                            c.style.borderColor = '#E2E8F0';
+                            c.style.backgroundColor = '#FFFFFF';
+                        });
+                        if (hiddenInput) hiddenInput.value = this.value.trim();
+                    }
+                });
+            }
+        });
+    </script>
+}
 
 </body>
 </html>

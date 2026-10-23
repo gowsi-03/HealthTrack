@@ -37,6 +37,10 @@ namespace HealthTrack.Models.ViewModels
         // Unread Notifications Count
         public int UnreadNotificationsCount { get; set; } = 2;
 
+        // First-Time Setup
+        public bool ShowFirstTimeSetup { get; set; } = false;
+        public string TrainerSpecialty { get; set; } = "General Fitness & Health";
+
         // Modal for Creating New Plan
         public CreatePlanFormModel CreatePlanForm { get; set; } = new();
     }

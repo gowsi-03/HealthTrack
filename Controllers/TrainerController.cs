@@ -218,7 +218,9 @@ namespace HealthTrack.Controllers
 
                 PendingRequests = pendingList,
                 RecentClients = recentClients,
-                UnreadNotificationsCount = unreadCount
+                UnreadNotificationsCount = unreadCount,
+                ShowFirstTimeSetup = !trainer.IsProfileCompleted,
+                TrainerSpecialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "General Fitness & Health" : trainer.FitnessGoal
             };
 
             return View(vm);
@@ -1495,6 +1497,117 @@ namespace HealthTrack.Controllers
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
             return File(bytes, "text/csv", $"ClientProgress_{clientName.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.csv");
+        }
+
+        // ====================================================================
+        // TRAINER PROFILE & SPECIALIZATION MANAGEMENT (/Trainer/Profile)
+        // ====================================================================
+
+        // GET: /Trainer/Profile
+        public async Task<IActionResult> Profile()
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            var clientCount = await _context.Users.CountAsync(u => u.TrainerId == trainer.Id);
+            var activePlansCount = await _context.WorkoutPlans.CountAsync(w => w.TrainerId == trainer.Id);
+            var upcomingApptsCount = await _context.Appointments.CountAsync(a => a.TrainerId == trainer.Id && a.AppointmentDate >= DateTime.UtcNow.Date && a.Status != "Declined");
+
+            string inits = "TR";
+            if (!string.IsNullOrWhiteSpace(trainer.FullName))
+            {
+                var parts = trainer.FullName.Trim().Split(' ');
+                inits = string.Join("", parts.Select(w => w.Length > 0 ? w[0].ToString() : "")).ToUpper();
+                if (inits.Length > 2) inits = inits.Substring(0, 2);
+            }
+
+            var vm = new TrainerProfileViewModel
+            {
+                Id = trainer.Id,
+                FullName = trainer.FullName ?? trainer.UserName ?? "Coach",
+                Email = trainer.Email ?? "",
+                PhoneNumber = trainer.PhoneNumber,
+                Specialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "Strength & Conditioning" : trainer.FitnessGoal,
+                Certifications = trainer.Certifications ?? "Certified Personal Trainer",
+                Bio = trainer.Bio ?? "Dedicated to empowering clients through evidence-based progressive programming, structured accountability, and tailored nutritional balance.",
+                JoinedDate = trainer.CreatedAt > DateTime.MinValue ? trainer.CreatedAt.ToString("MMM dd, yyyy") : DateTime.UtcNow.ToString("MMM dd, yyyy"),
+                Initials = inits,
+                AssignedClientsCount = clientCount,
+                ActivePlansCount = activePlansCount,
+                UpcomingAppointmentsCount = upcomingApptsCount,
+                IsProfileCompleted = trainer.IsProfileCompleted
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Trainer/Profile
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Profile(TrainerProfileViewModel model)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please check your inputs and try again.";
+                return View(model);
+            }
+
+            trainer.FullName = model.FullName;
+            trainer.PhoneNumber = model.PhoneNumber;
+            trainer.FitnessGoal = model.Specialty; // Used across platform as trainer specialty
+            trainer.Certifications = model.Certifications;
+            trainer.Bio = model.Bio;
+            trainer.IsProfileCompleted = true;
+
+            var result = await _userManager.UpdateAsync(trainer);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Your coaching profile and specialty have been updated successfully!";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            TempData["ErrorMessage"] = string.Join("; ", result.Errors.Select(e => e.Description));
+            return View(model);
+        }
+
+        // POST: /Trainer/CompleteFirstTimeSetup
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteFirstTimeSetup(string specialty, string? certifications, string? bio)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (!string.IsNullOrWhiteSpace(specialty))
+            {
+                trainer.FitnessGoal = specialty.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(certifications))
+            {
+                trainer.Certifications = certifications.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(bio))
+            {
+                trainer.Bio = bio.Trim();
+            }
+            trainer.IsProfileCompleted = true;
+
+            await _userManager.UpdateAsync(trainer);
+            TempData["SuccessMessage"] = $"Welcome to HealthTrack! Your specialty is now set to '{trainer.FitnessGoal}'.";
+
+            return RedirectToAction(nameof(Index));
         }
 
         // Helper to retrieve current authenticated trainer user

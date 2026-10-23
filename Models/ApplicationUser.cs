@@ -38,6 +38,17 @@ namespace HealthTrack.Models
         [StringLength(150)]
         public string? FitnessGoal { get; set; } = "General Fitness & Health";
 
+        [Display(Name = "Bio / Coaching Philosophy")]
+        [StringLength(1000)]
+        public string? Bio { get; set; }
+
+        [Display(Name = "Certifications")]
+        [StringLength(300)]
+        public string? Certifications { get; set; }
+
+        [Display(Name = "Profile Completed")]
+        public bool IsProfileCompleted { get; set; } = false;
+
         public string? TrainerId { get; set; }
 
         [ForeignKey("TrainerId")]

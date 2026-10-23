@@ -1,0 +1,750 @@
+@model HealthTrack.Models.ViewModels.TrainerProfileViewModel
+@{
+    ViewData["Title"] = "Trainer Profile & Specialization - HealthTrack";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts & Bootstrap 5 & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ht-navy: #0B192C;
+            --ht-navy-light: #1E293B;
+            --ht-navy-hover: #152840;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-teal: #0D9488;
+            --ht-slate: #0F172A;
+            --ht-muted: #64748B;
+            --ht-border: #E2E8F0;
+            --ht-bg: #F8FAFC;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--ht-bg);
+            color: var(--ht-slate);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar (Dark Navy) */
+        .sidebar {
+            width: 255px;
+            background-color: var(--ht-navy);
+            color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            max-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem 1.15rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--ht-green) 0%, var(--ht-teal) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.95rem;
+            border-radius: 12px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-link.active {
+            color: #FFFFFF;
+            background-color: rgba(16, 185, 129, 0.16);
+            font-weight: 700;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .active-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--ht-green);
+        }
+
+        .sidebar-bottom-section {
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 0.7rem 0.95rem;
+            border-radius: 10px;
+            color: #94A3B8;
+            background: transparent;
+            border: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-align: left;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-signout:hover {
+            color: #EF4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background-color: var(--ht-bg);
+        }
+
+        .top-navbar {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid var(--ht-border);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .content-area {
+            padding: 2rem 2.5rem 4rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: var(--ht-teal);
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        .page-title {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: var(--ht-slate);
+            margin: 0 0 0.35rem;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            color: var(--ht-muted);
+            font-size: 0.92rem;
+            margin: 0 0 2rem;
+        }
+
+        /* Profile Hero Banner */
+        .profile-hero-card {
+            background: linear-gradient(135deg, #0B192C 0%, #1E293B 100%);
+            border-radius: 18px;
+            padding: 2rem 2.25rem;
+            color: #FFFFFF;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(11, 25, 44, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .hero-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hero-avatar {
+            width: 76px;
+            height: 76px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--ht-green), var(--ht-teal));
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.85rem;
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+            flex-shrink: 0;
+        }
+
+        .hero-name {
+            font-size: 1.45rem;
+            font-weight: 800;
+            margin: 0 0 4px;
+            color: #FFFFFF;
+        }
+
+        .hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+
+        .hero-specialty-pill {
+            background: rgba(16, 185, 129, 0.18);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34D399;
+            font-weight: 700;
+            font-size: 0.78rem;
+            padding: 3px 12px;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-stats-row {
+            display: flex;
+            gap: 24px;
+        }
+
+        .hero-stat-box {
+            text-align: center;
+            padding: 0 12px;
+        }
+
+        .hero-stat-num {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        .hero-stat-lbl {
+            font-size: 0.72rem;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Settings Card */
+        .form-card {
+            background-color: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 16px;
+            padding: 2rem 2.25rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            margin-bottom: 2rem;
+        }
+
+        .card-section-title {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--ht-slate);
+            margin-bottom: 0.35rem;
+        }
+
+        .card-section-desc {
+            font-size: 0.85rem;
+            color: var(--ht-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Specialty Cards Grid */
+        .specialty-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .specialty-card {
+            border: 2px solid var(--ht-border);
+            border-radius: 14px;
+            padding: 1.15rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background-color: #FFFFFF;
+        }
+
+        .specialty-card:hover {
+            border-color: #CBD5E1;
+            background-color: #F8FAFC;
+        }
+
+        .specialty-card.selected {
+            border-color: var(--ht-green);
+            background-color: #F0FDF4;
+        }
+
+        .specialty-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background-color: #F1F5F9;
+            color: var(--ht-slate);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .specialty-card.selected .specialty-icon {
+            background-color: #DCFCE7;
+            color: var(--ht-green);
+        }
+
+        .specialty-info-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--ht-slate);
+            margin-bottom: 2px;
+        }
+
+        .specialty-info-sub {
+            font-size: 0.76rem;
+            color: var(--ht-muted);
+            line-height: 1.35;
+        }
+
+        .form-label-custom {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 0.4rem;
+        }
+
+        .input-custom {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--ht-border);
+            font-size: 0.9rem;
+            color: var(--ht-slate);
+            transition: all 0.15s ease;
+            background-color: #FFFFFF;
+        }
+
+        .input-custom:focus {
+            outline: none;
+            border-color: var(--ht-green);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        }
+
+        .btn-save-profile {
+            background-color: var(--ht-green);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem 2rem;
+            font-weight: 700;
+            font-size: 0.92rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .btn-save-profile:hover {
+            background-color: var(--ht-green-hover);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+    <!-- ========================================================= -->
+    <!-- 1. SIDEBAR                                                -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div>
+            <a href="/Trainer" class="brand-header">
+                <div class="brand-icon">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </div>
+                <span>HealthTrack</span>
+            </a>
+
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="/Trainer" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Clients" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>My Clients</span>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill">@Model.AssignedClientsCount</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Workouts" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-lightning-charge"></i>
+                            <span>Workout Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Diet" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-egg-fried"></i>
+                            <span>Diet Plans</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Reports" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Progress & Reports</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Trainer/Profile" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-person-gear"></i>
+                            <span>Profile & Specialization</span>
+                        </div>
+                        <span class="active-dot"></span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom-section">
+            <form asp-area="Identity" asp-page="/Account/Logout" method="post" id="logoutForm">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-signout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Sign Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT                                           -->
+    <!-- ========================================================= -->
+    <main class="main-wrapper">
+        <header class="top-navbar">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-emerald-subtle text-success fw-bold px-3 py-1.5 border border-success-subtle rounded-pill">
+                    <i class="bi bi-shield-check me-1"></i> Certified Coach
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end d-none d-sm-block">
+                    <div class="fw-bold small text-dark">@Model.FullName</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">@Model.Specialty</div>
+                </div>
+                <div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 36px; height: 36px; background-color: var(--ht-green);">
+                    @Model.Initials
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show rounded-3 border-0 shadow-sm mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 border-0 shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <div class="page-eyebrow">COACH MANAGEMENT</div>
+            <h1 class="page-title">Profile & Specialization</h1>
+            <p class="page-subtitle">Configure your public coaching domain, certifications, bio, and client-facing information.</p>
+
+            <!-- Hero Summary Banner -->
+            <div class="profile-hero-card">
+                <div class="hero-left">
+                    <div class="hero-avatar">
+                        @Model.Initials
+                    </div>
+                    <div>
+                        <h2 class="hero-name">@Model.FullName</h2>
+                        <div class="hero-meta">
+                            <span><i class="bi bi-envelope me-1"></i> @Model.Email</span>
+                            <span>&bull;</span>
+                            <span class="hero-specialty-pill">@Model.Specialty</span>
+                            <span>&bull;</span>
+                            <span>Member since @Model.JoinedDate</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-stats-row">
+                    <div class="hero-stat-box">
+                        <div class="hero-stat-num">@Model.AssignedClientsCount</div>
+                        <div class="hero-stat-lbl">Active Clients</div>
+                    </div>
+                    <div class="hero-stat-box">
+                        <div class="hero-stat-num">@Model.ActivePlansCount</div>
+                        <div class="hero-stat-lbl">Programs</div>
+                    </div>
+                    <div class="hero-stat-box">
+                        <div class="hero-stat-num">@Model.UpcomingAppointmentsCount</div>
+                        <div class="hero-stat-lbl">Sessions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Form -->
+            <form method="post" asp-action="Profile">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Email" />
+                <input type="hidden" asp-for="Specialty" id="selectedSpecialtyInput" />
+
+                <!-- 1. Specialization Selection -->
+                <div class="form-card">
+                    <h3 class="card-section-title">Coaching Domain & Specialization</h3>
+                    <p class="card-section-desc">Select your primary training focus. This is prominently displayed to clients and in the administrator roster.</p>
+
+                    <div class="specialty-grid">
+                        <div class="specialty-card @(Model.Specialty == "Strength & Conditioning" ? "selected" : "")" onclick="chooseSpecialty('Strength & Conditioning', this)">
+                            <div class="specialty-icon"><i class="bi bi-lightning-charge"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Strength & Conditioning</div>
+                                <div class="specialty-info-sub">Hypertrophy, athletic endurance, and progressive compound lifting.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty == "Clinical Nutrition" ? "selected" : "")" onclick="chooseSpecialty('Clinical Nutrition', this)">
+                            <div class="specialty-icon"><i class="bi bi-egg-fried"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Clinical Nutrition</div>
+                                <div class="specialty-info-sub">Macro balancing, dietary planning, and metabolic optimization.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty == "Fat Loss & Body Composition" ? "selected" : "")" onclick="chooseSpecialty('Fat Loss & Body Composition', this)">
+                            <div class="specialty-icon"><i class="bi bi-fire"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Fat Loss & Toning</div>
+                                <div class="specialty-info-sub">Caloric deficit management, HIIT routines, and lean body re-composition.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty == "Mobility & Injury Rehab" ? "selected" : "")" onclick="chooseSpecialty('Mobility & Injury Rehab', this)">
+                            <div class="specialty-icon"><i class="bi bi-shield-plus"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Mobility & Rehab</div>
+                                <div class="specialty-info-sub">Corrective posture, joint durability, and post-injury recovery.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty == "Cardio & Athletic Endurance" ? "selected" : "")" onclick="chooseSpecialty('Cardio & Athletic Endurance', this)">
+                            <div class="specialty-icon"><i class="bi bi-speedometer2"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Cardio Endurance</div>
+                                <div class="specialty-info-sub">VO2 max conditioning, marathon prep, and aerobic pacing.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" ? "selected" : "")" onclick="chooseCustomSpecialty(this)">
+                            <div class="specialty-icon"><i class="bi bi-pencil-square"></i></div>
+                            <div>
+                                <div class="specialty-info-title">Custom Domain</div>
+                                <div class="specialty-info-sub">Type a customized coaching title or sub-specialization.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="customSpecialtyWrap" style="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" ? "" : "display: none;")">
+                        <label class="form-label-custom">Custom Specialization Name</label>
+                        <input type="text" id="customSpecialtyInput" class="input-custom" value="@Model.Specialty" placeholder="e.g. Senior Functional Fitness Specialist" oninput="updateCustomValue(this.value)" />
+                    </div>
+                </div>
+
+                <!-- 2. Credentials & Bio -->
+                <div class="form-card">
+                    <h3 class="card-section-title">Credentials, Bio & Experience</h3>
+                    <p class="card-section-desc">Share your qualifications, certifications, and coaching philosophy.</p>
+
+                    <div class="mb-3">
+                        <label asp-for="Certifications" class="form-label-custom">Certifications & Accreditations</label>
+                        <input asp-for="Certifications" class="input-custom" placeholder="e.g. NASM-CPT, CSCS, Precision Nutrition L1, CPR/AED" />
+                        <span asp-validation-for="Certifications" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Bio" class="form-label-custom">Professional Bio & Coaching Philosophy</label>
+                        <textarea asp-for="Bio" rows="4" class="input-custom" placeholder="Tell clients about your background, training methodologies, and what they can expect working with you..."></textarea>
+                        <span asp-validation-for="Bio" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- 3. Personal & Contact Details -->
+                <div class="form-card">
+                    <h3 class="card-section-title">Account & Contact Information</h3>
+                    <p class="card-section-desc">Your basic account information used for client communications and administrative notifications.</p>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="FullName" class="form-label-custom">Full Name</label>
+                            <input asp-for="FullName" class="input-custom" required />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Email Address (Account ID)</label>
+                            <input type="email" value="@Model.Email" class="input-custom bg-light" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label-custom">Phone Number (Optional)</label>
+                            <input asp-for="PhoneNumber" class="input-custom" placeholder="+1 (555) 000-0000" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <button type="submit" class="btn-save-profile">
+                            <i class="bi bi-check2-circle"></i> Save Profile Changes
+                        </button>
+                        <a href="/Trainer" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                            Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function chooseSpecialty(specName, el) {
+        document.querySelectorAll('.specialty-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('selectedSpecialtyInput').value = specName;
+        document.getElementById('customSpecialtyWrap').style.display = 'none';
+    }
+
+    function chooseCustomSpecialty(el) {
+        document.querySelectorAll('.specialty-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        var wrap = document.getElementById('customSpecialtyWrap');
+        wrap.style.display = 'block';
+        var val = document.getElementById('customSpecialtyInput').value;
+        document.getElementById('selectedSpecialtyInput').value = val.trim() || 'Certified Performance Coach';
+        document.getElementById('customSpecialtyInput').focus();
+    }
+
+    function updateCustomValue(val) {
+        document.getElementById('selectedSpecialtyInput').value = val.trim() || 'Certified Performance Coach';
+    }
+</script>
+</body>
+</html>

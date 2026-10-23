@@ -30,6 +30,14 @@ namespace HealthTrack.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<string>("Bio")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Certifications")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -60,6 +68,9 @@ namespace HealthTrack.Data.Migrations
                         .HasColumnType("float");
 
                     b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsProfileCompleted")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")

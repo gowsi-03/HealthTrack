@@ -91,7 +91,24 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     await _userManager.AddToRoleAsync(user, Input.Role);
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    return LocalRedirect(returnUrl);
+
+                    if (Url.IsLocalUrl(returnUrl) && returnUrl != "/" && returnUrl != "~/")
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
+
+                    if (string.Equals(Input.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return RedirectToAction("Index", "Admin");
+                    }
+                    else if (string.Equals(Input.Role, "Trainer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return RedirectToAction("Index", "Trainer");
+                    }
+                    else
+                    {
+                        return RedirectToAction("Index", "Client");
+                    }
                 }
                 foreach (var error in result.Errors)
                 {

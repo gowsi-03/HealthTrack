@@ -245,7 +245,7 @@
         /* Role Selection Cards (Matching Screenshot) */
         .role-cards-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             margin-top: 0.35rem;
         }
@@ -455,7 +455,18 @@
                                 </div>
                                 <div>
                                     <span class="role-title">Trainer</span>
-                                    <span class="role-desc">Support clients</span>
+                                    <span class="role-desc">Coach clients</span>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: Admin -->
+                            <div class="role-card-item" id="roleCardAdmin" onclick="selectRole('Admin')">
+                                <div class="role-card-icon">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <div>
+                                    <span class="role-title">Admin</span>
+                                    <span class="role-desc">System manager</span>
                                 </div>
                             </div>
                         </div>
@@ -490,13 +501,18 @@
             document.getElementById('selectedRole').value = role;
             const clientCard = document.getElementById('roleCardClient');
             const trainerCard = document.getElementById('roleCardTrainer');
+            const adminCard = document.getElementById('roleCardAdmin');
+
+            clientCard.classList.remove('selected');
+            trainerCard.classList.remove('selected');
+            adminCard.classList.remove('selected');
 
             if (role === 'Client') {
                 clientCard.classList.add('selected');
-                trainerCard.classList.remove('selected');
-            } else {
+            } else if (role === 'Trainer') {
                 trainerCard.classList.add('selected');
-                clientCard.classList.remove('selected');
+            } else if (role === 'Admin') {
+                adminCard.classList.add('selected');
             }
         }
 

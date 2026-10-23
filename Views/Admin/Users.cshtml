@@ -1,6 +1,6 @@
 @model HealthTrack.Models.ViewModels.AdminUserManagementViewModel
 @{
-    ViewData["Title"] = "User Management - HealthTrack Administration";
+    ViewData["Title"] = "Client Management - HealthTrack Administration";
     Layout = null;
     var initials = string.IsNullOrEmpty(Model.AdminInitials) ? "JL" : Model.AdminInitials;
 }
@@ -780,7 +780,7 @@
                     <a href="/Admin/Users" class="sidebar-link active">
                         <div class="sidebar-link-left">
                             <i class="bi bi-people"></i>
-                            <span>User Management</span>
+                            <span>Client Management</span>
                         </div>
                         <span class="active-dot"></span>
                     </a>
@@ -887,7 +887,7 @@
                         </li>
                         <li>
                             <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Admin/Users">
-                                <i class="bi bi-people text-secondary"></i> User Management
+                                <i class="bi bi-people text-secondary"></i> Client Management
                             </a>
                         </li>
                         <li>
@@ -939,22 +939,22 @@
                 </div>
             }
 
-            <!-- Page Header Row (Matching Screenshot) -->
+            <!-- Page Header Row -->
             <div class="page-header-row">
                 <div>
                     <div class="page-eyebrow">ADMINISTRATION</div>
-                    <h1 class="page-title">User Management</h1>
-                    <p class="page-subtitle">Search, review and manage profiles from one place.</p>
+                    <h1 class="page-title">Client Management</h1>
+                    <p class="page-subtitle">Search, review and manage registered client profiles from one place.</p>
                 </div>
             </div>
 
             <!-- ========================================================= -->
-            <!-- 3. FILTER BAR CARD (Matching Screenshot)                  -->
+            <!-- 3. FILTER BAR CARD                                        -->
             <!-- ========================================================= -->
             <form method="get" asp-action="Users" class="filter-card">
                 <div class="filter-search-box">
                     <i class="bi bi-search filter-search-icon"></i>
-                    <input type="text" name="search" value="@Model.SearchTerm" class="filter-search-input" placeholder="Search by name or email..." />
+                    <input type="text" name="search" value="@Model.SearchTerm" class="filter-search-input" placeholder="Search by client name or email..." />
                 </div>
 
                 <div class="filter-controls-group">
@@ -963,13 +963,6 @@
                         <option value="All" selected="@(Model.StatusFilter == "All" ? "selected" : null)">All statuses</option>
                         <option value="Active" selected="@(Model.StatusFilter == "Active" ? "selected" : null)">Active</option>
                         <option value="Inactive" selected="@(Model.StatusFilter == "Inactive" ? "selected" : null)">Inactive</option>
-                    </select>
-
-                    <!-- Role / Plan Filter Dropdown -->
-                    <select name="role" class="custom-filter-select" onchange="this.form.submit()">
-                        <option value="All" selected="@(Model.RoleFilter == "All" ? "selected" : null)">All roles</option>
-                        <option value="Client" selected="@(Model.RoleFilter == "Client" ? "selected" : null)">Client</option>
-                        <option value="Trainer" selected="@(Model.RoleFilter == "Trainer" ? "selected" : null)">Trainer</option>
                     </select>
 
                     <!-- Filter Submit Button -->
@@ -981,19 +974,19 @@
             </form>
 
             <!-- ========================================================= -->
-            <!-- 4. USERS TABLE CARD (Matching Screenshot)                 -->
+            <!-- 4. CLIENTS TABLE CARD                                     -->
             <!-- ========================================================= -->
             <div class="users-table-card">
                 <div class="table-card-header">
-                    <h2 class="table-card-title">All users</h2>
+                    <h2 class="table-card-title">All clients</h2>
                     <p class="table-card-sub">
                         @if (Model.TotalItems > 0)
                         {
-                            <span>Showing @Model.StartItemIndex–@Model.EndItemIndex of @Model.TotalItems results</span>
+                            <span>Showing @Model.StartItemIndex–@Model.EndItemIndex of @Model.TotalItems clients</span>
                         }
                         else
                         {
-                            <span>0 registered accounts</span>
+                            <span>0 registered clients</span>
                         }
                     </p>
                 </div>
@@ -1002,11 +995,11 @@
                     <table class="table-users-list">
                         <thead>
                             <tr>
-                                <th>USER</th>
+                                <th>CLIENT</th>
                                 <th>EMAIL</th>
                                 <th>ROLE</th>
                                 <th>STATUS</th>
-                                <th>LAST ACTIVE</th>
+                                <th>JOINED DATE</th>
                                 <th style="width: 50px;"></th>
                             </tr>
                         </thead>
@@ -1026,7 +1019,7 @@
                                         </td>
                                         <td class="text-muted">@user.Email</td>
                                         <td>
-                                            <span class="fw-semibold text-secondary">@user.Role</span>
+                                            <span class="fw-semibold text-secondary">Client</span>
                                         </td>
                                         <td>
                                             @if (user.Status == "Active")
@@ -1055,19 +1048,19 @@
                                                         <form asp-action="ToggleUserStatus" method="post" style="display:inline;">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="userId" value="@user.Id" />
-                                                            <input type="hidden" name="returnUrl" value="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@Model.CurrentPage" />
+                                                            <input type="hidden" name="returnUrl" value="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&page=@Model.CurrentPage" />
                                                             <button type="submit" class="dropdown-item small py-1.5">
                                                                 <i class="bi bi-toggle-on me-2 text-secondary"></i> Toggle Status
                                                             </button>
                                                         </form>
                                                     </li>
                                                     <li>
-                                                        <form asp-action="DeleteUser" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this user?');">
+                                                        <form asp-action="DeleteUser" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to remove this client?');">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="userId" value="@user.Id" />
-                                                            <input type="hidden" name="returnUrl" value="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&role=@Model.RoleFilter&page=@Model.CurrentPage" />
+                                                            <input type="hidden" name="returnUrl" value="/Admin/Users?search=@Model.SearchTerm&status=@Model.StatusFilter&page=@Model.CurrentPage" />
                                                             <button type="submit" class="dropdown-item small py-1.5 text-danger">
-                                                                <i class="bi bi-trash3 me-2"></i> Delete User
+                                                                <i class="bi bi-trash3 me-2"></i> Remove Client
                                                             </button>
                                                         </form>
                                                     </li>
@@ -1082,8 +1075,8 @@
                                 <tr>
                                     <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="bi bi-people fs-2 text-secondary d-block mb-2"></i>
-                                        <div class="fw-semibold text-dark">No users found</div>
-                                        <div class="small">Try adjusting your search criteria or filters.</div>
+                                        <div class="fw-semibold text-dark">No clients found</div>
+                                        <div class="small">Try adjusting your search criteria or status filter.</div>
                                     </td>
                                 </tr>
                             }

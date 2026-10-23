@@ -293,8 +293,11 @@ namespace HealthTrack.Controllers
                 PageSize = 4
             };
 
-            // 1. Gather all users from Database (Clients and Trainers only, excluding Admin)
+            // 1. Gather ONLY Clients from Database (Strictly excluding Admin and Trainer roles)
             var allUsers = await _userManager.Users.ToListAsync();
+            var clientUsers = allUsers
+                .Where(u => u.Role == "Client" || (u.Role != "Admin" && u.Role != "Trainer"))
+                .ToList();
 
             var combinedList = new List<AdminUserListItemViewModel>();
 
@@ -302,14 +305,11 @@ namespace HealthTrack.Controllers
             string[] pastelTexts = { "#0284C7", "#059669", "#D97706", "#7C3AED", "#DB2777", "#4F46E5" };
             int colorIdx = 0;
 
-            // Add real regular users from DB (Clients and Trainers only)
-            foreach (var u in allUsers.Where(u => u.Role != "Admin"))
+            foreach (var u in clientUsers)
             {
-                var roles = await _userManager.GetRolesAsync(u);
-                string userRole = roles.FirstOrDefault() ?? u.Role ?? "Client";
                 bool isActive = !u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow;
 
-                string uInitials = "U";
+                string uInitials = "CL";
                 if (!string.IsNullOrWhiteSpace(u.FullName))
                 {
                     var p = u.FullName.Trim().Split(' ');
@@ -317,14 +317,18 @@ namespace HealthTrack.Controllers
                     if (uInitials.Length > 2) uInitials = uInitials.Substring(0, 2);
                 }
 
+                string joinedDate = u.CreatedAt > DateTime.MinValue
+                    ? u.CreatedAt.ToString("MMM dd, yyyy")
+                    : DateTime.UtcNow.ToString("MMM dd, yyyy");
+
                 combinedList.Add(new AdminUserListItemViewModel
                 {
                     Id = u.Id,
-                    FullName = u.FullName ?? u.UserName ?? "User",
+                    FullName = u.FullName ?? u.UserName ?? "Client",
                     Email = u.Email ?? "",
-                    Role = userRole,
+                    Role = "Client",
                     Status = isActive ? "Active" : "Inactive",
-                    LastActive = DateTime.UtcNow.ToString("MMM dd, yyyy"),
+                    LastActive = joinedDate,
                     Initials = uInitials,
                     AvatarBgColor = pastelBgs[colorIdx % pastelBgs.Length],
                     AvatarTextColor = pastelTexts[colorIdx % pastelTexts.Length]
@@ -346,18 +350,12 @@ namespace HealthTrack.Controllers
                 filtered = filtered.Where(u => string.Equals(u.Status, status, StringComparison.OrdinalIgnoreCase));
             }
 
-            // 4. Apply Role Filter
-            if (!string.Equals(role, "All", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(role))
-            {
-                filtered = filtered.Where(u => string.Equals(u.Role, role, StringComparison.OrdinalIgnoreCase));
-            }
-
             var filteredList = filtered.ToList();
 
             // Set Total count dynamically from actual database results
             vm.TotalItems = filteredList.Count;
 
-            // 5. Paginate
+            // 4. Paginate
             vm.Users = filteredList.Skip((vm.CurrentPage - 1) * vm.PageSize).Take(vm.PageSize).ToList();
 
             return View(vm);

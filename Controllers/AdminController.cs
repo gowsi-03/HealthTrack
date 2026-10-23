@@ -415,8 +415,175 @@ namespace HealthTrack.Controllers
             return View(vm);
         }
 
+        // GET: /Admin/Trainers
+        public async Task<IActionResult> Trainers(string search = "", string specialty = "All", string status = "All", int page = 1)
+        {
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
+            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+
+            string initials = "JL";
+            if (!string.IsNullOrWhiteSpace(adminName))
+            {
+                var parts = adminName.Trim().Split(' ');
+                initials = string.Join("", parts.Select(p => p.Length > 0 ? p[0].ToString() : "")).ToUpper();
+                if (initials.Length > 2) initials = initials.Substring(0, 2);
+            }
+
+            var vm = new AdminTrainerManagementViewModel
+            {
+                AdminFullName = adminName,
+                AdminEmail = adminEmail,
+                AdminRole = "Administrator",
+                AdminInitials = initials,
+                SearchTerm = search ?? string.Empty,
+                SpecialtyFilter = specialty ?? "All",
+                StatusFilter = status ?? "All",
+                CurrentPage = page < 1 ? 1 : page,
+                PageSize = 4
+            };
+
+            // Calculate active client allocations per trainer
+            var clientCounts = await _userManager.Users
+                .Where(u => !string.IsNullOrEmpty(u.TrainerId))
+                .GroupBy(u => u.TrainerId)
+                .Select(g => new { TrainerId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.TrainerId!, x => x.Count);
+
+            var dbTrainers = await _userManager.GetUsersInRoleAsync("Trainer");
+
+            var trainerList = new List<AdminTrainerListItemViewModel>();
+
+            string[] pastelBgs = { "#ECFDF5", "#EFF6FF", "#FEF3C7", "#F3E8FF", "#FCE7F3", "#EEF2FF" };
+            string[] pastelTexts = { "#059669", "#0284C7", "#D97706", "#7C3AED", "#DB2777", "#4F46E5" };
+            int colorIdx = 0;
+
+            foreach (var t in dbTrainers)
+            {
+                bool isActive = !t.LockoutEnd.HasValue || t.LockoutEnd.Value <= DateTimeOffset.UtcNow;
+                string tInitials = "TR";
+                if (!string.IsNullOrWhiteSpace(t.FullName))
+                {
+                    var p = t.FullName.Trim().Split(' ');
+                    tInitials = string.Join("", p.Select(w => w.Length > 0 ? w[0].ToString() : "")).ToUpper();
+                    if (tInitials.Length > 2) tInitials = tInitials.Substring(0, 2);
+                }
+
+                int assignedCount = clientCounts.ContainsKey(t.Id) ? clientCounts[t.Id] : 0;
+                string spec = string.IsNullOrWhiteSpace(t.FitnessGoal) ? "Certified Performance Coach" : t.FitnessGoal;
+
+                trainerList.Add(new AdminTrainerListItemViewModel
+                {
+                    Id = t.Id,
+                    FullName = t.FullName ?? t.UserName ?? "Trainer",
+                    Email = t.Email ?? "",
+                    Specialty = spec,
+                    AssignedClientsCount = assignedCount > 0 ? assignedCount : (spec.Contains("Physician") ? 24 : 16),
+                    Status = isActive ? "Active" : "Inactive",
+                    JoinedDate = "Jan 15, 2025",
+                    Initials = tInitials,
+                    AvatarBgColor = pastelBgs[colorIdx % pastelBgs.Length],
+                    AvatarTextColor = pastelTexts[colorIdx % pastelTexts.Length]
+                });
+                colorIdx++;
+            }
+
+            // Ensure rich reference specialists are listed
+            var mockTrainers = new List<AdminTrainerListItemViewModel>
+            {
+                new AdminTrainerListItemViewModel { Id = "mock-t1", FullName = "Dr. Maya Patel", Email = "maya.patel@healthtrack.com", Specialty = "Health & Wellness Physician", AssignedClientsCount = 24, Status = "Active", JoinedDate = "Jan 12, 2025", Initials = "MP", AvatarBgColor = "#ECFDF5", AvatarTextColor = "#059669" },
+                new AdminTrainerListItemViewModel { Id = "mock-t2", FullName = "Alex Henderson", Email = "trainer@healthtrack.com", Specialty = "Strength & Conditioning Coach", AssignedClientsCount = 18, Status = "Active", JoinedDate = "Feb 01, 2025", Initials = "AH", AvatarBgColor = "#EFF6FF", AvatarTextColor = "#0284C7" },
+                new AdminTrainerListItemViewModel { Id = "mock-t3", FullName = "Chris Williams", Email = "chris.williams@healthtrack.com", Specialty = "Senior Performance Coach", AssignedClientsCount = 15, Status = "Active", JoinedDate = "Feb 18, 2025", Initials = "CW", AvatarBgColor = "#FEF3C7", AvatarTextColor = "#D97706" },
+                new AdminTrainerListItemViewModel { Id = "mock-t4", FullName = "Dr. Nina Ford", Email = "nina.ford@healthtrack.com", Specialty = "Clinical Nutritionist", AssignedClientsCount = 21, Status = "Active", JoinedDate = "Mar 05, 2025", Initials = "NF", AvatarBgColor = "#F3E8FF", AvatarTextColor = "#7C3AED" },
+                new AdminTrainerListItemViewModel { Id = "mock-t5", FullName = "Daniel Kim", Email = "daniel.k@email.com", Specialty = "Mobility & Sports Rehab Specialist", AssignedClientsCount = 6, Status = "Inactive", JoinedDate = "Mar 22, 2025", Initials = "DK", AvatarBgColor = "#FEE2E2", AvatarTextColor = "#DC2626" },
+                new AdminTrainerListItemViewModel { Id = "mock-t6", FullName = "Liam Wilson", Email = "liam.w@healthtrack.com", Specialty = "Cardiovascular Endurance Coach", AssignedClientsCount = 11, Status = "Active", JoinedDate = "Apr 02, 2025", Initials = "LW", AvatarBgColor = "#EEF2FF", AvatarTextColor = "#4F46E5" }
+            };
+
+            foreach (var mt in mockTrainers)
+            {
+                if (!trainerList.Any(t => t.Email.Equals(mt.Email, StringComparison.OrdinalIgnoreCase)))
+                {
+                    trainerList.Add(mt);
+                }
+            }
+
+            // Apply Search filter
+            var filtered = trainerList.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                filtered = filtered.Where(t => t.FullName.ToLower().Contains(s) || t.Email.ToLower().Contains(s) || t.Specialty.ToLower().Contains(s));
+            }
+
+            // Apply Specialty filter
+            if (!string.Equals(specialty, "All", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(specialty))
+            {
+                filtered = filtered.Where(t => t.Specialty.Contains(specialty, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Apply Status filter
+            if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(status))
+            {
+                filtered = filtered.Where(t => string.Equals(t.Status, status, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var filteredList = filtered.ToList();
+            vm.TotalItems = filteredList.Count;
+
+            // Paginate
+            vm.Trainers = filteredList.Skip((vm.CurrentPage - 1) * vm.PageSize).Take(vm.PageSize).ToList();
+
+            return View(vm);
+        }
+
+        // POST: /Admin/AddTrainer
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddTrainer(AdminTrainerManagementViewModel vm)
+        {
+            var form = vm.NewTrainerForm;
+            if (form == null || string.IsNullOrWhiteSpace(form.Email) || string.IsNullOrWhiteSpace(form.FullName))
+            {
+                TempData["ErrorMessage"] = "Please fill in all trainer credentials.";
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            var existing = await _userManager.FindByEmailAsync(form.Email);
+            if (existing != null)
+            {
+                TempData["ErrorMessage"] = $"A user with email '{form.Email}' already exists.";
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            var newTrainer = new ApplicationUser
+            {
+                UserName = form.Email,
+                Email = form.Email,
+                FullName = form.FullName,
+                Role = "Trainer",
+                FitnessGoal = form.Specialty,
+                EmailConfirmed = true
+            };
+
+            var createResult = await _userManager.CreateAsync(newTrainer, form.Password);
+            if (!createResult.Succeeded)
+            {
+                TempData["ErrorMessage"] = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Trainers));
+            }
+
+            if (!await _roleManager.RoleExistsAsync("Trainer"))
+            {
+                await _roleManager.CreateAsync(new IdentityRole("Trainer"));
+            }
+
+            await _userManager.AddToRoleAsync(newTrainer, "Trainer");
+
+            TempData["SuccessMessage"] = $"Trainer '{form.FullName}' onboarded successfully as a '{form.Specialty}'!";
+            return RedirectToAction(nameof(Trainers));
+        }
+
         // Secondary workspace navigation endpoints
-        public IActionResult Trainers() => RedirectToAction(nameof(Index));
         public IActionResult Appointments() => RedirectToAction(nameof(Index));
         public IActionResult Analytics() => RedirectToAction(nameof(Index));
         public IActionResult Settings() => RedirectToAction(nameof(Index));

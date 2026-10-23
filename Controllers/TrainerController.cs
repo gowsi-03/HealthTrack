@@ -1580,7 +1580,10 @@ namespace HealthTrack.Controllers
             }
 
             trainer.FullName = model.FullName;
-            trainer.PhoneNumber = model.PhoneNumber;
+            if (!string.IsNullOrWhiteSpace(model.PhoneNumber))
+            {
+                trainer.PhoneNumber = model.PhoneNumber;
+            }
             trainer.FitnessGoal = model.Specialty; // Used across platform as trainer specialty
             trainer.Certifications = model.Certifications;
             trainer.Bio = model.Bio;

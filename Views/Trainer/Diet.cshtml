@@ -423,6 +423,27 @@
             color: #FFFFFF;
         }
 
+        .btn-new-template {
+            background-color: #FFFFFF;
+            border: 1.5px solid #CBD5E1;
+            color: #0F172A;
+            font-weight: 700;
+            font-size: 0.88rem;
+            padding: 0.6rem 1.15rem;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn-new-template:hover {
+            background-color: #F8FAFC;
+            border-color: #0D9488;
+            color: #0D9488;
+        }
+
         /* KPI Metric Cards Grid */
         .kpi-cards-grid {
             display: grid;
@@ -543,6 +564,7 @@
         .badge-blue { background: #E0F2FE; color: #0369A1; }
         .badge-purple { background: #F3E8FF; color: #7E22CE; }
         .badge-amber { background: #FEF3C7; color: #B45309; }
+        .badge-rose { background: #FFE4E6; color: #BE123C; }
 
         .template-title {
             font-size: 1.05rem;
@@ -968,10 +990,16 @@
                     <h1 class="page-title">Diet Plans & Nutrition</h1>
                     <p class="page-subtitle">Design dietary programs, set macro targets, and monitor client nutritional adherence.</p>
                 </div>
-                <button type="button" class="btn-create-diet" data-bs-toggle="modal" data-bs-target="#createDietModal">
-                    <i class="bi bi-plus-lg"></i>
-                    <span>Create diet plan</span>
-                </button>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn-new-template" data-bs-toggle="modal" data-bs-target="#createDietTemplateModal">
+                        <i class="bi bi-folder-plus text-teal"></i>
+                        <span>+ New Template</span>
+                    </button>
+                    <button type="button" class="btn-create-diet" data-bs-toggle="modal" data-bs-target="#createDietModal">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Create diet plan</span>
+                    </button>
+                </div>
             </div>
 
             <!-- KPI Metric Cards -->
@@ -1027,6 +1055,10 @@
                     <h2 class="section-title">Nutrition Program Templates</h2>
                     <p class="section-sub">Standardized caloric & macro blueprints you can assign directly to any client.</p>
                 </div>
+                <button type="button" class="btn-new-template" data-bs-toggle="modal" data-bs-target="#createDietTemplateModal">
+                    <i class="bi bi-plus-circle text-teal"></i>
+                    <span>+ New Template</span>
+                </button>
             </div>
 
             <div class="templates-grid">
@@ -1225,6 +1257,87 @@
                     <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-success px-4 rounded-3 fw-semibold" style="background-color: var(--ht-teal); border: none;">
                         <i class="bi bi-check2-circle me-1"></i> Assign Nutrition Plan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Reusable Diet Template (Without assigning client first) -->
+<div class="modal fade" id="createDietTemplateModal" tabindex="-1" aria-labelledby="createDietTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom px-4 py-3 bg-light rounded-top-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="bi bi-journal-bookmark"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold text-dark" id="createDietTemplateModalLabel">Create Reusable Diet Template</h5>
+                        <p class="text-muted small mb-0">Build a standardized nutritional protocol for your library. You can assign it to clients anytime.</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form asp-action="CreateDietTemplate" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body px-4 py-4">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small text-dark">Template Title <span class="text-danger">*</span></label>
+                            <input type="text" name="Title" class="form-control rounded-3 py-2" placeholder="e.g. High-Protein Fat Loss Protocol" required />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Diet Category</label>
+                            <select name="Category" class="form-select rounded-3 py-2">
+                                <option value="Balanced Nutrition">Balanced Performance</option>
+                                <option value="Caloric Deficit">High-Protein Fat Loss</option>
+                                <option value="Mass Building">Lean Mass Hypertrophy</option>
+                                <option value="Vegan & Plant">Plant-Based Metabolic Fuel</option>
+                                <option value="Rehab & Recovery">Anti-Inflammatory & Mobility</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Target Calories (kcal) <span class="text-danger">*</span></label>
+                            <input type="number" name="TargetCalories" class="form-control rounded-3 py-2" min="800" max="6000" value="2100" required />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Target Protein (g)</label>
+                            <input type="number" name="TargetProtein" class="form-control rounded-3 py-2" min="30" max="350" value="130" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small text-dark">Meals / Day</label>
+                            <select name="MealsPerDay" class="form-select rounded-3 py-2">
+                                <option value="3">3 Meals / Day</option>
+                                <option value="4" selected>4 Meals / Day</option>
+                                <option value="5">5 Meals / Day</option>
+                                <option value="6">6 Meals / Day</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold small text-dark">Template Description</label>
+                            <textarea name="Description" class="form-control rounded-3 py-2" rows="2" placeholder="Nutritional principles, macronutrient split rationale, and guidelines."></textarea>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold small text-dark">Sample Meal Blueprint</label>
+                            <textarea name="MealsText" class="form-control rounded-3 py-2" rows="3" placeholder="Breakfast: Oatmeal with protein powder and blueberries (450 kcal)&#10;Lunch: Grilled chicken breast with sweet potatoes & broccoli (600 kcal)&#10;Snack: Greek yogurt with honey and almonds (300 kcal)&#10;Dinner: Salmon fillet with quinoa and asparagus (650 kcal)"></textarea>
+                            <div class="form-text small text-muted">A standard meal plan will be generated if left blank.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-top px-4 py-3 bg-light rounded-bottom-4">
+                    <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning px-4 rounded-3 fw-semibold text-dark" style="background-color: #F59E0B; border: none;">
+                        <i class="bi bi-save me-1"></i> Save to Template Library
                     </button>
                 </div>
             </form>

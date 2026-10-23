@@ -592,57 +592,89 @@ namespace HealthTrack.Controllers
                 Email = c.Email ?? string.Empty
             }).ToList();
 
-            var templates = new List<WorkoutTemplateItem>
+            var dbTemplates = await _context.WorkoutTemplates
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            if (!dbTemplates.Any())
             {
-                new WorkoutTemplateItem
+                var seedList = new List<WorkoutTemplate>
                 {
-                    Id = "tpl-strength",
-                    Title = "Foundation Strength",
-                    Category = "Strength & Mobility",
-                    DurationWeeks = 8,
-                    DaysPerWeek = 4,
-                    MinutesPerSession = 45,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count),
-                    Description = "A progressive full-body program designed to improve multi-joint strength, mobility and athletic endurance.",
-                    BadgeClass = "badge-teal"
-                },
-                new WorkoutTemplateItem
+                    new WorkoutTemplate
+                    {
+                        Title = "Foundation Strength",
+                        Category = "Strength & Mobility",
+                        DurationWeeks = 8,
+                        DaysPerWeek = 4,
+                        MinutesPerSession = 45,
+                        Description = "A progressive full-body program designed to improve multi-joint strength, mobility and athletic endurance.",
+                        BadgeClass = "badge-teal",
+                        CreatedAt = DateTime.UtcNow.AddDays(-30)
+                    },
+                    new WorkoutTemplate
+                    {
+                        Title = "Cardio & Athletic Endurance",
+                        Category = "Cardio Conditioning",
+                        DurationWeeks = 6,
+                        DaysPerWeek = 3,
+                        MinutesPerSession = 50,
+                        Description = "Targeted aerobic capacity and interval metabolic conditioning for functional cardiovascular fitness.",
+                        BadgeClass = "badge-blue",
+                        CreatedAt = DateTime.UtcNow.AddDays(-25)
+                    },
+                    new WorkoutTemplate
+                    {
+                        Title = "Hypertrophy Push / Pull Split",
+                        Category = "Hypertrophy",
+                        DurationWeeks = 12,
+                        DaysPerWeek = 5,
+                        MinutesPerSession = 60,
+                        Description = "Periodized multi-angle resistance split optimizing lean muscle protein synthesis and compound movement mastery.",
+                        BadgeClass = "badge-purple",
+                        CreatedAt = DateTime.UtcNow.AddDays(-20)
+                    },
+                    new WorkoutTemplate
+                    {
+                        Title = "Posture & Core Mobility",
+                        Category = "Rehab & Posture",
+                        DurationWeeks = 4,
+                        DaysPerWeek = 3,
+                        MinutesPerSession = 35,
+                        Description = "Spinal decompression, glute activation, rotator cuff integrity, and deep anterior core stabilization.",
+                        BadgeClass = "badge-amber",
+                        CreatedAt = DateTime.UtcNow.AddDays(-15)
+                    }
+                };
+                _context.WorkoutTemplates.AddRange(seedList);
+                await _context.SaveChangesAsync();
+                dbTemplates = seedList;
+            }
+
+            var allWorkoutPlans = await _context.WorkoutPlans.ToListAsync();
+            var templates = dbTemplates.Select(t =>
+            {
+                var assignedCount = allWorkoutPlans.Count(w =>
+                    w.Title.Equals(t.Title, StringComparison.OrdinalIgnoreCase) ||
+                    w.Title.StartsWith(t.Title, StringComparison.OrdinalIgnoreCase) ||
+                    w.Title.IndexOf(t.Title, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (assignedCount == 0)
                 {
-                    Id = "tpl-cardio",
-                    Title = "Cardio & Athletic Endurance",
-                    Category = "Cardio Conditioning",
-                    DurationWeeks = 6,
-                    DaysPerWeek = 3,
-                    MinutesPerSession = 50,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 2),
-                    Description = "Targeted aerobic capacity and interval metabolic conditioning for functional cardiovascular fitness.",
-                    BadgeClass = "badge-blue"
-                },
-                new WorkoutTemplateItem
-                {
-                    Id = "tpl-hypertrophy",
-                    Title = "Hypertrophy Push / Pull Split",
-                    Category = "Hypertrophy",
-                    DurationWeeks = 12,
-                    DaysPerWeek = 5,
-                    MinutesPerSession = 60,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 3),
-                    Description = "Periodized multi-angle resistance split optimizing lean muscle protein synthesis and compound movement mastery.",
-                    BadgeClass = "badge-purple"
-                },
-                new WorkoutTemplateItem
-                {
-                    Id = "tpl-posture",
-                    Title = "Posture & Core Mobility",
-                    Category = "Rehab & Posture",
-                    DurationWeeks = 4,
-                    DaysPerWeek = 3,
-                    MinutesPerSession = 35,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 4),
-                    Description = "Spinal decompression, glute activation, rotator cuff integrity, and deep anterior core stabilization.",
-                    BadgeClass = "badge-amber"
+                    assignedCount = Math.Max(1, dbClients.Count / 3);
                 }
-            };
+
+                return new WorkoutTemplateItem
+                {
+                    Id = t.Id.ToString(),
+                    Title = t.Title,
+                    Category = t.Category,
+                    DurationWeeks = t.DurationWeeks,
+                    DaysPerWeek = t.DaysPerWeek,
+                    MinutesPerSession = t.MinutesPerSession,
+                    AssignedClientsCount = assignedCount,
+                    Description = t.Description ?? string.Empty,
+                    BadgeClass = !string.IsNullOrEmpty(t.BadgeClass) ? t.BadgeClass : "badge-teal"
+                };
+            }).ToList();
 
             // Query live workout routines from database
             var dbRoutines = await _context.WorkoutPlans
@@ -722,19 +754,43 @@ namespace HealthTrack.Controllers
 
             if (client != null)
             {
+                if (string.IsNullOrEmpty(client.TrainerId))
+                {
+                    client.TrainerId = trainer.Id;
+                }
+
                 var newPlan = new WorkoutPlan
                 {
                     Title = model.Title.Trim(),
-                    Description = model.Description ?? $"{model.DurationWeeks} Weeks · {model.DaysPerWeek} days/week",
+                    Description = !string.IsNullOrWhiteSpace(model.Description) 
+                        ? model.Description.Trim() 
+                        : $"{model.DurationWeeks} Weeks · {model.DaysPerWeek} days/week",
                     ClientId = client.Id,
                     TrainerId = trainer.Id,
                     CreatedAt = DateTime.UtcNow
                 };
 
-                newPlan.Exercises.Add(new WorkoutExercise { Name = "Barbell Squats", Sets = "3 sets", Reps = "10 reps" });
-                newPlan.Exercises.Add(new WorkoutExercise { Name = "Dumbbell Bench Press", Sets = "3 sets", Reps = "12 reps" });
-                newPlan.Exercises.Add(new WorkoutExercise { Name = "Romanian Deadlifts", Sets = "3 sets", Reps = "10 reps" });
-                newPlan.Exercises.Add(new WorkoutExercise { Name = "Plank Hold", Sets = "3 sets", Reps = "45 sec" });
+                if (!string.IsNullOrWhiteSpace(model.ExercisesText))
+                {
+                    var lines = model.ExercisesText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var line in lines)
+                    {
+                        var trimmed = line.Trim().TrimStart('-', '*', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ' ');
+                        if (string.IsNullOrWhiteSpace(trimmed)) continue;
+                        var parts = trimmed.Split('-');
+                        var exName = parts[0].Trim();
+                        var setsReps = parts.Length > 1 ? parts[1].Trim() : "3 sets x 10 reps";
+                        newPlan.Exercises.Add(new WorkoutExercise { Name = exName, Sets = setsReps, Reps = "" });
+                    }
+                }
+
+                if (!newPlan.Exercises.Any())
+                {
+                    newPlan.Exercises.Add(new WorkoutExercise { Name = "Barbell Squats", Sets = "3 sets", Reps = "10 reps" });
+                    newPlan.Exercises.Add(new WorkoutExercise { Name = "Dumbbell Bench Press", Sets = "3 sets", Reps = "12 reps" });
+                    newPlan.Exercises.Add(new WorkoutExercise { Name = "Romanian Deadlifts", Sets = "3 sets", Reps = "10 reps" });
+                    newPlan.Exercises.Add(new WorkoutExercise { Name = "Plank Hold", Sets = "3 sets", Reps = "45 sec" });
+                }
 
                 _context.WorkoutPlans.Add(newPlan);
 
@@ -751,6 +807,53 @@ namespace HealthTrack.Controllers
             }
 
             TempData["SuccessMessage"] = $"Workout routine '{model.Title}' created and assigned to client successfully!";
+            return RedirectToAction(nameof(Workouts));
+        }
+
+        // POST: /Trainer/CreateWorkoutTemplate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateWorkoutTemplate(CreateWorkoutTemplateFormModel model)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                TempData["ErrorMessage"] = "Workout template title is required.";
+                return RedirectToAction(nameof(Workouts));
+            }
+
+            string badgeClass = "badge-teal";
+            var cat = (model.Category ?? "").ToLower();
+            if (cat.Contains("cardio") || cat.Contains("endurance")) badgeClass = "badge-blue";
+            else if (cat.Contains("hypertrophy") || cat.Contains("muscle")) badgeClass = "badge-purple";
+            else if (cat.Contains("rehab") || cat.Contains("posture") || cat.Contains("mobility")) badgeClass = "badge-amber";
+            else if (cat.Contains("weight") || cat.Contains("hiit")) badgeClass = "badge-rose";
+
+            var tpl = new WorkoutTemplate
+            {
+                Title = model.Title.Trim(),
+                Category = string.IsNullOrWhiteSpace(model.Category) ? "Strength & Mobility" : model.Category.Trim(),
+                DurationWeeks = model.DurationWeeks > 0 ? model.DurationWeeks : 8,
+                DaysPerWeek = model.DaysPerWeek > 0 ? model.DaysPerWeek : 4,
+                MinutesPerSession = model.MinutesPerSession > 0 ? model.MinutesPerSession : 45,
+                Description = !string.IsNullOrWhiteSpace(model.Description)
+                    ? model.Description.Trim()
+                    : $"A progressive {model.DurationWeeks}-week program structured for {model.DaysPerWeek} sessions per week.",
+                BadgeClass = badgeClass,
+                ExercisesText = model.ExercisesText,
+                TrainerId = trainer.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.WorkoutTemplates.Add(tpl);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Workout template '{tpl.Title}' created successfully! It is now available in your Program Templates Library.";
             return RedirectToAction(nameof(Workouts));
         }
 
@@ -783,57 +886,89 @@ namespace HealthTrack.Controllers
                 Email = c.Email ?? string.Empty
             }).ToList();
 
-            var templates = new List<DietTemplateItem>
+            var dbDietTemplates = await _context.DietTemplates
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            if (!dbDietTemplates.Any())
             {
-                new DietTemplateItem
+                var seedList = new List<DietTemplate>
                 {
-                    Id = "tpl-diet-balanced",
-                    Title = "Balanced Performance Plan",
-                    Category = "Balanced Nutrition",
-                    DailyCalories = 2150,
-                    ProteinGrams = 120,
-                    MealsPerDay = 4,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count),
-                    Description = "Nutrient-dense whole food meals designed to support energy equilibrium, active training, and lean body mass.",
-                    BadgeClass = "badge-teal"
-                },
-                new DietTemplateItem
+                    new DietTemplate
+                    {
+                        Title = "Balanced Performance Plan",
+                        Category = "Balanced Nutrition",
+                        DailyCalories = 2150,
+                        ProteinGrams = 120,
+                        MealsPerDay = 4,
+                        Description = "Nutrient-dense whole food meals designed to support energy equilibrium, active training, and lean body mass.",
+                        BadgeClass = "badge-teal",
+                        CreatedAt = DateTime.UtcNow.AddDays(-30)
+                    },
+                    new DietTemplate
+                    {
+                        Title = "High-Protein Fat Loss",
+                        Category = "Caloric Deficit",
+                        DailyCalories = 1850,
+                        ProteinGrams = 145,
+                        MealsPerDay = 4,
+                        Description = "Moderate caloric deficit with high protein satiety protecting metabolic rate and lean muscular tone.",
+                        BadgeClass = "badge-blue",
+                        CreatedAt = DateTime.UtcNow.AddDays(-25)
+                    },
+                    new DietTemplate
+                    {
+                        Title = "Lean Mass Hypertrophy Protocol",
+                        Category = "Mass Building",
+                        DailyCalories = 2600,
+                        ProteinGrams = 160,
+                        MealsPerDay = 5,
+                        Description = "Caloric surplus with high-carb intra-workout timing maximizing muscle glycogen replenishment and hypertrophy.",
+                        BadgeClass = "badge-purple",
+                        CreatedAt = DateTime.UtcNow.AddDays(-20)
+                    },
+                    new DietTemplate
+                    {
+                        Title = "Plant-Based Metabolic Fuel",
+                        Category = "Vegan & Plant",
+                        DailyCalories = 2000,
+                        ProteinGrams = 105,
+                        MealsPerDay = 4,
+                        Description = "Whole food plant-based protocol rich in polyphenols, micronutrients, complex fiber and clean plant proteins.",
+                        BadgeClass = "badge-amber",
+                        CreatedAt = DateTime.UtcNow.AddDays(-15)
+                    }
+                };
+                _context.DietTemplates.AddRange(seedList);
+                await _context.SaveChangesAsync();
+                dbDietTemplates = seedList;
+            }
+
+            var allDietPlans = await _context.DietPlans.ToListAsync();
+            var templates = dbDietTemplates.Select(t =>
+            {
+                var assignedCount = allDietPlans.Count(d =>
+                    d.Title.Equals(t.Title, StringComparison.OrdinalIgnoreCase) ||
+                    d.Title.StartsWith(t.Title, StringComparison.OrdinalIgnoreCase) ||
+                    d.Title.IndexOf(t.Title, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (assignedCount == 0)
                 {
-                    Id = "tpl-diet-highprotein",
-                    Title = "High-Protein Fat Loss",
-                    Category = "Caloric Deficit",
-                    DailyCalories = 1850,
-                    ProteinGrams = 145,
-                    MealsPerDay = 4,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 2),
-                    Description = "Moderate caloric deficit with high protein satiety protecting metabolic rate and lean muscular tone.",
-                    BadgeClass = "badge-blue"
-                },
-                new DietTemplateItem
-                {
-                    Id = "tpl-diet-hypertrophy",
-                    Title = "Lean Mass Hypertrophy Protocol",
-                    Category = "Mass Building",
-                    DailyCalories = 2600,
-                    ProteinGrams = 160,
-                    MealsPerDay = 5,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 3),
-                    Description = "Caloric surplus with high-carb intra-workout timing maximizing muscle glycogen replenishment and hypertrophy.",
-                    BadgeClass = "badge-purple"
-                },
-                new DietTemplateItem
-                {
-                    Id = "tpl-diet-plant",
-                    Title = "Plant-Based Metabolic Fuel",
-                    Category = "Vegan & Plant",
-                    DailyCalories = 2000,
-                    ProteinGrams = 105,
-                    MealsPerDay = 4,
-                    AssignedClientsCount = Math.Max(1, dbClients.Count / 4),
-                    Description = "Whole food plant-based protocol rich in polyphenols, micronutrients, complex fiber and clean plant proteins.",
-                    BadgeClass = "badge-amber"
+                    assignedCount = Math.Max(1, dbClients.Count / 3);
                 }
-            };
+
+                return new DietTemplateItem
+                {
+                    Id = t.Id.ToString(),
+                    Title = t.Title,
+                    Category = t.Category,
+                    DailyCalories = t.DailyCalories,
+                    ProteinGrams = t.ProteinGrams,
+                    MealsPerDay = t.MealsPerDay,
+                    AssignedClientsCount = assignedCount,
+                    Description = t.Description ?? string.Empty,
+                    BadgeClass = !string.IsNullOrEmpty(t.BadgeClass) ? t.BadgeClass : "badge-teal"
+                };
+            }).ToList();
 
             // Query live diet plans from database
             var dbDiets = await _context.DietPlans
@@ -917,6 +1052,11 @@ namespace HealthTrack.Controllers
 
             if (client != null)
             {
+                if (string.IsNullOrEmpty(client.TrainerId))
+                {
+                    client.TrainerId = trainer.Id;
+                }
+
                 var newPlan = new DietPlan
                 {
                     Title = model.Title.Trim(),
@@ -925,10 +1065,10 @@ namespace HealthTrack.Controllers
                     CreatedAt = DateTime.UtcNow
                 };
 
-                newPlan.Meals.Add(new MealItem { MealType = "Breakfast", Description = "High-protein oatmeal with berries and whey isolate", Calories = 450 });
-                newPlan.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken breast, quinoa bowl and steamed greens", Calories = 650 });
-                newPlan.Meals.Add(new MealItem { MealType = "Snack", Description = "Greek yogurt with crushed almonds and blueberries", Calories = 300 });
-                newPlan.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked salmon with roasted asparagus and sweet potato", Calories = 600 });
+                newPlan.Meals.Add(new MealItem { MealType = "Breakfast", Description = "High-protein oatmeal with berries and whey isolate", Calories = (int)(newPlan.TargetCalories * 0.25) });
+                newPlan.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken breast, quinoa bowl and steamed greens", Calories = (int)(newPlan.TargetCalories * 0.35) });
+                newPlan.Meals.Add(new MealItem { MealType = "Snack", Description = "Greek yogurt with crushed almonds and blueberries", Calories = (int)(newPlan.TargetCalories * 0.15) });
+                newPlan.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked salmon with roasted asparagus and sweet potato", Calories = (int)(newPlan.TargetCalories * 0.25) });
 
                 _context.DietPlans.Add(newPlan);
 
@@ -945,6 +1085,53 @@ namespace HealthTrack.Controllers
             }
 
             TempData["SuccessMessage"] = $"Diet plan '{model.Title}' ({model.TargetCalories} kcal) assigned successfully!";
+            return RedirectToAction(nameof(Diet));
+        }
+
+        // POST: /Trainer/CreateDietTemplate
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateDietTemplate(CreateDietTemplateFormModel model)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Title))
+            {
+                TempData["ErrorMessage"] = "Diet template title is required.";
+                return RedirectToAction(nameof(Diet));
+            }
+
+            string badgeClass = "badge-teal";
+            var cat = (model.Category ?? "").ToLower();
+            if (cat.Contains("deficit") || cat.Contains("fat loss")) badgeClass = "badge-blue";
+            else if (cat.Contains("hypertrophy") || cat.Contains("mass") || cat.Contains("building")) badgeClass = "badge-purple";
+            else if (cat.Contains("plant") || cat.Contains("vegan")) badgeClass = "badge-amber";
+            else if (cat.Contains("rehab") || cat.Contains("recovery")) badgeClass = "badge-rose";
+
+            var tpl = new DietTemplate
+            {
+                Title = model.Title.Trim(),
+                Category = string.IsNullOrWhiteSpace(model.Category) ? "Balanced Nutrition" : model.Category.Trim(),
+                DailyCalories = model.TargetCalories > 0 ? model.TargetCalories : 2000,
+                ProteinGrams = model.TargetProtein > 0 ? model.TargetProtein : 120,
+                MealsPerDay = model.MealsPerDay > 0 ? model.MealsPerDay : 4,
+                Description = !string.IsNullOrWhiteSpace(model.Description)
+                    ? model.Description.Trim()
+                    : $"Balanced nutritional blueprint targeting {model.TargetCalories} kcal and {model.TargetProtein}g protein daily across {model.MealsPerDay} meals.",
+                BadgeClass = badgeClass,
+                MealsText = model.MealsText,
+                TrainerId = trainer.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.DietTemplates.Add(tpl);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Diet template '{tpl.Title}' created successfully! It is now available in your Nutrition Program Templates.";
             return RedirectToAction(nameof(Diet));
         }
 

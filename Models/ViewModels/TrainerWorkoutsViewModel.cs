@@ -72,4 +72,15 @@ namespace HealthTrack.Models.ViewModels
         public string Description { get; set; } = string.Empty;
         public string ExercisesText { get; set; } = string.Empty;
     }
+
+    public class CreateWorkoutTemplateFormModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = "Strength & Mobility";
+        public int DurationWeeks { get; set; } = 8;
+        public int DaysPerWeek { get; set; } = 4;
+        public int MinutesPerSession { get; set; } = 45;
+        public string Description { get; set; } = string.Empty;
+        public string ExercisesText { get; set; } = string.Empty;
+    }
 }

@@ -68,4 +68,15 @@ namespace HealthTrack.Models.ViewModels
         public int MealsPerDay { get; set; } = 4;
         public string DietaryNotes { get; set; } = string.Empty;
     }
+
+    public class CreateDietTemplateFormModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = "Balanced Nutrition";
+        public int TargetCalories { get; set; } = 2000;
+        public int TargetProtein { get; set; } = 120;
+        public int MealsPerDay { get; set; } = 4;
+        public string Description { get; set; } = string.Empty;
+        public string MealsText { get; set; } = string.Empty;
+    }
 }

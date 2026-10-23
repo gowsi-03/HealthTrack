@@ -19,6 +19,8 @@ namespace HealthTrack.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<PlatformSetting> PlatformSettings { get; set; }
+        public DbSet<WorkoutTemplate> WorkoutTemplates { get; set; }
+        public DbSet<DietTemplate> DietTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

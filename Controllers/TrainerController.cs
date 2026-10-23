@@ -67,8 +67,9 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            var trainerFirstName = trainer.FullName.Replace("Dr. ", "").Trim().Split(' ')[0];
-            if (string.IsNullOrWhiteSpace(trainerFirstName)) trainerFirstName = "Maya";
+            var trainerFirstName = (!string.IsNullOrWhiteSpace(trainer.FullName)) 
+                ? trainer.FullName.Replace("Dr. ", "").Trim().Split(' ')[0] 
+                : (trainer.UserName?.Split('@')[0] ?? "Trainer");
 
             // Query Assigned Clients from database
             var clients = await _context.Users
@@ -194,7 +195,7 @@ namespace HealthTrack.Controllers
                 TrainerId = trainer.Id,
                 TrainerName = trainerFirstName,
                 TrainerFullName = trainer.FullName,
-                TrainerEmail = trainer.Email ?? "trainer@healthtrack.com",
+                TrainerEmail = trainer.Email ?? string.Empty,
                 DateFormatted = DateTime.UtcNow.ToString("dddd, MMMM d").ToUpper(),
 
                 AssignedClientsCount = clientCount,
@@ -305,14 +306,17 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Find client or fallback to primary client
-            var client = await _userManager.FindByIdAsync(model.ClientId) 
-                         ?? await _userManager.FindByEmailAsync("client@healthtrack.com");
+            if (string.IsNullOrWhiteSpace(model.ClientId))
+            {
+                TempData["ErrorMessage"] = "Please select a client to assign a plan.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            var client = await _userManager.FindByIdAsync(model.ClientId);
             if (client == null)
             {
-                client = await _userManager.Users.FirstOrDefaultAsync(u => u.Role == "Client") 
-                         ?? trainer;
+                TempData["ErrorMessage"] = "Selected client was not found.";
+                return RedirectToAction(nameof(Index));
             }
 
             if (model.PlanType == "Diet")
@@ -495,8 +499,8 @@ namespace HealthTrack.Controllers
 
             var vm = new TrainerClientsViewModel
             {
-                TrainerName = trainer.FullName.Replace("Dr. ", ""),
-                TrainerEmail = trainer.Email ?? "trainer@healthtrack.com",
+                TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
+                TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = "AM",
                 TotalClientsCount = allClients.Count,
                 ActiveClientsCount = allClients.Count(c => c.Status == "Active"),
@@ -712,8 +716,8 @@ namespace HealthTrack.Controllers
 
             var vm = new TrainerWorkoutsViewModel
             {
-                TrainerName = trainer.FullName.Replace("Dr. ", ""),
-                TrainerEmail = trainer.Email ?? "trainer@healthtrack.com",
+                TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
+                TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = "AM",
                 UnreadNotificationsCount = unreadCount,
                 TotalActiveProgramsCount = clientRoutines.Count,
@@ -745,11 +749,17 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Workouts));
             }
 
-            // Find client user if existing in database
+            if (string.IsNullOrWhiteSpace(model.ClientId))
+            {
+                TempData["ErrorMessage"] = "Please select a client to assign this workout routine.";
+                return RedirectToAction(nameof(Workouts));
+            }
+
             var client = await _userManager.FindByIdAsync(model.ClientId);
             if (client == null)
             {
-                client = await _userManager.FindByEmailAsync("client@healthtrack.com");
+                TempData["ErrorMessage"] = "Selected client was not found.";
+                return RedirectToAction(nameof(Workouts));
             }
 
             if (client != null)
@@ -1011,8 +1021,8 @@ namespace HealthTrack.Controllers
 
             var vm = new TrainerDietViewModel
             {
-                TrainerName = trainer.FullName.Replace("Dr. ", ""),
-                TrainerEmail = trainer.Email ?? "trainer@healthtrack.com",
+                TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
+                TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = "AM",
                 UnreadNotificationsCount = unreadCount,
                 TotalActiveDietPlans = clientRosters.Count,
@@ -1044,10 +1054,17 @@ namespace HealthTrack.Controllers
                 return RedirectToAction(nameof(Diet));
             }
 
+            if (string.IsNullOrWhiteSpace(model.ClientId))
+            {
+                TempData["ErrorMessage"] = "Please select a client to assign this diet plan.";
+                return RedirectToAction(nameof(Diet));
+            }
+
             var client = await _userManager.FindByIdAsync(model.ClientId);
             if (client == null)
             {
-                client = await _userManager.FindByEmailAsync("client@healthtrack.com");
+                TempData["ErrorMessage"] = "Selected client was not found.";
+                return RedirectToAction(nameof(Diet));
             }
 
             if (client != null)
@@ -1166,8 +1183,8 @@ namespace HealthTrack.Controllers
             var items = new List<TrainerAppointmentItem>();
             foreach (var dba in dbAppts)
             {
-                var cName = dba.Client?.FullName ?? "Client User";
-                var cEmail = dba.Client?.Email ?? "client@healthtrack.com";
+                var cName = dba.Client?.FullName ?? dba.Client?.UserName ?? "Client";
+                var cEmail = dba.Client?.Email ?? string.Empty;
                 var inits = string.Join("", cName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s[0])).ToUpper();
                 if (inits.Length > 2) inits = inits.Substring(0, 2);
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
@@ -1211,10 +1228,10 @@ namespace HealthTrack.Controllers
 
             var vm = new TrainerAppointmentsViewModel
             {
-                TrainerName = trainer.FullName.Replace("Dr. ", ""),
-                TrainerEmail = trainer.Email ?? "maya.patel@healthtrack.com",
-                TrainerInitials = "AM",
-                UnreadNotificationsCount = unreadCount > 0 ? unreadCount : 2,
+                TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
+                TrainerEmail = trainer.Email ?? string.Empty,
+                TrainerInitials = "TR",
+                UnreadNotificationsCount = unreadCount,
                 PendingRequestsCount = items.Count(i => i.Status == "Pending"),
                 ApprovedRequestsCount = items.Count(i => i.Status == "Approved"),
                 TotalRequestsCount = items.Count,
@@ -1317,9 +1334,13 @@ namespace HealthTrack.Controllers
             }).ToList();
 
             var selectedClient = clientOptions.FirstOrDefault(c => c.Id == clientId || c.Name.Equals(clientId, StringComparison.OrdinalIgnoreCase)) ?? clientOptions.FirstOrDefault();
-            if (selectedClient == null)
+            if (selectedClient == null && clientOptions.Any())
             {
-                selectedClient = new TrainerClientFilterOption { Id = "client-default", Name = "Client User", Email = "client@healthtrack.com", Initials = "CL" };
+                selectedClient = clientOptions.First();
+            }
+            else if (selectedClient == null)
+            {
+                selectedClient = new TrainerClientFilterOption { Id = string.Empty, Name = "No Clients Enrolled", Email = string.Empty, Initials = "--" };
                 clientOptions.Add(selectedClient);
             }
 
@@ -1329,8 +1350,8 @@ namespace HealthTrack.Controllers
 
             var vm = new TrainerReportsViewModel
             {
-                TrainerName = trainer.FullName.Replace("Dr. ", ""),
-                TrainerEmail = trainer.Email ?? "trainer@healthtrack.com",
+                TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
+                TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = "AM",
                 UnreadNotificationsCount = unreadCount,
                 SelectedClientId = selectedClient.Id,
@@ -1432,7 +1453,7 @@ namespace HealthTrack.Controllers
         // GET: /Trainer/ExportReportCsv
         public async Task<IActionResult> ExportReportCsv(string? clientId = null)
         {
-            var clientName = string.IsNullOrEmpty(clientId) ? "Alex Morgan" : clientId;
+            var clientName = string.IsNullOrEmpty(clientId) ? "Client" : clientId;
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("Date,Client,Weight(kg),Height(cm),BMI,Waist(cm),Notes");
 
@@ -1468,7 +1489,7 @@ namespace HealthTrack.Controllers
             return File(bytes, "text/csv", $"ClientProgress_{clientName.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
 
-        // Helper to retrieve current trainer or fallback to Dr. Maya Patel for preview
+        // Helper to retrieve current authenticated trainer user
         private async Task<ApplicationUser?> GetCurrentTrainerUserAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -1476,25 +1497,9 @@ namespace HealthTrack.Controllers
             {
                 var isTrainer = await _userManager.IsInRoleAsync(user, "Trainer") || await _userManager.IsInRoleAsync(user, "Admin") || user.Role == "Trainer" || user.Role == "Admin";
                 if (isTrainer) return user;
-                return null;
             }
 
-            // Preview fallback for Dr. Maya Patel when not logged in
-            var maya = await _userManager.FindByEmailAsync("maya.patel@healthtrack.com");
-            if (maya != null) return maya;
-
-            var genericTrainer = await _userManager.FindByEmailAsync("trainer@healthtrack.com");
-            if (genericTrainer != null) return genericTrainer;
-
-            return new ApplicationUser
-            {
-                Id = "trainer-maya-id",
-                FullName = "Dr. Maya Patel",
-                Email = "maya.patel@healthtrack.com",
-                UserName = "maya.patel@healthtrack.com",
-                Role = "Trainer",
-                FitnessGoal = "Health & Wellness Physician"
-            };
+            return null;
         }
     }
 }

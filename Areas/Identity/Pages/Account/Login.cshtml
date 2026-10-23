@@ -328,36 +328,6 @@
             text-decoration: underline;
         }
 
-        /* Quick fill credentials helper for coursework evaluation */
-        .demo-bar {
-            background: #F8FAFC;
-            border: 1px dashed #CBD5E1;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-top: 1.5rem;
-            font-size: 0.8rem;
-            color: #64748B;
-        }
-        .demo-pill {
-            display: inline-block;
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #334155;
-            cursor: pointer;
-            margin-right: 4px;
-            margin-top: 4px;
-            transition: all 0.15s ease;
-        }
-        .demo-pill:hover {
-            border-color: var(--ht-green);
-            color: var(--ht-green);
-            background: #F0FDF4;
-        }
-
         /* Mobile Responsive */
         @@media (max-width: 992px) {
             .split-layout {
@@ -469,16 +439,6 @@
                 <div class="bottom-switch">
                     New to HealthTrack? <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl" class="create-link">Create account</a>
                 </div>
-
-                <!-- Demo Credentials Quick-Fill (Helpful for Tutor & Demoing) -->
-                <div class="demo-bar">
-                    <div class="fw-semibold mb-1" style="color: #475569;">
-                        <i class="bi bi-info-circle me-1"></i> Demo Quick-Fill:
-                    </div>
-                    <span class="demo-pill" onclick="fillDemo('client@healthtrack.com', 'Client123!')">Client Demo</span>
-                    <span class="demo-pill" onclick="fillDemo('trainer@healthtrack.com', 'Trainer123!')">Trainer Demo</span>
-                    <span class="demo-pill" onclick="fillDemo('admin@healthtrack.com', 'Admin123!')">Admin Demo</span>
-                </div>
             </form>
 
         </div>
@@ -501,11 +461,6 @@
             input.type = 'password';
             btn.textContent = 'Show';
         }
-    }
-
-    function fillDemo(email, password) {
-        document.getElementById('emailInput').value = email;
-        document.getElementById('passwordInput').value = password;
     }
 </script>
 

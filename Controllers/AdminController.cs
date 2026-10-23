@@ -30,8 +30,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Index()
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -227,8 +227,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Users(string search = "", string status = "All", string role = "All", int page = 1)
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -325,8 +325,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Trainers(string search = "", string specialty = "All", string status = "All", int page = 1)
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -478,8 +478,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Appointments(string search = "", string status = "All", string trainer = "All", string timeframe = "All", int page = 1)
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -820,8 +820,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Analytics(string timeframe = "Last 30 days", string metric = "All metrics")
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -956,7 +956,7 @@ namespace HealthTrack.Controllers
             sb.AppendLine($"Total Consultations Booked,{totalAppts},1-on-1 consultations,Dynamic");
             sb.AppendLine($"Consultation Fulfillment Rate,{Math.Round(fulfillmentRate, 1)}%,Database records,Optimal");
             sb.AppendLine();
-            sb.AppendLine("Report prepared by System Administration (admin@healthtrack.com)");
+            sb.AppendLine("Report prepared by System Administration");
 
             byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
             return File(bytes, "text/csv", $"HealthTrack_Platform_Analytics_{DateTime.UtcNow:yyyyMMdd}.csv");
@@ -970,8 +970,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Settings()
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))
@@ -1011,8 +1011,8 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Settings(AdminSystemSettingsViewModel model)
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
-            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
-            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+            string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
+            string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
             string initials = "JL";
             if (!string.IsNullOrWhiteSpace(adminName))

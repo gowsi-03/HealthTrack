@@ -72,7 +72,7 @@ namespace HealthTrack.Controllers
                 FitnessGoal = user.FitnessGoal ?? "General Health & Fitness"
             };
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+            bool isDemoUser = false;
 
             // 1. Fetch Health Logs for Analytics & KPIs
             var logs = await _context.HealthLogs
@@ -618,15 +618,16 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Workouts()
         {
             var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             var vm = new WorkoutPlansViewModel
             {
                 ClientId = user.Id,
-                FullName = user.FullName ?? user.UserName ?? "Alex Morgan",
+                FullName = user.FullName ?? user.UserName ?? "Client",
                 Email = user.Email ?? string.Empty
             };
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+            bool isDemoUser = false;
 
             // Fetch trainer info
             if (!string.IsNullOrEmpty(user.TrainerId))
@@ -797,12 +798,12 @@ namespace HealthTrack.Controllers
             var user = await GetCurrentClientUserAsync();
             if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+            bool isDemoUser = false;
 
             var vm = new DietPlansViewModel
             {
                 ClientId = user.Id,
-                FullName = user.FullName ?? user.UserName ?? "John Doe",
+                FullName = user.FullName ?? user.UserName ?? "Client",
                 Email = user.Email ?? string.Empty,
                 TrainerName = "No coach assigned yet"
             };
@@ -1148,12 +1149,13 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Appointments(string tab = "Upcoming", string search = "", string status = "All")
         {
             var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             var vm = new AppointmentsViewModel
             {
                 ClientId = user.Id,
-                FullName = user.FullName ?? user.UserName ?? "John Doe",
-                Email = user.Email ?? "client@healthtrack.com",
+                FullName = user.FullName ?? user.UserName ?? "Client",
+                Email = user.Email ?? string.Empty,
                 ActiveTab = string.Equals(tab, "Past", StringComparison.OrdinalIgnoreCase) ? "Past" : "Upcoming",
                 SearchTerm = search ?? string.Empty,
                 StatusFilter = status ?? "All"
@@ -1166,7 +1168,7 @@ namespace HealthTrack.Controllers
                 .OrderBy(a => a.AppointmentDate)
                 .ToListAsync();
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+            bool isDemoUser = false;
 
             // If demo user has 0 or only 1 legacy appointment, auto-seed the reference items for them so it matches the design
             if (isDemoUser && dbAppointments.Count <= 1)
@@ -1247,10 +1249,7 @@ namespace HealthTrack.Controllers
             var allItems = new List<AppointmentItemViewModel>();
             foreach (var a in dbAppointments)
             {
-                var specialistName = a.Trainer?.FullName ?? "Dr. Maya Patel";
-                if (a.Notes != null && a.Notes.Contains("Dr. Maya Patel")) specialistName = "Dr. Maya Patel";
-                else if (a.Notes != null && a.Notes.Contains("Chris Williams")) specialistName = "Chris Williams";
-                else if (a.Notes != null && a.Notes.Contains("Dr. Nina Ford")) specialistName = "Dr. Nina Ford";
+                var specialistName = a.Trainer?.FullName ?? a.Trainer?.UserName ?? "Assigned Coach";
 
                 string category = "HEALTH CONSULTATION";
                 string duration = "45 min";
@@ -1451,20 +1450,15 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Analytics(string timeRange = "Last 30 days", string metric = "All metrics")
         {
             var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
-
-            if (isDemoUser && (user.HeightCm == null || user.HeightCm == 180))
-            {
-                user.HeightCm = 178;
-                await _userManager.UpdateAsync(user);
-            }
+            bool isDemoUser = false;
 
             var vm = new ProgressAnalyticsViewModel
             {
                 ClientId = user.Id,
-                FullName = user.FullName ?? user.UserName ?? "John Doe",
-                Email = user.Email ?? "client@healthtrack.com",
+                FullName = user.FullName ?? user.UserName ?? "Client",
+                Email = user.Email ?? string.Empty,
                 SelectedTimeRange = timeRange ?? "Last 30 days",
                 SelectedMetric = metric ?? "All metrics",
                 HeightCm = (int)(user.HeightCm ?? 175),
@@ -1773,75 +1767,26 @@ namespace HealthTrack.Controllers
         public async Task<IActionResult> Notifications()
         {
             var user = await GetCurrentClientUserAsync();
+            if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
 
             var vm = new NotificationsViewModel
             {
                 ClientId = user.Id,
-                FullName = user.FullName ?? user.UserName ?? "John Doe",
-                Email = user.Email ?? "client@healthtrack.com"
+                FullName = user.FullName ?? user.UserName ?? "Client",
+                Email = user.Email ?? string.Empty
             };
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
-
-            // Ensure demo user has notifications matching media_1792593460829_608ca178.png
-            if (isDemoUser)
+            var hasAnyNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id);
+            if (!hasAnyNotifs)
             {
-                var hasRefNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id && n.Message.Contains("Workout starts in 2 hours"));
-                if (!hasRefNotifs)
+                _context.Notifications.Add(new Notification
                 {
-                    var oldNotifs = await _context.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
-                    if (oldNotifs.Any())
-                    {
-                        _context.Notifications.RemoveRange(oldNotifs);
-                    }
-
-                    _context.Notifications.AddRange(
-                        new Notification
-                        {
-                            UserId = user.Id,
-                            Message = "Workout starts in 2 hours: Upper Body Strength is scheduled for 5:30 PM today.",
-                            IsRead = false,
-                            CreatedAt = DateTime.UtcNow.AddMinutes(-10)
-                        },
-                        new Notification
-                        {
-                            UserId = user.Id,
-                            Message = "Appointment confirmed: Dr. Maya Patel approved your health consultation.",
-                            IsRead = false,
-                            CreatedAt = DateTime.UtcNow.AddHours(-1)
-                        },
-                        new Notification
-                        {
-                            UserId = user.Id,
-                            Message = "Time to log lunch: Keep your nutrition goals on track by logging your meal.",
-                            IsRead = true,
-                            CreatedAt = DateTime.UtcNow.AddHours(-2)
-                        },
-                        new Notification
-                        {
-                            UserId = user.Id,
-                            Message = "New progress insight: You've improved workout consistency by 12% this month.",
-                            IsRead = true,
-                            CreatedAt = DateTime.UtcNow.AddDays(-1)
-                        }
-                    );
-                    await _context.SaveChangesAsync();
-                }
-            }
-            else
-            {
-                var hasAnyNotifs = await _context.Notifications.AnyAsync(n => n.UserId == user.Id);
-                if (!hasAnyNotifs)
-                {
-                    _context.Notifications.Add(new Notification
-                    {
-                        UserId = user.Id,
-                        Message = $"Welcome to HealthTrack, {user.FullName}! Get started by recording your measurements or booking your first consultation.",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                    await _context.SaveChangesAsync();
-                }
+                    UserId = user.Id,
+                    Message = $"Welcome to HealthTrack, {user.FullName ?? user.UserName ?? "Client"}! Get started by recording your measurements or booking your first consultation.",
+                    IsRead = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
             }
 
             var dbNotifs = await _context.Notifications
@@ -2011,7 +1956,7 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            bool isDemoUser = string.Equals(user.Email, "client@healthtrack.com", StringComparison.OrdinalIgnoreCase) || user.Id == "demo-client-id";
+            bool isDemoUser = false;
 
             // Determine assigned trainer
             string trainerName = "Not assigned yet";
@@ -2239,7 +2184,7 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
-        // Helper to retrieve current client user or fallback to seeded demo client
+        // Helper to retrieve current authenticated client user
         private async Task<ApplicationUser?> GetCurrentClientUserAsync()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -2249,22 +2194,7 @@ namespace HealthTrack.Controllers
                 if (isTrainer) return null;
                 return user;
             }
-
-            // Fallback for easy preview during development & grading
-            var demo = await _userManager.FindByEmailAsync("client@healthtrack.com");
-            if (demo != null) return demo;
-
-            return new ApplicationUser
-            {
-                Id = "demo-client-id",
-                FullName = "Alex Morgan",
-                Email = "client@healthtrack.com",
-                UserName = "client@healthtrack.com",
-                CurrentWeight = 72.4,
-                HeightCm = 178,
-                TargetWeight = 70.0,
-                FitnessGoal = "Weight loss & lean muscle"
-            };
+            return null;
         }
 
         private static string GetBmiCategory(double bmi)

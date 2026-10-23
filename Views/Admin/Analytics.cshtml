@@ -1,0 +1,1249 @@
+@model HealthTrack.Models.ViewModels.AdminAnalyticsViewModel
+@{
+    ViewData["Title"] = "Reports & Analytics - HealthTrack Administration";
+    Layout = null;
+    var initials = string.IsNullOrEmpty(Model.AdminInitials) ? "JL" : Model.AdminInitials;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --ht-navy-bg: #0C1E28;
+            --ht-navy-card: #132733;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-green-light: #ECFDF5;
+            --ht-slate-dark: #0F172A;
+            --ht-slate-muted: #64748B;
+            --ht-border: #E2E8F0;
+            --ht-body-bg: #F8FAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--ht-body-bg);
+            color: var(--ht-slate-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ========================================================= */
+        /* 1. SIDEBAR (Dark Navy)                                    */
+        /* ========================================================= */
+        .sidebar {
+            width: 260px;
+            background-color: var(--ht-navy-bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 1.5rem 1.15rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .nav-category {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.95rem;
+            border-radius: 12px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #10B981;
+            font-weight: 700;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-link-left i {
+            font-size: 1.1rem;
+        }
+
+        .active-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #10B981;
+        }
+
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .support-card {
+            background-color: var(--ht-navy-card);
+            border-radius: 16px;
+            padding: 1.1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .support-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .support-title {
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .support-desc {
+            color: #64748B;
+            font-size: 0.75rem;
+            line-height: 1.35;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-link {
+            color: #10B981;
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .support-link:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            color: #94A3B8;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .btn-signout:hover {
+            color: #EF4444;
+            background-color: rgba(239, 68, 68, 0.08);
+        }
+
+        .public-site-link {
+            display: block;
+            text-align: center;
+            font-size: 0.72rem;
+            color: #475569;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .public-site-link:hover {
+            color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 2. MAIN VIEW AREA                                         */
+        /* ========================================================= */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            height: 72px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid var(--ht-border);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .search-box-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #F1F5F9;
+            padding: 0.55rem 1.1rem;
+            border-radius: 12px;
+            width: 380px;
+        }
+
+        .search-icon-top {
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        .search-input-top {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.88rem;
+            color: var(--ht-slate-dark);
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .btn-notification {
+            position: relative;
+            background: none;
+            border: 1px solid var(--ht-border);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-notification:hover {
+            background-color: #F8FAFC;
+            color: var(--ht-slate-dark);
+        }
+
+        .notify-dot {
+            position: absolute;
+            top: 9px;
+            right: 9px;
+            width: 8px;
+            height: 8px;
+            background-color: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+
+        .admin-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .avatar-initials-admin {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #D1FAE5;
+            color: #059669;
+            font-weight: 800;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-meta-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #0F172A;
+            line-height: 1.2;
+        }
+
+        .admin-meta-role {
+            font-size: 0.72rem;
+            color: #64748B;
+        }
+
+        /* Body container */
+        .dashboard-body {
+            padding: 2.25rem;
+            flex: 1;
+        }
+
+        /* Page Header */
+        .page-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        .page-title {
+            font-weight: 800;
+            font-size: 1.85rem;
+            color: #0F172A;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            color: #64748B;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .btn-export-report {
+            background-color: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            color: #1E293B;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-export-report:hover {
+            background-color: #F8FAFC;
+            border-color: #CBD5E1;
+            color: #0F172A;
+            transform: translateY(-1px);
+        }
+
+        /* ========================================================= */
+        /* 3. FILTER PILL ROW (Matching Wireframe)                   */
+        /* ========================================================= */
+        .filter-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-select-pill {
+            background-color: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 12px;
+            padding: 0.55rem 2rem 0.55rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-select-pill:hover,
+        .filter-select-pill:focus {
+            border-color: #94A3B8;
+        }
+
+        .btn-apply-filters {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            color: #0F172A;
+            padding: 0.55rem 1.15rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-apply-filters:hover {
+            background: #F8FAFC;
+            border-color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 4. 4 KPI STAT CARDS (Row 1)                               */
+        /* ========================================================= */
+        .kpi-stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 18px;
+            padding: 1.45rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .kpi-stat-card:hover {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04);
+            border-color: #CBD5E1;
+        }
+
+        .kpi-card-label {
+            font-size: 0.82rem;
+            color: #64748B;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .kpi-card-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #0F172A;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .kpi-card-subtext {
+            font-size: 0.78rem;
+            color: #10B981;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .kpi-card-subtext.muted {
+            color: #64748B;
+            font-weight: 500;
+        }
+
+        /* ========================================================= */
+        /* 5. CHARTS SECTION (Row 2)                                 */
+        /* ========================================================= */
+        .analytics-chart-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 20px;
+            padding: 1.75rem;
+            height: 100%;
+        }
+
+        .chart-header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-title-main {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #0F172A;
+            margin-bottom: 0.2rem;
+        }
+
+        .chart-subtitle {
+            font-size: 0.8rem;
+            color: #64748B;
+            margin: 0;
+        }
+
+        .chart-kpi-highlight {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 1.25rem;
+        }
+
+        .chart-kpi-number {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #0F172A;
+            letter-spacing: -0.02em;
+        }
+
+        .chart-kpi-badge {
+            background: #ECFDF5;
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .chart-kpi-badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #10B981;
+        }
+
+        /* ========================================================= */
+        /* 6. COACH LEADERBOARD TABLE (Row 3)                        */
+        /* ========================================================= */
+        .leaderboard-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 20px;
+            padding: 1.75rem;
+            margin-top: 1.75rem;
+        }
+
+        .table-leaderboard {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 0;
+        }
+
+        .table-leaderboard th {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.9rem 1.1rem;
+            border-bottom: 1px solid #F1F5F9;
+            background: #FAFAFA;
+        }
+
+        .table-leaderboard th:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        .table-leaderboard th:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        .table-leaderboard td {
+            padding: 1.05rem 1.1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid #F8FAFC;
+            font-size: 0.88rem;
+        }
+
+        .table-leaderboard tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-leaderboard tr:hover td {
+            background-color: #FBFDFB;
+        }
+
+        .coach-profile-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-circle-coach {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .coach-name-bold {
+            font-weight: 700;
+            color: #0F172A;
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+
+        .coach-email-sub {
+            font-size: 0.78rem;
+            color: #64748B;
+        }
+
+        .specialty-badge {
+            display: inline-block;
+            background: #F1F5F9;
+            color: #334155;
+            padding: 0.3rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.78rem;
+        }
+
+        .load-badge {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            font-weight: 700;
+            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill-high {
+            background: #ECFDF5;
+            color: #059669;
+            font-weight: 700;
+            font-size: 0.76rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill-optimal {
+            background: #EFF6FF;
+            color: #2563EB;
+            font-weight: 700;
+            font-size: 0.76rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pill-available {
+            background: #FEF3C7;
+            color: #D97706;
+            font-weight: 700;
+            font-size: 0.76rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot-green { width: 6px; height: 6px; border-radius: 50%; background: #10B981; }
+        .dot-blue { width: 6px; height: 6px; border-radius: 50%; background: #3B82F6; }
+        .dot-amber { width: 6px; height: 6px; border-radius: 50%; background: #F59E0B; }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================= -->
+    <!-- 1. SIDEBAR (Dark Navy)                                    -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div>
+            <!-- Brand Logo -->
+            <a href="/Admin" class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="bi bi-heart"></i>
+                </div>
+                <span>Health<span style="color: #10B981;">Track</span></span>
+            </a>
+
+            <!-- Navigation Links -->
+            <div class="nav-category">WORKSPACE</div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="/Admin" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid-fill"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Users" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>User Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Trainers" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-activity"></i>
+                            <span>Trainer Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Analytics" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Reports & Analytics</span>
+                        </div>
+                        <span class="active-dot"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Settings" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-gear"></i>
+                            <span>System Settings</span>
+                        </div>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <!-- Support Card -->
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div class="support-title">Need assistance?</div>
+                <div class="support-desc">Our care team is here to help.</div>
+                <a href="mailto:support@healthtrack.com" class="support-link">
+                    <span>Contact support</span>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+
+            <!-- Sign Out Button -->
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                <button type="submit" class="btn-signout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Sign out</span>
+                </button>
+            </form>
+
+            <a href="/" class="public-site-link">View public site</a>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT AREA                                      -->
+    <!-- ========================================================= -->
+    <div class="main-wrapper">
+
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="search-box-top">
+                <i class="bi bi-search search-icon-top"></i>
+                <input type="text" class="search-input-top" placeholder="Search analytics, trends, reports..." />
+            </div>
+
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <a href="javascript:void(0)" class="btn-notification" title="Notifications">
+                    <i class="bi bi-bell"></i>
+                    <span class="notify-dot"></span>
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="admin-profile-pill btn p-0 border-0" type="button" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials-admin">@initials</div>
+                        <div class="text-start d-none d-sm-block">
+                            <div class="admin-meta-name">@Model.AdminFullName</div>
+                            <div class="admin-meta-role">@Model.AdminRole</div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted ms-1" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="adminDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.AdminFullName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@Model.AdminEmail</div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin">
+                                <i class="bi bi-grid text-secondary"></i> Administrator Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Users">
+                                <i class="bi bi-people text-secondary"></i> User Management
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Trainers">
+                                <i class="bi bi-activity text-secondary"></i> Trainer Management
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Appointments">
+                                <i class="bi bi-calendar2-event text-secondary"></i> Appointments
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Admin/Analytics">
+                                <i class="bi bi-graph-up-arrow text-secondary"></i> Reports & Analytics
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="dashboard-body">
+
+            <!-- Page Header Row -->
+            <div class="page-header-row">
+                <div>
+                    <div class="page-eyebrow">INSIGHTS & PLATFORM INTELLIGENCE</div>
+                    <h1 class="page-title">Reports & analytics</h1>
+                    <p class="page-subtitle">Track meaningful trends and make informed operational decisions.</p>
+                </div>
+                <div>
+                    <a href="/Admin/ExportReport?timeframe=@Model.SelectedTimeframe" class="btn-export-report">
+                        <i class="bi bi-download"></i>
+                        <span>Export report</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filter Pill Row (Matching Wireframe) -->
+            <form method="get" asp-action="Analytics" class="filter-row">
+                <select name="timeframe" class="filter-select-pill" onchange="this.form.submit()">
+                    <option value="Last 30 days" selected="@(Model.SelectedTimeframe == "Last 30 days" ? "selected" : null)">Last 30 days</option>
+                    <option value="Last 7 days" selected="@(Model.SelectedTimeframe == "Last 7 days" ? "selected" : null)">Last 7 days</option>
+                    <option value="Last 90 days" selected="@(Model.SelectedTimeframe == "Last 90 days" ? "selected" : null)">Last 90 days</option>
+                    <option value="This year" selected="@(Model.SelectedTimeframe == "This year" ? "selected" : null)">This year</option>
+                </select>
+
+                <select name="metric" class="filter-select-pill" onchange="this.form.submit()">
+                    <option value="All metrics" selected="@(Model.SelectedMetric == "All metrics" ? "selected" : null)">All metrics</option>
+                    <option value="User Growth" selected="@(Model.SelectedMetric == "User Growth" ? "selected" : null)">User Growth</option>
+                    <option value="Workouts" selected="@(Model.SelectedMetric == "Workouts" ? "selected" : null)">Workouts Volume</option>
+                    <option value="Appointments" selected="@(Model.SelectedMetric == "Appointments" ? "selected" : null)">Appointments Fulfillment</option>
+                    <option value="Coach Capacity" selected="@(Model.SelectedMetric == "Coach Capacity" ? "selected" : null)">Coach Capacity</option>
+                </select>
+
+                <button type="submit" class="btn-apply-filters">
+                    Apply filters
+                </button>
+            </form>
+
+            <!-- ========================================================= -->
+            <!-- 3. 4 KPI STAT CARDS (Row 1)                               -->
+            <!-- ========================================================= -->
+            <div class="row g-4 mb-4">
+                <!-- Card 1: Active Users -->
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="kpi-stat-card">
+                        <div>
+                            <div class="kpi-card-label">Active users</div>
+                            <div class="kpi-card-value">@Model.TotalActiveUsers.ToString("N0")</div>
+                        </div>
+                        <div class="kpi-card-subtext">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.UserGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Workout volume -->
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="kpi-stat-card">
+                        <div>
+                            <div class="kpi-card-label">Workouts completed</div>
+                            <div class="kpi-card-value">@Model.TotalWorkoutsLogged.ToString("N0")</div>
+                        </div>
+                        <div class="kpi-card-subtext">
+                            <i class="bi bi-check2-circle"></i>
+                            <span>@Model.WorkoutCompletionRate completion rate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Consultations -->
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="kpi-stat-card">
+                        <div>
+                            <div class="kpi-card-label">Consultations booked</div>
+                            <div class="kpi-card-value">@Model.TotalConsultations.ToString("N0")</div>
+                        </div>
+                        <div class="kpi-card-subtext">
+                            <i class="bi bi-arrow-up-right"></i>
+                            <span>@Model.ConsultationFulfillmentRate fulfillment rate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Coach Load -->
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="kpi-stat-card">
+                        <div>
+                            <div class="kpi-card-label">Coach capacity</div>
+                            <div class="kpi-card-value">@Model.AvgCoachWorkload</div>
+                        </div>
+                        <div class="kpi-card-subtext muted">
+                            <span>@Model.CoachCapacityStatus · @Model.CoachCapacityGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 4. CHARTS SECTION (Row 2 - Matching Wireframe)            -->
+            <!-- ========================================================= -->
+            <div class="row g-4 mb-4">
+                <!-- Chart 1: Platform Growth Curve (60%) -->
+                <div class="col-lg-7">
+                    <div class="analytics-chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3 class="chart-title-main">Platform activity trend</h3>
+                                <p class="chart-subtitle">Daily active users and session throughput over time</p>
+                            </div>
+                            <span class="badge bg-light text-secondary border px-2.5 py-1.5 fw-semibold small">@Model.SelectedTimeframe</span>
+                        </div>
+
+                        <div class="chart-kpi-highlight">
+                            <div class="chart-kpi-number">@Model.TotalActiveUsers.ToString("N0") active</div>
+                            <div class="chart-kpi-badge">On track</div>
+                        </div>
+
+                        <div style="height: 260px; position: relative;">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Activity Completion by Day (40%) -->
+                <div class="col-lg-5">
+                    <div class="analytics-chart-card">
+                        <div class="chart-header-row">
+                            <div>
+                                <h3 class="chart-title-main">Weekly activity volume</h3>
+                                <p class="chart-subtitle">Session completions and workouts by day</p>
+                            </div>
+                        </div>
+
+                        <div class="chart-kpi-highlight">
+                            <div class="chart-kpi-number">88.5%</div>
+                            <div class="chart-kpi-badge">+4.2% this week</div>
+                        </div>
+
+                        <div style="height: 260px; position: relative;">
+                            <canvas id="weeklyBarChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================= -->
+            <!-- 5. COACH PERFORMANCE & UTILIZATION TABLE (Row 3)          -->
+            <!-- ========================================================= -->
+            <div class="leaderboard-card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div>
+                        <h2 class="fw-bold text-dark fs-5 mb-1">Coach Performance & Capacity</h2>
+                        <p class="text-muted small mb-0">Overview of certified specialist workloads, sessions conducted, and fulfillment ratings.</p>
+                    </div>
+                    <span class="badge bg-light text-muted border px-2.5 py-1.5 fw-semibold">@Model.CoachLeaderboard.Count specialists</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-leaderboard">
+                        <thead>
+                            <tr>
+                                <th>COACH</th>
+                                <th>SPECIALTY</th>
+                                <th>ACTIVE CLIENTS</th>
+                                <th>SESSIONS DELIVERED</th>
+                                <th>COMPLETION RATE</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.CoachLeaderboard != null && Model.CoachLeaderboard.Any())
+                            {
+                                foreach (var coach in Model.CoachLeaderboard)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="coach-profile-cell">
+                                                <div class="avatar-circle-coach" style="background-color: @coach.AvatarBgColor; color: @coach.AvatarTextColor;">
+                                                    @coach.Initials
+                                                </div>
+                                                <div>
+                                                    <div class="coach-name-bold">@coach.CoachName</div>
+                                                    <div class="coach-email-sub">@coach.CoachEmail</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="specialty-badge">@coach.Specialty</span>
+                                        </td>
+                                        <td>
+                                            <span class="load-badge">
+                                                <i class="bi bi-people-fill"></i>
+                                                <span>@coach.AssignedClients Clients</span>
+                                            </span>
+                                        </td>
+                                        <td class="fw-bold text-dark">
+                                            @coach.SessionsDelivered Sessions
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 6px; width: 80px; background-color: #E2E8F0; border-radius: 10px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: @coach.CompletionRatePercent%; border-radius: 10px;"></div>
+                                                </div>
+                                                <span class="fw-bold text-dark small">@coach.CompletionRatePercent%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (coach.Status == "High Performing")
+                                            {
+                                                <span class="status-pill-high">
+                                                    <span class="dot-green"></span>
+                                                    <span>High Performing</span>
+                                                </span>
+                                            }
+                                            else if (coach.Status == "Optimal Load")
+                                            {
+                                                <span class="status-pill-optimal">
+                                                    <span class="dot-blue"></span>
+                                                    <span>Optimal Load</span>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-pill-available">
+                                                    <span class="dot-amber"></span>
+                                                    <span>Available</span>
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Chart 1: Platform Growth Curve (Area / Line with Emerald Gradient)
+        const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+        const gradientGrowth = ctxGrowth.createLinearGradient(0, 0, 0, 240);
+        gradientGrowth.addColorStop(0, 'rgba(16, 185, 129, 0.28)');
+        gradientGrowth.addColorStop(1, 'rgba(16, 185, 129, 0.00)');
+
+        new Chart(ctxGrowth, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.GrowthChartLabels)),
+                datasets: [{
+                    label: 'Active Users',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ActiveUsersChartData)),
+                    borderColor: '#10B981',
+                    borderWidth: 3,
+                    fill: true,
+                    backgroundColor: gradientGrowth,
+                    tension: 0.42,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#10B981',
+                    pointBorderWidth: 3,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        titleFont: { family: 'Plus Jakarta Sans', weight: '700' },
+                        bodyFont: { family: 'Plus Jakarta Sans' },
+                        padding: 10,
+                        cornerRadius: 8
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, color: '#94A3B8' }
+                    },
+                    y: {
+                        grid: { color: '#F1F5F9' },
+                        ticks: { font: { family: 'Plus Jakarta Sans', size: 11 }, color: '#94A3B8' }
+                    }
+                }
+            }
+        });
+
+        // Chart 2: Weekly Activity Bar Chart
+        const ctxBar = document.getElementById('weeklyBarChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentLabels)),
+                datasets: [{
+                    label: 'Completed Sessions',
+                    data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyEngagementData)),
+                    backgroundColor: [
+                        '#D1FAE5', '#D1FAE5', '#D1FAE5', '#D1FAE5', '#D1FAE5', '#D1FAE5', '#10B981'
+                    ],
+                    borderRadius: 8,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0F172A',
+                        cornerRadius: 8,
+                        titleFont: { family: 'Plus Jakarta Sans', weight: '700' }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }, color: '#94A3B8' }
+                    },
+                    y: {
+                        display: false,
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -5,35 +5,39 @@ namespace HealthTrack.Models.ViewModels
     public class AdminDashboardViewModel
     {
         // Admin Profile Info
-        public string AdminFullName { get; set; } = "Jordan Lee";
+        public string AdminFullName { get; set; } = "System Administrator";
         public string AdminEmail { get; set; } = "admin@healthtrack.com";
         public string AdminRole { get; set; } = "Administrator";
-        public string AdminInitials { get; set; } = "JL";
-        public int UnreadNotificationsCount { get; set; } = 3;
+        public string AdminInitials { get; set; } = "SA";
+        public int UnreadNotificationsCount { get; set; } = 0;
 
         // Metric Stat Cards (Row 1)
-        public int TotalUsers { get; set; } = 2846;
-        public string UsersGrowthText { get; set; } = "+8.2% from last month";
+        public int TotalUsers { get; set; } = 0;
+        public string UsersGrowthText { get; set; } = "Total platform accounts";
 
-        public int TotalClients { get; set; } = 2492;
-        public string ClientsGrowthText { get; set; } = "+7.8% from last month";
+        public int TotalClients { get; set; } = 0;
+        public string ClientsGrowthText { get; set; } = "Active clients";
 
-        public int TotalTrainers { get; set; } = 354;
-        public string TrainersGrowthText { get; set; } = "+11.4% from last month";
+        public int TotalTrainers { get; set; } = 0;
+        public string TrainersGrowthText { get; set; } = "Certified coaches";
 
-        public int TotalAppointments { get; set; } = 1278;
-        public string AppointmentsGrowthText { get; set; } = "+15.2% from last month";
+        public int TotalAdmins { get; set; } = 0;
+        public string AdminsGrowthText { get; set; } = "System managers";
+
+        public int TotalAppointments { get; set; } = 0;
+        public string AppointmentsGrowthText { get; set; } = "Scheduled sessions";
 
         // System Usage Chart (Row 2 Left)
-        public int ActiveUsersCount { get; set; } = 1984;
-        public string UsageGrowthText { get; set; } = "+12.4%";
+        public int ActiveUsersCount { get; set; } = 0;
+        public string UsageGrowthText { get; set; } = "Active now";
         public string SelectedUsageTimeRange { get; set; } = "Last 30 days";
-        public List<string> UsageLabels { get; set; } = new() { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
-        public List<int> UsageData { get; set; } = new() { 66, 68, 73, 76, 81 };
+        public List<string> UsageLabels { get; set; } = new();
+        public List<int> UsageData { get; set; } = new();
 
         // User Distribution Donut Chart (Row 2 Right)
-        public double ClientsPercentage { get; set; } = 87.6;
-        public double TrainersPercentage { get; set; } = 12.4;
+        public double ClientsPercentage { get; set; } = 0.0;
+        public double TrainersPercentage { get; set; } = 0.0;
+        public double AdminsPercentage { get; set; } = 0.0;
 
         // Recent Activity Table (Row 3)
         public List<AdminRecentActivityItem> RecentActivities { get; set; } = new();

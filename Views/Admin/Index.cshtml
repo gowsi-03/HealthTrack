@@ -525,6 +525,11 @@
             color: #6366F1;
         }
 
+        .stat-icon-purple {
+            background: #F3E8FF;
+            color: #9333EA;
+        }
+
         .stat-dots {
             color: #94A3B8;
             cursor: pointer;
@@ -688,6 +693,13 @@
             height: 10px;
             border-radius: 50%;
             background: #1E3A8A;
+        }
+
+        .legend-dot-purple {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #9333EA;
         }
 
         .legend-name {
@@ -1039,10 +1051,10 @@
             <!-- ========================================================= -->
             <!-- 3. METRIC STAT CARDS (Row 1)                              -->
             <!-- ========================================================= -->
-            <div class="row g-4 mb-4">
+            <div class="row g-3 g-xl-4 mb-4">
                 
                 <!-- Card 1: Total Users -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-xl col-md-4 col-sm-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-blue">
@@ -1055,14 +1067,14 @@
                             <div class="stat-value">@Model.TotalUsers.ToString("N0")</div>
                         </div>
                         <div class="stat-trend">
-                            <i class="bi bi-arrow-up-right"></i>
+                            <i class="bi bi-person-check"></i>
                             <span>@Model.UsersGrowthText</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Card 2: Clients -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-xl col-md-4 col-sm-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-green">
@@ -1075,14 +1087,14 @@
                             <div class="stat-value">@Model.TotalClients.ToString("N0")</div>
                         </div>
                         <div class="stat-trend">
-                            <i class="bi bi-arrow-up-right"></i>
+                            <i class="bi bi-person-heart"></i>
                             <span>@Model.ClientsGrowthText</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Card 3: Trainers -->
-                <div class="col-xl-3 col-md-6">
+                <div class="col-xl col-md-4 col-sm-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-orange">
@@ -1095,14 +1107,34 @@
                             <div class="stat-value">@Model.TotalTrainers.ToString("N0")</div>
                         </div>
                         <div class="stat-trend">
-                            <i class="bi bi-arrow-up-right"></i>
+                            <i class="bi bi-award"></i>
                             <span>@Model.TrainersGrowthText</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 4: Appointments -->
-                <div class="col-xl-3 col-md-6">
+                <!-- Card 4: Admins -->
+                <div class="col-xl col-md-4 col-sm-6">
+                    <div class="stat-card">
+                        <div class="stat-card-top">
+                            <div class="stat-icon-wrapper stat-icon-purple">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <span class="stat-dots" title="Options">•••</span>
+                        </div>
+                        <div>
+                            <div class="stat-label">Admins</div>
+                            <div class="stat-value">@Model.TotalAdmins.ToString("N0")</div>
+                        </div>
+                        <div class="stat-trend">
+                            <i class="bi bi-shield-lock"></i>
+                            <span>@Model.AdminsGrowthText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Appointments -->
+                <div class="col-xl col-md-4 col-sm-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-indigo">
@@ -1115,7 +1147,7 @@
                             <div class="stat-value">@Model.TotalAppointments.ToString("N0")</div>
                         </div>
                         <div class="stat-trend">
-                            <i class="bi bi-arrow-up-right"></i>
+                            <i class="bi bi-calendar-check"></i>
                             <span>@Model.AppointmentsGrowthText</span>
                         </div>
                     </div>
@@ -1177,16 +1209,21 @@
                         </div>
 
                         <!-- Legend Row -->
-                        <div class="donut-legend-row">
+                        <div class="donut-legend-row" style="display: flex; justify-content: space-around; gap: 8px;">
                             <div class="legend-item">
                                 <span class="legend-dot-green"></span>
                                 <span class="legend-name">Clients</span>
-                                <span class="legend-pct">@Model.ClientsPercentage%</span>
+                                <span class="legend-pct">@Model.TotalClients (@Model.ClientsPercentage%)</span>
                             </div>
                             <div class="legend-item">
                                 <span class="legend-dot-navy"></span>
                                 <span class="legend-name">Trainers</span>
-                                <span class="legend-pct">@Model.TrainersPercentage%</span>
+                                <span class="legend-pct">@Model.TotalTrainers (@Model.TrainersPercentage%)</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot-purple"></span>
+                                <span class="legend-name">Admins</span>
+                                <span class="legend-pct">@Model.TotalAdmins (@Model.AdminsPercentage%)</span>
                             </div>
                         </div>
                     </div>
@@ -1389,8 +1426,8 @@
                             }
                         },
                         y: {
-                            min: 60,
-                            max: 90,
+                            beginAtZero: true,
+                            suggestedMax: Math.max(5, @Model.ActiveUsersCount + 2),
                             grid: {
                                 color: '#F1F5F9',
                                 drawBorder: false
@@ -1398,7 +1435,7 @@
                             ticks: {
                                 color: '#94A3B8',
                                 font: { family: 'Plus Jakarta Sans', size: 11 },
-                                stepSize: 5
+                                precision: 0
                             }
                         }
                     }
@@ -1411,10 +1448,10 @@
             new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Clients', 'Trainers'],
+                    labels: ['Clients', 'Trainers', 'Admins'],
                     datasets: [{
-                        data: [@Model.ClientsPercentage, @Model.TrainersPercentage],
-                        backgroundColor: ['#10B981', '#1E3A8A'],
+                        data: [@Model.TotalClients, @Model.TotalTrainers, @Model.TotalAdmins],
+                        backgroundColor: ['#10B981', '#1E3A8A', '#9333EA'],
                         borderWidth: 0,
                         hoverOffset: 4
                     }]
@@ -1433,7 +1470,7 @@
                             cornerRadius: 8,
                             callbacks: {
                                 label: function(context) {
-                                    return ' ' + context.label + ': ' + context.parsed + '%';
+                                    return ' ' + context.label + ': ' + context.parsed + ' user(s)';
                                 }
                             }
                         }

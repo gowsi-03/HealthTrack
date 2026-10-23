@@ -33,7 +33,7 @@ namespace HealthTrack.Controllers
             string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
             string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
-            string initials = "JL";
+            string initials = "SA";
             if (!string.IsNullOrWhiteSpace(adminName))
             {
                 var parts = adminName.Trim().Split(' ');
@@ -47,29 +47,56 @@ namespace HealthTrack.Controllers
                 AdminEmail = adminEmail,
                 AdminRole = "Administrator",
                 AdminInitials = initials,
-                UnreadNotificationsCount = 3
+                UnreadNotificationsCount = 0
             };
 
             // Calculate real counts from database
             var allUsers = await _userManager.Users.ToListAsync();
             var clientUsers = await _userManager.GetUsersInRoleAsync("Client");
             var trainerUsers = await _userManager.GetUsersInRoleAsync("Trainer");
+            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
             var appointmentsCount = await _context.Appointments.CountAsync();
 
             vm.TotalUsers = allUsers.Count;
             vm.TotalClients = clientUsers.Count;
             vm.TotalTrainers = trainerUsers.Count;
+            vm.TotalAdmins = adminUsers.Count;
             vm.TotalAppointments = appointmentsCount;
 
+            // Real active users: Users who are not locked out
+            int activeCount = allUsers.Count(u => !u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow);
+            vm.ActiveUsersCount = activeCount;
+            vm.UsageGrowthText = activeCount > 0 ? $"{activeCount} active user{(activeCount > 1 ? "s" : "")}" : "0 active";
+
+            // Metric card dynamic labels
+            vm.UsersGrowthText = $"{allUsers.Count} total account{(allUsers.Count == 1 ? "" : "s")}";
+            vm.ClientsGrowthText = $"{clientUsers.Count} registered client{(clientUsers.Count == 1 ? "" : "s")}";
+            vm.TrainersGrowthText = $"{trainerUsers.Count} certified coach{(trainerUsers.Count == 1 ? "" : "es")}";
+            vm.AdminsGrowthText = $"{adminUsers.Count} system manager{(adminUsers.Count == 1 ? "" : "s")}";
+            vm.AppointmentsGrowthText = $"{appointmentsCount} scheduled booking{(appointmentsCount == 1 ? "" : "s")}";
+
+            // Role distribution percentages (Total = 100%)
             double totalRatio = vm.TotalUsers > 0 ? vm.TotalUsers : 1;
             vm.ClientsPercentage = Math.Round(((double)vm.TotalClients / totalRatio) * 100, 1);
             vm.TrainersPercentage = Math.Round(((double)vm.TotalTrainers / totalRatio) * 100, 1);
+            vm.AdminsPercentage = Math.Round(((double)vm.TotalAdmins / totalRatio) * 100, 1);
+
+            // Dynamic System Usage Chart Data (Last 30 days)
+            var today = DateTime.UtcNow;
+            vm.UsageLabels = new List<string>
+            {
+                today.AddDays(-28).ToString("MMM dd"),
+                today.AddDays(-21).ToString("MMM dd"),
+                today.AddDays(-14).ToString("MMM dd"),
+                today.AddDays(-7).ToString("MMM dd"),
+                today.ToString("MMM dd")
+            };
+            vm.UsageData = new List<int> { activeCount, activeCount, activeCount, activeCount, activeCount };
 
             // Populate Recent Activity 100% from database users
             var recentList = new List<AdminRecentActivityItem>();
 
             var dbRecent = allUsers
-                .Where(u => u.Email != adminEmail)
                 .OrderByDescending(u => u.Id)
                 .Take(6)
                 .ToList();
@@ -205,11 +232,18 @@ namespace HealthTrack.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string userId, string returnUrl = "")
         {
+            var currentAdmin = await _userManager.GetUserAsync(User);
             if (!string.IsNullOrEmpty(userId) && !userId.StartsWith("mock-"))
             {
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user != null)
                 {
+                    if (currentAdmin != null && user.Id == currentAdmin.Id)
+                    {
+                        TempData["ErrorMessage"] = "You cannot delete your own active administrator account.";
+                        if (!string.IsNullOrEmpty(returnUrl)) return LocalRedirect(returnUrl);
+                        return RedirectToAction(nameof(Users));
+                    }
                     await _userManager.DeleteAsync(user);
                     TempData["SuccessMessage"] = $"User {user.FullName} removed successfully.";
                 }
@@ -230,7 +264,7 @@ namespace HealthTrack.Controllers
             string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
             string adminEmail = currentAdmin?.Email ?? User.Identity?.Name ?? string.Empty;
 
-            string initials = "JL";
+            string initials = "SA";
             if (!string.IsNullOrWhiteSpace(adminName))
             {
                 var parts = adminName.Trim().Split(' ');
@@ -251,7 +285,7 @@ namespace HealthTrack.Controllers
                 PageSize = 4
             };
 
-            // 1. Gather all users (Database + Seed/Mockup Reference items)
+            // 1. Gather all users from Database
             var allUsers = await _userManager.Users.ToListAsync();
 
             var combinedList = new List<AdminUserListItemViewModel>();
@@ -261,7 +295,7 @@ namespace HealthTrack.Controllers
             int colorIdx = 0;
 
             // Add real users from DB
-            foreach (var u in allUsers.Where(u => u.Email != adminEmail))
+            foreach (var u in allUsers)
             {
                 var roles = await _userManager.GetRolesAsync(u);
                 string userRole = roles.FirstOrDefault() ?? u.Role ?? "Client";

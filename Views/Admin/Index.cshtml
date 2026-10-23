@@ -1051,10 +1051,10 @@
             <!-- ========================================================= -->
             <!-- 3. METRIC STAT CARDS (Row 1)                              -->
             <!-- ========================================================= -->
-            <div class="row g-3 g-xl-4 mb-4">
+            <div class="row g-4 mb-4">
                 
                 <!-- Card 1: Total Users -->
-                <div class="col-xl col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-blue">
@@ -1074,7 +1074,7 @@
                 </div>
 
                 <!-- Card 2: Clients -->
-                <div class="col-xl col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-green">
@@ -1094,7 +1094,7 @@
                 </div>
 
                 <!-- Card 3: Trainers -->
-                <div class="col-xl col-md-4 col-sm-6">
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-orange">
@@ -1113,28 +1113,8 @@
                     </div>
                 </div>
 
-                <!-- Card 4: Admins -->
-                <div class="col-xl col-md-4 col-sm-6">
-                    <div class="stat-card">
-                        <div class="stat-card-top">
-                            <div class="stat-icon-wrapper stat-icon-purple">
-                                <i class="bi bi-shield-check"></i>
-                            </div>
-                            <span class="stat-dots" title="Options">•••</span>
-                        </div>
-                        <div>
-                            <div class="stat-label">Admins</div>
-                            <div class="stat-value">@Model.TotalAdmins.ToString("N0")</div>
-                        </div>
-                        <div class="stat-trend">
-                            <i class="bi bi-shield-lock"></i>
-                            <span>@Model.AdminsGrowthText</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 5: Appointments -->
-                <div class="col-xl col-md-4 col-sm-6">
+                <!-- Card 4: Appointments -->
+                <div class="col-xl-3 col-md-6">
                     <div class="stat-card">
                         <div class="stat-card-top">
                             <div class="stat-icon-wrapper stat-icon-indigo">
@@ -1209,7 +1189,7 @@
                         </div>
 
                         <!-- Legend Row -->
-                        <div class="donut-legend-row" style="display: flex; justify-content: space-around; gap: 8px;">
+                        <div class="donut-legend-row">
                             <div class="legend-item">
                                 <span class="legend-dot-green"></span>
                                 <span class="legend-name">Clients</span>
@@ -1219,11 +1199,6 @@
                                 <span class="legend-dot-navy"></span>
                                 <span class="legend-name">Trainers</span>
                                 <span class="legend-pct">@Model.TotalTrainers (@Model.TrainersPercentage%)</span>
-                            </div>
-                            <div class="legend-item">
-                                <span class="legend-dot-purple"></span>
-                                <span class="legend-name">Admins</span>
-                                <span class="legend-pct">@Model.TotalAdmins (@Model.AdminsPercentage%)</span>
                             </div>
                         </div>
                     </div>
@@ -1442,16 +1417,19 @@
                 }
             });
 
-            // 2. User Distribution Donut Chart
+            // 2. User Distribution Donut Chart (Clients and Trainers only)
             const ctxDonut = document.getElementById('userDistributionChart').getContext('2d');
+
+            const hasUsers = (@Model.TotalClients + @Model.TotalTrainers) > 0;
+            const donutData = hasUsers ? [@Model.TotalClients, @Model.TotalTrainers] : [0, 0];
 
             new Chart(ctxDonut, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Clients', 'Trainers', 'Admins'],
+                    labels: ['Clients', 'Trainers'],
                     datasets: [{
-                        data: [@Model.TotalClients, @Model.TotalTrainers, @Model.TotalAdmins],
-                        backgroundColor: ['#10B981', '#1E3A8A', '#9333EA'],
+                        data: donutData,
+                        backgroundColor: ['#10B981', '#1E3A8A'],
                         borderWidth: 0,
                         hoverOffset: 4
                     }]
@@ -1463,6 +1441,7 @@
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: hasUsers,
                             backgroundColor: '#0F172A',
                             titleFont: { family: 'Plus Jakarta Sans', size: 12 },
                             bodyFont: { family: 'Plus Jakarta Sans', size: 12 },

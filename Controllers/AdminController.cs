@@ -50,36 +50,41 @@ namespace HealthTrack.Controllers
                 UnreadNotificationsCount = 0
             };
 
-            // Calculate real counts from database
+            // Calculate real counts from database (Clients and Trainers only, excluding Admin)
             var allUsers = await _userManager.Users.ToListAsync();
             var clientUsers = await _userManager.GetUsersInRoleAsync("Client");
             var trainerUsers = await _userManager.GetUsersInRoleAsync("Trainer");
-            var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+            var regularUsers = allUsers.Where(u => u.Role != "Admin").ToList();
             var appointmentsCount = await _context.Appointments.CountAsync();
 
-            vm.TotalUsers = allUsers.Count;
+            int regularUsersCount = clientUsers.Count + trainerUsers.Count;
+            vm.TotalUsers = regularUsersCount;
             vm.TotalClients = clientUsers.Count;
             vm.TotalTrainers = trainerUsers.Count;
-            vm.TotalAdmins = adminUsers.Count;
             vm.TotalAppointments = appointmentsCount;
 
-            // Real active users: Users who are not locked out
-            int activeCount = allUsers.Count(u => !u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow);
+            // Real active regular users: Users who are not locked out (excluding Admin)
+            int activeCount = regularUsers.Count(u => !u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow);
             vm.ActiveUsersCount = activeCount;
             vm.UsageGrowthText = activeCount > 0 ? $"{activeCount} active user{(activeCount > 1 ? "s" : "")}" : "0 active";
 
             // Metric card dynamic labels
-            vm.UsersGrowthText = $"{allUsers.Count} total account{(allUsers.Count == 1 ? "" : "s")}";
+            vm.UsersGrowthText = $"{regularUsersCount} platform account{(regularUsersCount == 1 ? "" : "s")}";
             vm.ClientsGrowthText = $"{clientUsers.Count} registered client{(clientUsers.Count == 1 ? "" : "s")}";
             vm.TrainersGrowthText = $"{trainerUsers.Count} certified coach{(trainerUsers.Count == 1 ? "" : "es")}";
-            vm.AdminsGrowthText = $"{adminUsers.Count} system manager{(adminUsers.Count == 1 ? "" : "s")}";
             vm.AppointmentsGrowthText = $"{appointmentsCount} scheduled booking{(appointmentsCount == 1 ? "" : "s")}";
 
-            // Role distribution percentages (Total = 100%)
-            double totalRatio = vm.TotalUsers > 0 ? vm.TotalUsers : 1;
-            vm.ClientsPercentage = Math.Round(((double)vm.TotalClients / totalRatio) * 100, 1);
-            vm.TrainersPercentage = Math.Round(((double)vm.TotalTrainers / totalRatio) * 100, 1);
-            vm.AdminsPercentage = Math.Round(((double)vm.TotalAdmins / totalRatio) * 100, 1);
+            // Role distribution percentages (Clients and Trainers only)
+            if (regularUsersCount > 0)
+            {
+                vm.ClientsPercentage = Math.Round(((double)vm.TotalClients / regularUsersCount) * 100, 1);
+                vm.TrainersPercentage = Math.Round(((double)vm.TotalTrainers / regularUsersCount) * 100, 1);
+            }
+            else
+            {
+                vm.ClientsPercentage = 0.0;
+                vm.TrainersPercentage = 0.0;
+            }
 
             // Dynamic System Usage Chart Data (Last 30 days)
             var today = DateTime.UtcNow;
@@ -93,10 +98,10 @@ namespace HealthTrack.Controllers
             };
             vm.UsageData = new List<int> { activeCount, activeCount, activeCount, activeCount, activeCount };
 
-            // Populate Recent Activity 100% from database users
+            // Populate Recent Activity 100% from database users (Clients and Trainers only)
             var recentList = new List<AdminRecentActivityItem>();
 
-            var dbRecent = allUsers
+            var dbRecent = regularUsers
                 .OrderByDescending(u => u.Id)
                 .Take(6)
                 .ToList();
@@ -285,7 +290,7 @@ namespace HealthTrack.Controllers
                 PageSize = 4
             };
 
-            // 1. Gather all users from Database
+            // 1. Gather all users from Database (Clients and Trainers only, excluding Admin)
             var allUsers = await _userManager.Users.ToListAsync();
 
             var combinedList = new List<AdminUserListItemViewModel>();
@@ -294,8 +299,8 @@ namespace HealthTrack.Controllers
             string[] pastelTexts = { "#0284C7", "#059669", "#D97706", "#7C3AED", "#DB2777", "#4F46E5" };
             int colorIdx = 0;
 
-            // Add real users from DB
-            foreach (var u in allUsers)
+            // Add real regular users from DB (Clients and Trainers only)
+            foreach (var u in allUsers.Where(u => u.Role != "Admin"))
             {
                 var roles = await _userManager.GetRolesAsync(u);
                 string userRole = roles.FirstOrDefault() ?? u.Role ?? "Client";

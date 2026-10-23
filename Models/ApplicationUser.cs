@@ -19,6 +19,9 @@ namespace HealthTrack.Models
         [Display(Name = "Is Approved")]
         public bool IsApproved { get; set; } = true;
 
+        [Display(Name = "Registration Date")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         [Display(Name = "Height (cm)")]
         [Range(50, 250, ErrorMessage = "Please enter a valid height in cm.")]
         public double? HeightCm { get; set; } = 175.0;

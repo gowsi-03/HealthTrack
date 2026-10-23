@@ -466,7 +466,7 @@ namespace HealthTrack.Controllers
                     Status = clientStatus,
                     CurrentWeight = dbc.CurrentWeight ?? 72.0,
                     TargetWeight = dbc.TargetWeight ?? 70.0,
-                    JoinedDate = "Jan 2025"
+                    JoinedDate = dbc.CreatedAt > DateTime.MinValue ? dbc.CreatedAt.ToString("MMM yyyy") : DateTime.UtcNow.ToString("MMM yyyy")
                 });
             }
 

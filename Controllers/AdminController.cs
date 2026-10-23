@@ -439,7 +439,7 @@ namespace HealthTrack.Controllers
                     AssignedClientsCount = assignedCount,
                     IsApproved = t.IsApproved,
                     Status = statusStr,
-                    JoinedDate = "Jan 15, 2025",
+                    JoinedDate = t.CreatedAt > DateTime.MinValue ? t.CreatedAt.ToString("MMM dd, yyyy") : DateTime.UtcNow.ToString("MMM dd, yyyy"),
                     Initials = tInitials,
                     AvatarBgColor = pastelBgs[colorIdx % pastelBgs.Length],
                     AvatarTextColor = pastelTexts[colorIdx % pastelTexts.Length]
@@ -502,7 +502,8 @@ namespace HealthTrack.Controllers
                 FullName = form.FullName,
                 Role = "Trainer",
                 FitnessGoal = form.Specialty,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow
             };
 
             var createResult = await _userManager.CreateAsync(newTrainer, form.Password);

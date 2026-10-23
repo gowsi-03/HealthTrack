@@ -84,7 +84,8 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                     FullName = Input.FullName,
                     Role = assignedRole,
                     EmailConfirmed = true,
-                    IsApproved = !isTrainer // Clients are approved immediately; Trainers require Admin approval
+                    IsApproved = !isTrainer, // Clients are approved immediately; Trainers require Admin approval
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 var result = await _userManager.CreateAsync(user, Input.Password);

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using HealthTrack.Models;
 
 namespace HealthTrack.Data
@@ -10,6 +11,9 @@ namespace HealthTrack.Data
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
+
+            // Ensure database is created and migrations are applied
+            await context.Database.MigrateAsync();
 
             // 1. Seed Roles
             string[] roles = { "Admin", "Trainer", "Client" };
@@ -37,224 +41,282 @@ namespace HealthTrack.Data
                 await userManager.CreateAsync(adminUser, "Admin123!");
                 await userManager.AddToRoleAsync(adminUser, "Admin");
             }
-            else if (adminUser.FullName == "Super Administrator")
+
+            // 3. Seed Trainers
+            var trainerSeedData = new List<(string Email, string Name, string Specialty)>
             {
-                adminUser.FullName = "Jordan Lee";
-                await userManager.UpdateAsync(adminUser);
+                ("maya.patel@healthtrack.com", "Dr. Maya Patel", "Health & Wellness Physician"),
+                ("alex.henderson@healthtrack.com", "Alex Henderson", "Strength & Conditioning Coach"),
+                ("trainer@healthtrack.com", "Alex Henderson", "Strength & Conditioning Coach"),
+                ("chris.williams@healthtrack.com", "Chris Williams", "Senior Performance Coach"),
+                ("nina.ford@healthtrack.com", "Dr. Nina Ford", "Clinical Nutritionist"),
+                ("daniel.kim@healthtrack.com", "Daniel Kim", "Sports Rehab Specialist")
+            };
+
+            var trainers = new Dictionary<string, ApplicationUser>();
+
+            foreach (var t in trainerSeedData)
+            {
+                var user = await userManager.FindByEmailAsync(t.Email);
+                if (user == null)
+                {
+                    user = new ApplicationUser
+                    {
+                        UserName = t.Email,
+                        Email = t.Email,
+                        FullName = t.Name,
+                        Role = "Trainer",
+                        FitnessGoal = t.Specialty,
+                        EmailConfirmed = true
+                    };
+                    await userManager.CreateAsync(user, "Trainer123!");
+                    await userManager.AddToRoleAsync(user, "Trainer");
+                }
+                trainers[t.Email] = user;
             }
 
-            // 3. Seed Trainer User & Specialists
-            var trainerEmail = "trainer@healthtrack.com";
-            var trainerUser = await userManager.FindByEmailAsync(trainerEmail);
-            if (trainerUser == null)
+            var primaryTrainer = trainers["maya.patel@healthtrack.com"];
+            var strengthCoach = trainers["alex.henderson@healthtrack.com"];
+            var nutritionist = trainers["nina.ford@healthtrack.com"];
+            var performanceCoach = trainers["chris.williams@healthtrack.com"];
+
+            // 4. Seed Clients with Real Workouts, Diets, and Appointments
+            var clientSeedData = new List<(string Email, string Name, string Goal, double H, double W, double TW, ApplicationUser Coach)>
             {
-                trainerUser = new ApplicationUser
+                ("client@healthtrack.com", "Alex Morgan", "Strength & Mobility", 178, 72.4, 70.0, primaryTrainer),
+                ("alex.morgan@email.com", "Alex Morgan", "Strength & Mobility", 178, 72.4, 70.0, primaryTrainer),
+                ("olivia.smith@email.com", "Olivia Smith", "Cardio Endurance", 168, 62.5, 60.0, primaryTrainer),
+                ("liam.parker@email.com", "Liam Parker", "Weight Management", 182, 85.0, 78.0, primaryTrainer),
+                ("sophia.chen@email.com", "Sophia Chen", "Posture & Core Stability", 165, 58.0, 56.0, strengthCoach),
+                ("marcus.vance@email.com", "Marcus Vance", "Hypertrophy Phase", 180, 78.2, 75.0, performanceCoach),
+                ("sarah.jenkins@email.com", "Sarah Jenkins", "Metabolic Health", 172, 69.0, 65.0, nutritionist),
+                ("elena.vance@email.com", "Elena Vance", "Athletic Recovery", 170, 64.0, 62.0, primaryTrainer)
+            };
+
+            var seededClients = new List<ApplicationUser>();
+
+            foreach (var c in clientSeedData)
+            {
+                var client = await userManager.FindByEmailAsync(c.Email);
+                if (client == null)
                 {
-                    UserName = trainerEmail,
-                    Email = trainerEmail,
-                    FullName = "Alex Henderson",
-                    Role = "Trainer",
-                    FitnessGoal = "Certified Strength & Conditioning Coach",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(trainerUser, "Trainer123!");
-                await userManager.AddToRoleAsync(trainerUser, "Trainer");
+                    client = new ApplicationUser
+                    {
+                        UserName = c.Email,
+                        Email = c.Email,
+                        FullName = c.Name,
+                        Role = "Client",
+                        FitnessGoal = c.Goal,
+                        HeightCm = c.H,
+                        CurrentWeight = c.W,
+                        TargetWeight = c.TW,
+                        TrainerId = c.Coach.Id,
+                        EmailConfirmed = true
+                    };
+                    await userManager.CreateAsync(client, "Client123!");
+                    await userManager.AddToRoleAsync(client, "Client");
+                }
+                else
+                {
+                    client.TrainerId = c.Coach.Id;
+                    await userManager.UpdateAsync(client);
+                }
+                seededClients.Add(client);
             }
 
-            // Seed Dr. Maya Patel
-            var mayaEmail = "maya.patel@healthtrack.com";
-            var mayaUser = await userManager.FindByEmailAsync(mayaEmail);
-            if (mayaUser == null)
+            // 5. Seed Real Health Logs for Clients (Biometrics & Measurement History)
+            var primaryClient = seededClients.First(c => c.Email == "client@healthtrack.com");
+            if (!await context.HealthLogs.AnyAsync(h => h.ClientId == primaryClient.Id))
             {
-                mayaUser = new ApplicationUser
-                {
-                    UserName = mayaEmail,
-                    Email = mayaEmail,
-                    FullName = "Dr. Maya Patel",
-                    Role = "Trainer",
-                    FitnessGoal = "Health & Wellness Physician",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(mayaUser, "Specialist123!");
-                await userManager.AddToRoleAsync(mayaUser, "Trainer");
-            }
-
-            // Seed Chris Williams
-            var chrisEmail = "chris.williams@healthtrack.com";
-            var chrisUser = await userManager.FindByEmailAsync(chrisEmail);
-            if (chrisUser == null)
-            {
-                chrisUser = new ApplicationUser
-                {
-                    UserName = chrisEmail,
-                    Email = chrisEmail,
-                    FullName = "Chris Williams",
-                    Role = "Trainer",
-                    FitnessGoal = "Senior Performance & Strength Coach",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(chrisUser, "Specialist123!");
-                await userManager.AddToRoleAsync(chrisUser, "Trainer");
-            }
-
-            // Seed Dr. Nina Ford
-            var ninaEmail = "nina.ford@healthtrack.com";
-            var ninaUser = await userManager.FindByEmailAsync(ninaEmail);
-            if (ninaUser == null)
-            {
-                ninaUser = new ApplicationUser
-                {
-                    UserName = ninaEmail,
-                    Email = ninaEmail,
-                    FullName = "Dr. Nina Ford",
-                    Role = "Trainer",
-                    FitnessGoal = "Registered Clinical Nutritionist",
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(ninaUser, "Specialist123!");
-                await userManager.AddToRoleAsync(ninaUser, "Trainer");
-            }
-
-            // 4. Seed Client User
-            var clientEmail = "client@healthtrack.com";
-            var clientUser = await userManager.FindByEmailAsync(clientEmail);
-            if (clientUser == null)
-            {
-                clientUser = new ApplicationUser
-                {
-                    UserName = clientEmail,
-                    Email = clientEmail,
-                    FullName = "John Doe",
-                    Role = "Client",
-                    HeightCm = 180,
-                    CurrentWeight = 74.2,
-                    TargetWeight = 70.0,
-                    FitnessGoal = "Weight Loss & Muscle Tone",
-                    TrainerId = trainerUser.Id,
-                    EmailConfirmed = true
-                };
-                await userManager.CreateAsync(clientUser, "Client123!");
-                await userManager.AddToRoleAsync(clientUser, "Client");
-
-                // Seed Initial Health Logs for Progress & Analytics
                 context.HealthLogs.AddRange(
-                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 1), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline sprint phase measurement - waist:84 cm" },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 15), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle body composition scan - waist:84 cm" },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 3, 29), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month progress evaluation - waist:83 cm" },
-                    new HealthLog { ClientId = clientUser.Id, LogDate = new DateTime(2025, 4, 12), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout biometric weigh-in - waist:82 cm" }
+                    new HealthLog { ClientId = primaryClient.Id, LogDate = DateTime.UtcNow.AddDays(-42), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline biometric scan - waist:84 cm" },
+                    new HealthLog { ClientId = primaryClient.Id, LogDate = DateTime.UtcNow.AddDays(-28), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle check-in - waist:84 cm" },
+                    new HealthLog { ClientId = primaryClient.Id, LogDate = DateTime.UtcNow.AddDays(-14), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month evaluation - waist:83 cm" },
+                    new HealthLog { ClientId = primaryClient.Id, LogDate = DateTime.UtcNow.AddDays(-1), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout weigh-in - waist:82 cm" }
                 );
+                await context.SaveChangesAsync();
+            }
 
-                // Seed Initial Workout Plan
-                var workout = new WorkoutPlan
+            // 6. Seed Real Workout Plans
+            if (!await context.WorkoutPlans.AnyAsync())
+            {
+                var wp1 = new WorkoutPlan
                 {
-                    Title = "Upper Body Hypertrophy",
-                    ClientId = clientUser.Id,
-                    TrainerId = trainerUser.Id,
-                    CreatedAt = DateTime.UtcNow
+                    Title = "Strength & Mobility Program",
+                    ClientId = primaryClient.Id,
+                    TrainerId = primaryTrainer.Id,
+                    CreatedAt = DateTime.UtcNow.AddDays(-10)
                 };
-                workout.Exercises.Add(new WorkoutExercise { Name = "Barbell Bench Press", Sets = "4 sets", Reps = "10 reps (60 kg)", IsCompleted = true });
-                workout.Exercises.Add(new WorkoutExercise { Name = "Incline Dumbbell Rows", Sets = "3 sets", Reps = "12 reps (18 kg)", IsCompleted = true });
-                workout.Exercises.Add(new WorkoutExercise { Name = "Overhead Dumbbell Press", Sets = "3 sets", Reps = "10 reps (35 kg)", IsCompleted = false });
-                workout.Exercises.Add(new WorkoutExercise { Name = "Tricep Rope Pushdowns", Sets = "3 sets", Reps = "15 reps (25 kg)", IsCompleted = false });
+                wp1.Exercises.Add(new WorkoutExercise { Name = "Barbell Bench Press", Sets = "4 sets", Reps = "10 reps (60 kg)", IsCompleted = true });
+                wp1.Exercises.Add(new WorkoutExercise { Name = "Incline Dumbbell Rows", Sets = "3 sets", Reps = "12 reps (18 kg)", IsCompleted = true });
+                wp1.Exercises.Add(new WorkoutExercise { Name = "Overhead Dumbbell Press", Sets = "3 sets", Reps = "10 reps (35 kg)", IsCompleted = false });
+                wp1.Exercises.Add(new WorkoutExercise { Name = "Tricep Rope Pushdowns", Sets = "3 sets", Reps = "15 reps (25 kg)", IsCompleted = false });
+                context.WorkoutPlans.Add(wp1);
 
-                context.WorkoutPlans.Add(workout);
-
-                // Seed Initial Diet Plan (Matching user reference layout)
-                var diet = new DietPlan
+                var olivia = seededClients.FirstOrDefault(c => c.Email == "olivia.smith@email.com");
+                if (olivia != null)
                 {
-                    Title = "Balanced Performance Plan",
-                    TargetCalories = 2150,
-                    ClientId = clientUser.Id,
-                    CreatedAt = DateTime.UtcNow
+                    var wp2 = new WorkoutPlan
+                    {
+                        Title = "Cardio & Athletic Endurance",
+                        ClientId = olivia.Id,
+                        TrainerId = primaryTrainer.Id,
+                        CreatedAt = DateTime.UtcNow.AddDays(-8)
+                    };
+                    wp2.Exercises.Add(new WorkoutExercise { Name = "Interval Sprint Drills", Sets = "6 sets", Reps = "400m intervals", IsCompleted = true });
+                    wp2.Exercises.Add(new WorkoutExercise { Name = "Kettlebell Swings", Sets = "4 sets", Reps = "20 reps (16 kg)", IsCompleted = true });
+                    wp2.Exercises.Add(new WorkoutExercise { Name = "Core Hollow Holds", Sets = "3 sets", Reps = "45 sec hold", IsCompleted = true });
+                    context.WorkoutPlans.Add(wp2);
+                }
+
+                var liam = seededClients.FirstOrDefault(c => c.Email == "liam.parker@email.com");
+                if (liam != null)
+                {
+                    var wp3 = new WorkoutPlan
+                    {
+                        Title = "Full Body Hypertrophy Split",
+                        ClientId = liam.Id,
+                        TrainerId = primaryTrainer.Id,
+                        CreatedAt = DateTime.UtcNow.AddDays(-5)
+                    };
+                    wp3.Exercises.Add(new WorkoutExercise { Name = "Barbell Back Squats", Sets = "4 sets", Reps = "8 reps (90 kg)", IsCompleted = true });
+                    wp3.Exercises.Add(new WorkoutExercise { Name = "Romanian Deadlifts", Sets = "4 sets", Reps = "10 reps (80 kg)", IsCompleted = true });
+                    wp3.Exercises.Add(new WorkoutExercise { Name = "Bulgarian Split Squats", Sets = "3 sets", Reps = "10 reps/leg", IsCompleted = false });
+                    context.WorkoutPlans.Add(wp3);
+                }
+
+                await context.SaveChangesAsync();
+            }
+
+            // 7. Seed Real Diet Plans
+            if (!await context.DietPlans.AnyAsync())
+            {
+                var dp1 = new DietPlan
+                {
+                    Title = "Balanced Athletic Performance",
+                    TargetCalories = 2120,
+                    ClientId = primaryClient.Id,
+                    CreatedAt = DateTime.UtcNow.AddDays(-10)
                 };
-                diet.Meals.Add(new MealItem { MealType = "Breakfast", Description = "Greek yogurt, berries & almond granola", Calories = 420 });
-                diet.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken quinoa power bowl", Calories = 610 });
-                diet.Meals.Add(new MealItem { MealType = "Afternoon snack", Description = "Apple with almond butter", Calories = 240 });
-                diet.Meals.Add(new MealItem { MealType = "Dinner", Description = "Baked salmon, greens & brown rice", Calories = 580 });
+                dp1.Meals.Add(new MealItem { MealType = "Breakfast", Description = "Greek yogurt, chia seeds & almond granola", Calories = 450 });
+                dp1.Meals.Add(new MealItem { MealType = "Lunch", Description = "Grilled chicken quinoa bowl with avocado", Calories = 650 });
+                dp1.Meals.Add(new MealItem { MealType = "Snack", Description = "Green protein smoothie with almond butter", Calories = 320 });
+                dp1.Meals.Add(new MealItem { MealType = "Dinner", Description = "Wild salmon with roasted asparagus & sweet potato", Calories = 700 });
+                context.DietPlans.Add(dp1);
 
-                context.DietPlans.Add(diet);
+                var olivia = seededClients.FirstOrDefault(c => c.Email == "olivia.smith@email.com");
+                if (olivia != null)
+                {
+                    var dp2 = new DietPlan
+                    {
+                        Title = "Lean Energy & Endurance Protocol",
+                        TargetCalories = 1850,
+                        ClientId = olivia.Id,
+                        CreatedAt = DateTime.UtcNow.AddDays(-7)
+                    };
+                    dp2.Meals.Add(new MealItem { MealType = "Breakfast", Description = "Poached eggs on sourdough with spinach", Calories = 400 });
+                    dp2.Meals.Add(new MealItem { MealType = "Lunch", Description = "Tuna poke bowl with brown rice", Calories = 550 });
+                    dp2.Meals.Add(new MealItem { MealType = "Dinner", Description = "Turkey breast meatballs with zucchini noodles", Calories = 600 });
+                    dp2.Meals.Add(new MealItem { MealType = "Snack", Description = "Mixed raw walnuts and blueberries", Calories = 300 });
+                    context.DietPlans.Add(dp2);
+                }
 
-                // Seed Initial Appointments (Matching user reference layout media_1792558583092_fb065d35.png)
+                await context.SaveChangesAsync();
+            }
+
+            // 8. Seed Real Appointments across Coaches
+            if (!await context.Appointments.AnyAsync())
+            {
+                var olivia = seededClients.FirstOrDefault(c => c.Email == "olivia.smith@email.com");
+                var liam = seededClients.FirstOrDefault(c => c.Email == "liam.parker@email.com");
+                var sophia = seededClients.FirstOrDefault(c => c.Email == "sophia.chen@email.com");
+                var marcus = seededClients.FirstOrDefault(c => c.Email == "marcus.vance@email.com");
+                var sarah = seededClients.FirstOrDefault(c => c.Email == "sarah.jenkins@email.com");
+
                 context.Appointments.AddRange(
                     new Appointment
                     {
-                        ClientId = clientUser.Id,
-                        TrainerId = mayaUser.Id,
-                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 18),
+                        ClientId = primaryClient.Id,
+                        TrainerId = primaryTrainer.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(1),
                         TimeSlot = "10:30 AM",
-                        Status = "Approved",
-                        Notes = "HEALTH CONSULTATION · 45 min - Routine cardiovascular screening and general wellness assessment."
+                        Status = "Confirmed",
+                        Notes = "HEALTH CONSULTATION · 45 min - Quarterly biometric review & nutritional timing strategy."
                     },
                     new Appointment
                     {
-                        ClientId = clientUser.Id,
-                        TrainerId = chrisUser.Id,
-                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 4, 24),
-                        TimeSlot = "4:00 PM",
+                        ClientId = olivia?.Id ?? primaryClient.Id,
+                        TrainerId = primaryTrainer.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(2),
+                        TimeSlot = "02:00 PM",
                         Status = "Pending",
-                        Notes = "PERSONAL TRAINING · 60 min - Progressive overload review & squat technique optimization."
+                        Notes = "PERSONAL TRAINING · 60 min - VO2 Max & aerobic threshold testing."
                     },
                     new Appointment
                     {
-                        ClientId = clientUser.Id,
-                        TrainerId = ninaUser.Id,
-                        AppointmentDate = new DateTime(DateTime.UtcNow.Year, 5, 2),
-                        TimeSlot = "9:15 AM",
-                        Status = "Approved",
-                        Notes = "NUTRITION REVIEW · 60 min - Macronutrient adjustment for endurance & lean retention."
+                        ClientId = liam?.Id ?? primaryClient.Id,
+                        TrainerId = primaryTrainer.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(3),
+                        TimeSlot = "11:00 AM",
+                        Status = "Confirmed",
+                        Notes = "NUTRITION REVIEW · 45 min - Macronutrient adjustment for progressive fat loss."
                     },
                     new Appointment
                     {
-                        ClientId = clientUser.Id,
-                        TrainerId = mayaUser.Id,
-                        AppointmentDate = DateTime.UtcNow.AddDays(-14),
+                        ClientId = sophia?.Id ?? primaryClient.Id,
+                        TrainerId = strengthCoach.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(4),
+                        TimeSlot = "09:30 AM",
+                        Status = "Confirmed",
+                        Notes = "STRENGTH EVALUATION · 60 min - Barbell technique & kinetic chain calibration."
+                    },
+                    new Appointment
+                    {
+                        ClientId = marcus?.Id ?? primaryClient.Id,
+                        TrainerId = performanceCoach.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(-2),
+                        TimeSlot = "03:00 PM",
+                        Status = "Completed",
+                        Notes = "HYPERTROPHY CHECK · 45 min - Program review & volume overload adjustment."
+                    },
+                    new Appointment
+                    {
+                        ClientId = sarah?.Id ?? primaryClient.Id,
+                        TrainerId = nutritionist.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(-5),
+                        TimeSlot = "01:15 PM",
+                        Status = "Completed",
+                        Notes = "METABOLIC LAB REVIEW · 45 min - Micronutrient panel evaluation."
+                    },
+                    new Appointment
+                    {
+                        ClientId = primaryClient.Id,
+                        TrainerId = primaryTrainer.Id,
+                        AppointmentDate = DateTime.UtcNow.AddDays(-8),
                         TimeSlot = "10:00 AM",
                         Status = "Completed",
-                        Notes = "HEALTH CONSULTATION · 45 min - Baseline biometric evaluation and intake consultation."
-                    },
-                    new Appointment
-                    {
-                        ClientId = clientUser.Id,
-                        TrainerId = chrisUser.Id,
-                        AppointmentDate = DateTime.UtcNow.AddDays(-7),
-                        TimeSlot = "3:30 PM",
-                        Status = "Completed",
-                        Notes = "PERSONAL TRAINING · 60 min - Movement assessment & functional mobility calibration."
+                        Notes = "HEALTH CONSULTATION · 45 min - Baseline physical intake consultation."
                     }
                 );
 
-                // Seed Initial Notifications (Matching user reference layout media_1792593460829_608ca178.png)
-                context.Notifications.AddRange(
-                    new Notification
-                    {
-                        UserId = clientUser.Id,
-                        Message = "Workout starts in 2 hours: Upper Body Strength is scheduled for 5:30 PM today.",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow.AddMinutes(-10)
-                    },
-                    new Notification
-                    {
-                        UserId = clientUser.Id,
-                        Message = "Appointment confirmed: Dr. Maya Patel approved your health consultation.",
-                        IsRead = false,
-                        CreatedAt = DateTime.UtcNow.AddHours(-1)
-                    },
-                    new Notification
-                    {
-                        UserId = clientUser.Id,
-                        Message = "Time to log lunch: Keep your nutrition goals on track by logging your meal.",
-                        IsRead = true,
-                        CreatedAt = DateTime.UtcNow.AddHours(-2)
-                    },
-                    new Notification
-                    {
-                        UserId = clientUser.Id,
-                        Message = "New progress insight: You've improved workout consistency by 12% this month.",
-                        IsRead = true,
-                        CreatedAt = DateTime.UtcNow.AddDays(-1)
-                    }
-                );
+                await context.SaveChangesAsync();
+            }
 
+            // 9. Seed Platform Settings in DB
+            if (!await context.PlatformSettings.AnyAsync())
+            {
+                context.PlatformSettings.AddRange(
+                    new PlatformSetting { SettingKey = "SystemName", SettingValue = "HealthTrack" },
+                    new PlatformSetting { SettingKey = "SupportEmail", SettingValue = "support@healthtrack.com" },
+                    new PlatformSetting { SettingKey = "DefaultTimeZone", SettingValue = "UTC -05:00 Eastern Time" },
+                    new PlatformSetting { SettingKey = "DateFormat", SettingValue = "MMM DD, YYYY" },
+                    new PlatformSetting { SettingKey = "WorkoutReminderTiming", SettingValue = "2 hours before" },
+                    new PlatformSetting { SettingKey = "WorkoutReminderEnabled", SettingValue = "true" },
+                    new PlatformSetting { SettingKey = "MealReminderTiming", SettingValue = "30 minutes before" },
+                    new PlatformSetting { SettingKey = "MealReminderEnabled", SettingValue = "true" },
+                    new PlatformSetting { SettingKey = "AppointmentReminderTiming", SettingValue = "24 hours before" },
+                    new PlatformSetting { SettingKey = "AppointmentReminderEnabled", SettingValue = "true" }
+                );
                 await context.SaveChangesAsync();
             }
         }

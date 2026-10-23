@@ -970,12 +970,6 @@
                     <h1 class="page-title">Trainer Management</h1>
                     <p class="page-subtitle">Review coach credentials, specialties, client allocations, and status.</p>
                 </div>
-                <div>
-                    <button type="button" class="btn-add-trainer" data-bs-toggle="modal" data-bs-target="#addTrainerModal">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Add trainer</span>
-                    </button>
-                </div>
             </div>
 
             <!-- ========================================================= -->
@@ -1172,54 +1166,6 @@
             </div>
 
         </main>
-    </div>
-
-    <!-- ========================================================= -->
-    <!-- MODAL: ADD TRAINER (+ Add trainer button)                 -->
-    <!-- ========================================================= -->
-    <div class="modal fade" id="addTrainerModal" tabindex="-1" aria-labelledby="addTrainerModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="addTrainerModalLabel">Onboard Certified Trainer</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form asp-action="AddTrainer" method="post">
-                    @Html.AntiForgeryToken()
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Trainer Full Name</label>
-                            <input asp-for="NewTrainerForm.FullName" class="form-control rounded-3 py-2" placeholder="e.g. Dr. Marcus Vance" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Email Address</label>
-                            <input asp-for="NewTrainerForm.Email" type="email" class="form-control rounded-3 py-2" placeholder="e.g. marcus.v@healthtrack.com" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Specialty / Coaching Domain</label>
-                            <select asp-for="NewTrainerForm.Specialty" class="form-select rounded-3 py-2">
-                                <option value="Strength & Conditioning Coach" selected>Strength & Conditioning Coach</option>
-                                <option value="Clinical Nutritionist">Clinical Nutritionist</option>
-                                <option value="Health & Wellness Physician">Health & Wellness Physician</option>
-                                <option value="Mobility & Sports Rehab Specialist">Mobility & Sports Rehab Specialist</option>
-                                <option value="Cardiovascular Endurance Coach">Cardiovascular Endurance Coach</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Temporary Password</label>
-                            <input asp-for="NewTrainerForm.Password" type="password" class="form-control rounded-3 py-2" value="Trainer123!" required />
-                            <small class="text-muted">Must be at least 6 characters with a digit and lowercase letter.</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn text-white rounded-3 px-4 fw-bold" style="background: #10B981;">
-                            <i class="bi bi-plus-lg me-1"></i> Onboard Trainer
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 
     <!-- Bootstrap 5 JS -->

@@ -950,12 +950,6 @@
                     <h1 class="page-title">User Management</h1>
                     <p class="page-subtitle">Search, review and manage profiles from one place.</p>
                 </div>
-                <div>
-                    <button type="button" class="btn-add-user" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="bi bi-plus-lg"></i>
-                        <span>Add user</span>
-                    </button>
-                </div>
             </div>
 
             <!-- ========================================================= -->
@@ -977,10 +971,9 @@
 
                     <!-- Role / Plan Filter Dropdown -->
                     <select name="role" class="custom-filter-select" onchange="this.form.submit()">
-                        <option value="All" selected="@(Model.RoleFilter == "All" ? "selected" : null)">All plans</option>
+                        <option value="All" selected="@(Model.RoleFilter == "All" ? "selected" : null)">All roles</option>
                         <option value="Client" selected="@(Model.RoleFilter == "Client" ? "selected" : null)">Client</option>
                         <option value="Trainer" selected="@(Model.RoleFilter == "Trainer" ? "selected" : null)">Trainer</option>
-                        <option value="Admin" selected="@(Model.RoleFilter == "Admin" ? "selected" : null)">Admin</option>
                     </select>
 
                     <!-- Filter Submit Button -->
@@ -1144,53 +1137,6 @@
             </div>
 
         </main>
-    </div>
-
-    <!-- ========================================================= -->
-    <!-- MODAL: ADD USER (+ Add user button)                       -->
-    <!-- ========================================================= -->
-    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold" id="addUserModalLabel">Create Platform User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form asp-action="AddUser" method="post">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="returnUrl" value="/Admin/Users" />
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Full Name</label>
-                            <input asp-for="NewUserForm.FullName" class="form-control rounded-3 py-2" placeholder="e.g. Jordan Lee" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Email Address</label>
-                            <input asp-for="NewUserForm.Email" type="email" class="form-control rounded-3 py-2" placeholder="e.g. user@healthtrack.com" required />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Account Role</label>
-                            <select asp-for="NewUserForm.Role" class="form-select rounded-3 py-2">
-                                <option value="Client" selected>Client (Health & Fitness Tracker)</option>
-                                <option value="Trainer">Trainer (Coach / Specialist)</option>
-                                <option value="Admin">Administrator</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold text-muted">Temporary Password</label>
-                            <input asp-for="NewUserForm.Password" type="password" class="form-control rounded-3 py-2" value="HealthTrack123!" required />
-                            <small class="text-muted">Must be at least 6 characters with a digit and lowercase letter.</small>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 px-3" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn text-white rounded-3 px-4 fw-bold" style="background: #10B981;">
-                            <i class="bi bi-plus-lg me-1"></i> Create User
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 
     <!-- Bootstrap 5 JS -->

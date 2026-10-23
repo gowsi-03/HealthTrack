@@ -59,7 +59,8 @@ namespace HealthTrack.Services
 
                     if (!string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password))
                     {
-                        client.Credentials = new NetworkCredential(username, password);
+                        var cleanPassword = password.Replace(" ", "").Trim();
+                        client.Credentials = new NetworkCredential(username.Trim(), cleanPassword);
                     }
 
                     await client.SendMailAsync(message);

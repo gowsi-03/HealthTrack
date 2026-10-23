@@ -1257,7 +1257,89 @@ namespace HealthTrack.Controllers
             return File(bytes, "text/csv", $"HealthTrack_Platform_Analytics_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
 
-        // Secondary workspace navigation endpoints
-        public IActionResult Settings() => RedirectToAction(nameof(Index));
+        // ====================================================================
+        // SYSTEM SETTINGS (/Admin/Settings)
+        // ====================================================================
+
+        private static AdminSystemSettingsViewModel _persistedSettings = new AdminSystemSettingsViewModel();
+
+        // GET: /Admin/Settings
+        public async Task<IActionResult> Settings()
+        {
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
+            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+
+            string initials = "JL";
+            if (!string.IsNullOrWhiteSpace(adminName))
+            {
+                var parts = adminName.Trim().Split(' ');
+                initials = string.Join("", parts.Select(p => p.Length > 0 ? p[0].ToString() : "")).ToUpper();
+                if (initials.Length > 2) initials = initials.Substring(0, 2);
+            }
+
+            var vm = new AdminSystemSettingsViewModel
+            {
+                AdminFullName = adminName,
+                AdminEmail = adminEmail,
+                AdminRole = "Administrator",
+                AdminInitials = initials,
+                SystemName = _persistedSettings.SystemName,
+                SupportEmail = _persistedSettings.SupportEmail,
+                DefaultTimeZone = _persistedSettings.DefaultTimeZone,
+                DateFormat = _persistedSettings.DateFormat,
+                WorkoutReminderTiming = _persistedSettings.WorkoutReminderTiming,
+                WorkoutReminderEnabled = _persistedSettings.WorkoutReminderEnabled,
+                MealReminderTiming = _persistedSettings.MealReminderTiming,
+                MealReminderEnabled = _persistedSettings.MealReminderEnabled,
+                AppointmentReminderTiming = _persistedSettings.AppointmentReminderTiming,
+                AppointmentReminderEnabled = _persistedSettings.AppointmentReminderEnabled
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Admin/Settings
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Settings(AdminSystemSettingsViewModel model)
+        {
+            var currentAdmin = await _userManager.GetUserAsync(User);
+            string adminName = currentAdmin?.FullName ?? "Jordan Lee";
+            string adminEmail = currentAdmin?.Email ?? "admin@healthtrack.com";
+
+            string initials = "JL";
+            if (!string.IsNullOrWhiteSpace(adminName))
+            {
+                var parts = adminName.Trim().Split(' ');
+                initials = string.Join("", parts.Select(p => p.Length > 0 ? p[0].ToString() : "")).ToUpper();
+                if (initials.Length > 2) initials = initials.Substring(0, 2);
+            }
+
+            model.AdminFullName = adminName;
+            model.AdminEmail = adminEmail;
+            model.AdminRole = "Administrator";
+            model.AdminInitials = initials;
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Persist the settings
+            _persistedSettings.SystemName = model.SystemName;
+            _persistedSettings.SupportEmail = model.SupportEmail;
+            _persistedSettings.DefaultTimeZone = model.DefaultTimeZone;
+            _persistedSettings.DateFormat = model.DateFormat;
+            _persistedSettings.WorkoutReminderTiming = model.WorkoutReminderTiming;
+            _persistedSettings.WorkoutReminderEnabled = model.WorkoutReminderEnabled;
+            _persistedSettings.MealReminderTiming = model.MealReminderTiming;
+            _persistedSettings.MealReminderEnabled = model.MealReminderEnabled;
+            _persistedSettings.AppointmentReminderTiming = model.AppointmentReminderTiming;
+            _persistedSettings.AppointmentReminderEnabled = model.AppointmentReminderEnabled;
+
+            TempData["SuccessMessage"] = "System settings and reminder timing updated successfully!";
+            return View(model);
+        }
     }
 }

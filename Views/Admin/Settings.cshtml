@@ -1,0 +1,898 @@
+@model HealthTrack.Models.ViewModels.AdminSystemSettingsViewModel
+@{
+    ViewData["Title"] = "System Settings - HealthTrack Administration";
+    Layout = null;
+    var initials = string.IsNullOrEmpty(Model.AdminInitials) ? "JL" : Model.AdminInitials;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ht-navy-bg: #0C1E28;
+            --ht-navy-card: #132733;
+            --ht-green: #10B981;
+            --ht-green-hover: #059669;
+            --ht-green-light: #ECFDF5;
+            --ht-slate-dark: #0F172A;
+            --ht-slate-muted: #64748B;
+            --ht-border: #E2E8F0;
+            --ht-body-bg: #F8FAFC;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--ht-body-bg);
+            color: var(--ht-slate-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ========================================================= */
+        /* 1. SIDEBAR (Dark Navy)                                    */
+        /* ========================================================= */
+        .sidebar {
+            width: 260px;
+            background-color: var(--ht-navy-bg);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 1.5rem 1.15rem;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: #FFFFFF;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+        }
+
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        }
+
+        .nav-category {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0.95rem;
+            border-radius: 12px;
+            color: #94A3B8;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-link:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-link.active {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #10B981;
+            font-weight: 700;
+        }
+
+        .sidebar-link-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-link-left i {
+            font-size: 1.1rem;
+        }
+
+        .active-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #10B981;
+        }
+
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .support-card {
+            background-color: var(--ht-navy-card);
+            border-radius: 16px;
+            padding: 1.1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .support-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10B981;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .support-title {
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .support-desc {
+            color: #64748B;
+            font-size: 0.75rem;
+            line-height: 1.35;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-link {
+            color: #10B981;
+            text-decoration: none;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .support-link:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        .btn-signout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            color: #94A3B8;
+            font-size: 0.88rem;
+            font-weight: 600;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .btn-signout:hover {
+            color: #EF4444;
+            background-color: rgba(239, 68, 68, 0.08);
+        }
+
+        .public-site-link {
+            display: block;
+            text-align: center;
+            font-size: 0.72rem;
+            color: #475569;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .public-site-link:hover {
+            color: #94A3B8;
+        }
+
+        /* ========================================================= */
+        /* 2. MAIN VIEW AREA                                         */
+        /* ========================================================= */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            height: 72px;
+            background-color: #FFFFFF;
+            border-bottom: 1px solid var(--ht-border);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+        }
+
+        .search-box-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #F1F5F9;
+            padding: 0.55rem 1.1rem;
+            border-radius: 12px;
+            width: 380px;
+        }
+
+        .search-icon-top {
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        .search-input-top {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.88rem;
+            color: var(--ht-slate-dark);
+            width: 100%;
+            font-family: inherit;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .btn-notification {
+            position: relative;
+            background: none;
+            border: 1px solid var(--ht-border);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-notification:hover {
+            background-color: #F8FAFC;
+            color: var(--ht-slate-dark);
+        }
+
+        .notify-dot {
+            position: absolute;
+            top: 9px;
+            right: 9px;
+            width: 8px;
+            height: 8px;
+            background-color: #EF4444;
+            border-radius: 50%;
+            border: 2px solid #FFFFFF;
+        }
+
+        .admin-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .avatar-initials-admin {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #D1FAE5;
+            color: #059669;
+            font-weight: 800;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .admin-meta-name {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #0F172A;
+            line-height: 1.2;
+        }
+
+        .admin-meta-role {
+            font-size: 0.72rem;
+            color: #64748B;
+        }
+
+        /* Body container */
+        .dashboard-body {
+            padding: 2.25rem;
+            flex: 1;
+        }
+
+        /* Alerts */
+        .alert-custom-success {
+            background-color: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            color: #065F46;
+            border-radius: 12px;
+            padding: 0.9rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* Page Header */
+        .page-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            color: #64748B;
+            text-transform: uppercase;
+            margin-bottom: 0.35rem;
+        }
+
+        .page-title {
+            font-weight: 800;
+            font-size: 1.85rem;
+            color: #0F172A;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .page-subtitle {
+            color: #64748B;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .btn-save-settings {
+            background-color: var(--ht-green);
+            color: #FFFFFF;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            cursor: pointer;
+        }
+
+        .btn-save-settings:hover {
+            background-color: var(--ht-green-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+
+        /* ========================================================= */
+        /* 3. SETTINGS CARDS (Matching Wireframe)                    */
+        /* ========================================================= */
+        .settings-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ht-border);
+            border-radius: 20px;
+            padding: 1.85rem;
+            height: 100%;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+        }
+
+        .settings-card-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: #0F172A;
+            margin-bottom: 0.25rem;
+        }
+
+        .settings-card-sub {
+            font-size: 0.82rem;
+            color: #64748B;
+            margin-bottom: 1.75rem;
+        }
+
+        .form-label-custom {
+            font-weight: 700;
+            font-size: 0.84rem;
+            color: #334155;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control-custom {
+            background-color: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 10px;
+            padding: 0.65rem 1rem;
+            font-size: 0.88rem;
+            color: #0F172A;
+            width: 100%;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control-custom:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        }
+
+        .form-select-custom {
+            background-color: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 10px;
+            padding: 0.65rem 2.2rem 0.65rem 1rem;
+            font-size: 0.88rem;
+            color: #0F172A;
+            width: 100%;
+            outline: none;
+            cursor: pointer;
+            font-family: inherit;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.85rem center;
+            background-size: 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-select-custom:focus {
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
+        }
+
+        /* Reminder Rows */
+        .reminder-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.15rem 0;
+            border-bottom: 1px solid #F1F5F9;
+            gap: 1rem;
+        }
+
+        .reminder-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0.5rem;
+        }
+
+        .reminder-info {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #0F172A;
+            margin-bottom: 0.15rem;
+        }
+
+        .reminder-desc {
+            font-size: 0.76rem;
+            color: #64748B;
+        }
+
+        .reminder-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .reminder-select {
+            background-color: #FFFFFF;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            padding: 0.45rem 1.8rem 0.45rem 0.75rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.65rem center;
+            background-size: 12px;
+            width: 150px;
+        }
+
+        .form-check-custom {
+            width: 19px;
+            height: 19px;
+            accent-color: #10B981;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================= -->
+    <!-- 1. SIDEBAR (Dark Navy)                                    -->
+    <!-- ========================================================= -->
+    <aside class="sidebar">
+        <div>
+            <!-- Brand Logo -->
+            <a href="/Admin" class="sidebar-brand">
+                <div class="brand-icon">
+                    <i class="bi bi-heart"></i>
+                </div>
+                <span>Health<span style="color: #10B981;">Track</span></span>
+            </a>
+
+            <!-- Navigation Links -->
+            <div class="nav-category">WORKSPACE</div>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="/Admin" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-grid-fill"></i>
+                            <span>Dashboard</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Users" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-people"></i>
+                            <span>User Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Trainers" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-activity"></i>
+                            <span>Trainer Management</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Appointments" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-calendar2-event"></i>
+                            <span>Appointments</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Analytics" class="sidebar-link">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Reports & Analytics</span>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Admin/Settings" class="sidebar-link active">
+                        <div class="sidebar-link-left">
+                            <i class="bi bi-gear"></i>
+                            <span>System Settings</span>
+                        </div>
+                        <span class="active-dot"></span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-bottom">
+            <!-- Support Card -->
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div class="support-title">Need assistance?</div>
+                <div class="support-desc">Our care team is here to help.</div>
+                <a href="mailto:support@healthtrack.com" class="support-link">
+                    <span>Contact support</span>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+
+            <!-- Sign Out Button -->
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                <button type="submit" class="btn-signout">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Sign out</span>
+                </button>
+            </form>
+
+            <a href="/" class="public-site-link">View public site</a>
+        </div>
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- 2. MAIN CONTENT AREA                                      -->
+    <!-- ========================================================= -->
+    <div class="main-wrapper">
+
+        <!-- Top Navbar -->
+        <header class="top-navbar">
+            <div class="search-box-top">
+                <i class="bi bi-search search-icon-top"></i>
+                <input type="text" class="search-input-top" placeholder="Search system preferences..." />
+            </div>
+
+            <div class="navbar-right">
+                <!-- Notification Bell -->
+                <a href="javascript:void(0)" class="btn-notification" title="Notifications">
+                    <i class="bi bi-bell"></i>
+                    <span class="notify-dot"></span>
+                </a>
+
+                <!-- User Profile Dropdown -->
+                <div class="dropdown">
+                    <button class="admin-profile-pill btn p-0 border-0" type="button" id="adminDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="avatar-initials-admin">@initials</div>
+                        <div class="text-start d-none d-sm-block">
+                            <div class="admin-meta-name">@Model.AdminFullName</div>
+                            <div class="admin-meta-role">@Model.AdminRole</div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted ms-1" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border border-slate-100 rounded-3 mt-2 py-2" aria-labelledby="adminDropdown" style="min-width: 220px; z-index: 1050;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">@Model.AdminFullName</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">@Model.AdminEmail</div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin">
+                                <i class="bi bi-grid text-secondary"></i> Administrator Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Users">
+                                <i class="bi bi-people text-secondary"></i> User Management
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Trainers">
+                                <i class="bi bi-activity text-secondary"></i> Trainer Management
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Appointments">
+                                <i class="bi bi-calendar2-event text-secondary"></i> Appointments
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Analytics">
+                                <i class="bi bi-graph-up-arrow text-secondary"></i> Reports & Analytics
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Admin/Settings">
+                                <i class="bi bi-gear text-secondary"></i> System Settings
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li class="px-2 pt-1">
+                            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Log out</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="dashboard-body">
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-custom-success">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <span>@TempData["SuccessMessage"]</span>
+                    </div>
+                    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+                </div>
+            }
+
+            <!-- Page Header Row -->
+            <div class="page-header-row">
+                <div>
+                    <div class="page-eyebrow">PLATFORM CONFIGURATION</div>
+                    <h1 class="page-title">System settings</h1>
+                    <p class="page-subtitle">Configure platform defaults and notification timing.</p>
+                </div>
+                <div>
+                    <button type="submit" form="settingsForm" class="btn-save-settings">
+                        Save changes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="settingsForm" asp-action="Settings" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row g-4">
+                    <!-- Left Card: Basic Settings -->
+                    <div class="col-lg-6">
+                        <div class="settings-card">
+                            <h2 class="settings-card-title">Basic settings</h2>
+                            <p class="settings-card-sub">General platform preferences</p>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="SystemName" class="form-label-custom">System name</label>
+                                    <input asp-for="SystemName" class="form-control-custom" placeholder="HealthTrack" required />
+                                    <span asp-validation-for="SystemName" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="SupportEmail" class="form-label-custom">Support email</label>
+                                    <input asp-for="SupportEmail" type="email" class="form-control-custom" placeholder="support@healthtrack.com" required />
+                                    <span asp-validation-for="SupportEmail" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="DefaultTimeZone" class="form-label-custom">Default time zone</label>
+                                    <select asp-for="DefaultTimeZone" class="form-select-custom">
+                                        <option value="UTC -05:00 Eastern Time">UTC -05:00 Eastern Time</option>
+                                        <option value="UTC -08:00 Pacific Time">UTC -08:00 Pacific Time</option>
+                                        <option value="UTC -06:00 Central Time">UTC -06:00 Central Time</option>
+                                        <option value="UTC +00:00 GMT / London">UTC +00:00 GMT / London</option>
+                                        <option value="UTC +01:00 Central European">UTC +01:00 Central European</option>
+                                        <option value="UTC +05:30 Indian Standard">UTC +05:30 Indian Standard</option>
+                                        <option value="UTC +08:00 Singapore / Hong Kong">UTC +08:00 Singapore / Hong Kong</option>
+                                        <option value="UTC +09:00 Tokyo">UTC +09:00 Tokyo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="DateFormat" class="form-label-custom">Date format</label>
+                                    <select asp-for="DateFormat" class="form-select-custom">
+                                        <option value="MMM DD, YYYY">MMM DD, YYYY</option>
+                                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Card: Reminder Timing -->
+                    <div class="col-lg-6">
+                        <div class="settings-card">
+                            <h2 class="settings-card-title">Reminder timing</h2>
+                            <p class="settings-card-sub">Choose when users receive reminders</p>
+
+                            <!-- Row 1: Workout Reminders -->
+                            <div class="reminder-row">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Workout reminders</div>
+                                    <div class="reminder-desc">Push notification and email</div>
+                                </div>
+                                <div class="reminder-controls">
+                                    <select asp-for="WorkoutReminderTiming" class="reminder-select">
+                                        <option value="30 minutes before">30 minutes before</option>
+                                        <option value="1 hour before">1 hour before</option>
+                                        <option value="2 hours before">2 hours before</option>
+                                        <option value="4 hours before">4 hours before</option>
+                                    </select>
+                                    <input asp-for="WorkoutReminderEnabled" type="checkbox" class="form-check-custom" title="Enable workout reminders" />
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Meal Reminders -->
+                            <div class="reminder-row">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Meal reminders</div>
+                                    <div class="reminder-desc">Push notification and email</div>
+                                </div>
+                                <div class="reminder-controls">
+                                    <select asp-for="MealReminderTiming" class="reminder-select">
+                                        <option value="15 minutes before">15 minutes before</option>
+                                        <option value="30 minutes before">30 minutes before</option>
+                                        <option value="1 hour before">1 hour before</option>
+                                    </select>
+                                    <input asp-for="MealReminderEnabled" type="checkbox" class="form-check-custom" title="Enable meal reminders" />
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Appointments -->
+                            <div class="reminder-row">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">Appointments</div>
+                                    <div class="reminder-desc">Push notification and email</div>
+                                </div>
+                                <div class="reminder-controls">
+                                    <select asp-for="AppointmentReminderTiming" class="reminder-select">
+                                        <option value="1 hour before">1 hour before</option>
+                                        <option value="2 hours before">2 hours before</option>
+                                        <option value="12 hours before">12 hours before</option>
+                                        <option value="24 hours before">24 hours before</option>
+                                    </select>
+                                    <input asp-for="AppointmentReminderEnabled" type="checkbox" class="form-check-custom" title="Enable appointment reminders" />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+        </main>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

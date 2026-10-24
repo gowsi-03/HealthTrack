@@ -24,15 +24,15 @@ namespace HealthTrack.Models
 
         [Display(Name = "Height (cm)")]
         [Range(50, 250, ErrorMessage = "Please enter a valid height in cm.")]
-        public double? HeightCm { get; set; } = 175.0;
+        public double? HeightCm { get; set; }
 
         [Display(Name = "Target Weight (kg)")]
         [Range(20, 300, ErrorMessage = "Please enter a realistic target weight.")]
-        public double? TargetWeight { get; set; } = 70.0;
+        public double? TargetWeight { get; set; }
 
         [Display(Name = "Current Weight (kg)")]
         [Range(20, 300, ErrorMessage = "Please enter your current weight.")]
-        public double? CurrentWeight { get; set; } = 75.0;
+        public double? CurrentWeight { get; set; }
 
         [Display(Name = "Fitness Goal")]
         [StringLength(150)]

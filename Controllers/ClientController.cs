@@ -67,8 +67,8 @@ namespace HealthTrack.Controllers
                 ClientId = user.Id,
                 FullName = user.FullName ?? user.UserName ?? "Client",
                 Email = user.Email ?? string.Empty,
-                HeightCm = user.HeightCm ?? 175.0,
-                TargetWeight = user.TargetWeight ?? 70.0,
+                HeightCm = user.HeightCm ?? 0,
+                TargetWeight = user.TargetWeight ?? 0,
                 FitnessGoal = user.FitnessGoal ?? "General Health & Fitness"
             };
 
@@ -87,9 +87,17 @@ namespace HealthTrack.Controllers
                 vm.CaloriesBurned = latestLog.CaloriesBurned;
 
                 // BMI Calculation
-                double heightInMeters = vm.HeightCm / 100.0;
-                vm.CurrentBmi = Math.Round(vm.CurrentWeight / (heightInMeters * heightInMeters), 1);
-                vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
+                if (vm.HeightCm > 0)
+                {
+                    double heightInMeters = vm.HeightCm / 100.0;
+                    vm.CurrentBmi = Math.Round(vm.CurrentWeight / (heightInMeters * heightInMeters), 1);
+                    vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
+                }
+                else
+                {
+                    vm.CurrentBmi = 0;
+                    vm.BmiCategory = "--";
+                }
 
                 // Trend comparisons
                 if (logs.Count >= 2)
@@ -123,7 +131,7 @@ namespace HealthTrack.Controllers
             {
                 // Fallback default sample data ONLY for seeded demo account
                 vm.CurrentWeight = user.CurrentWeight ?? 72.4;
-                double hM = vm.HeightCm / 100.0;
+                double hM = (vm.HeightCm > 0 ? vm.HeightCm : 175.0) / 100.0;
                 vm.CurrentBmi = Math.Round(vm.CurrentWeight / (hM * hM), 1);
                 vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
                 vm.CaloriesBurned = 510;
@@ -137,22 +145,24 @@ namespace HealthTrack.Controllers
             else
             {
                 // Fresh real user: clean zero / initial state
-                vm.CurrentWeight = user.CurrentWeight ?? 0;
+                bool hasProfileWeight = user.IsProfileCompleted && user.CurrentWeight.HasValue && user.CurrentWeight.Value > 0;
+                vm.CurrentWeight = hasProfileWeight ? user.CurrentWeight.Value : 0;
                 if (vm.CurrentWeight > 0 && vm.HeightCm > 0)
                 {
                     double hM = vm.HeightCm / 100.0;
                     vm.CurrentBmi = Math.Round(vm.CurrentWeight / (hM * hM), 1);
                     vm.BmiCategory = GetBmiCategory(vm.CurrentBmi);
+                    vm.BmiTrendText = "Baseline BMI";
                 }
                 else
                 {
                     vm.CurrentBmi = 0;
                     vm.BmiCategory = "--";
+                    vm.BmiTrendText = "No calculation yet";
                 }
                 vm.CaloriesBurned = 0;
                 vm.CaloriesTrendText = "0 kcal today";
                 vm.WeightTrendText = vm.CurrentWeight > 0 ? "Profile baseline weight" : "No weigh-in recorded";
-                vm.BmiTrendText = vm.CurrentBmi > 0 ? "Baseline BMI" : "Set height & weight";
                 vm.WeightChangeThisMonth = "New account";
                 vm.ChartLabels = new List<string>();
                 vm.ChartWeights = new List<double>();
@@ -285,7 +295,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 1,
                     Title = "Morning hydration",
-                    Subtitle = "8:00 AM â€¢ 500 ml water",
+                    Subtitle = "8:00 AM • 500 ml water",
                     Category = "Hydration",
                     IsCompleted = hasHydrationToday,
                     ActionButtonText = hasHydrationToday ? "Done" : "Log"
@@ -294,7 +304,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 2,
                     Title = "Healthy breakfast",
-                    Subtitle = "8:30 AM â€¢ 420 kcal",
+                    Subtitle = "8:30 AM • 420 kcal",
                     Category = "Meal",
                     IsCompleted = hasBreakfastToday,
                     ActionButtonText = hasBreakfastToday ? "Done" : "Log"
@@ -303,7 +313,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 3,
                     Title = vm.ActiveWorkoutPlan?.Title ?? "Daily Workout Routine",
-                    Subtitle = "5:30 PM â€¢ 45 minutes",
+                    Subtitle = "5:30 PM • 45 minutes",
                     Category = "Workout",
                     IsCompleted = hasWorkoutToday,
                     ActionButtonText = hasWorkoutToday ? "Done" : "Start"
@@ -312,7 +322,7 @@ namespace HealthTrack.Controllers
                 {
                     Id = 4,
                     Title = "Log evening meal",
-                    Subtitle = "7:30 PM â€¢ Target 560 kcal",
+                    Subtitle = "7:30 PM • Target 560 kcal",
                     Category = "Meal",
                     IsCompleted = hasEveningMealToday,
                     ActionButtonText = hasEveningMealToday ? "Done" : "Log"
@@ -653,18 +663,18 @@ namespace HealthTrack.Controllers
                 vm.CompletionPercentage = vm.TotalExercisesCount > 0 
                     ? (int)Math.Round((double)vm.CompletedExercisesCount / vm.TotalExercisesCount * 100) 
                     : 0;
-                vm.CurrentWeekText = $"Week 1 of 8 â€¢ {vm.CompletedExercisesCount} of {vm.TotalExercisesCount} exercises completed";
+                vm.CurrentWeekText = $"Week 1 of 8 • {vm.CompletedExercisesCount} of {vm.TotalExercisesCount} exercises completed";
 
                 vm.WeeklySessions = new List<WorkoutSessionItem>
                 {
                     new WorkoutSessionItem
                     {
                         Id = plan.Id,
-                        DaySchedule = "Today â€¢ 5:30 PM",
+                        DaySchedule = "Today • 5:30 PM",
                         Title = plan.Title,
                         ExerciseCount = plan.Exercises.Count,
                         DurationMinutes = 45,
-                        Intensity = "3 sets â€¢ 8-12 reps",
+                        Intensity = "3 sets • 8-12 reps",
                         Status = vm.CompletionPercentage == 100 ? "Completed" : (vm.CompletionPercentage > 0 ? "In progress" : "Upcoming"),
                         IsActiveSession = true,
                         ExerciseNames = plan.Exercises.Select(e => $"{e.Name} ({e.Sets}x{e.Reps})").ToList()
@@ -675,25 +685,25 @@ namespace HealthTrack.Controllers
             {
                 // Pre-populated mockup view only for demo client
                 vm.HasActivePlan = true;
-                vm.ProgramTitle = "Foundation Strength â€¢ 8 Weeks";
+                vm.ProgramTitle = "Foundation Strength • 8 Weeks";
                 vm.ProgramDescription = "A progressive full-body program designed to improve strength, mobility and endurance.";
                 vm.DaysPerWeek = 4;
                 vm.MinutesPerSession = 45;
                 vm.TotalExercisesCount = 8;
                 vm.CompletedExercisesCount = 5;
                 vm.CompletionPercentage = 62;
-                vm.CurrentWeekText = "Week 5 of 8 â€¢ Stay consistent";
+                vm.CurrentWeekText = "Week 5 of 8 • Stay consistent";
 
                 vm.WeeklySessions = new List<WorkoutSessionItem>
                 {
                     new WorkoutSessionItem
                     {
                         Id = 1,
-                        DaySchedule = "Today â€¢ 5:30 PM",
+                        DaySchedule = "Today • 5:30 PM",
                         Title = "Upper body strength",
                         ExerciseCount = 8,
                         DurationMinutes = 45,
-                        Intensity = "3 sets â€¢ 8-12 reps",
+                        Intensity = "3 sets • 8-12 reps",
                         Status = "In progress",
                         IsActiveSession = true,
                         ExerciseNames = new List<string> { "Barbell Bench Press (4x10)", "Incline Dumbbell Rows (3x12)", "Overhead DB Press (3x10)", "Tricep Pushdowns (3x15)" }
@@ -705,7 +715,7 @@ namespace HealthTrack.Controllers
                         Title = "Lower body & core",
                         ExerciseCount = 7,
                         DurationMinutes = 50,
-                        Intensity = "3 sets â€¢ 8-12 reps",
+                        Intensity = "3 sets • 8-12 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "Barbell Back Squats (4x8)", "Romanian Deadlifts (3x10)", "Bulgarian Split Squats (3x10)", "Plank Holds (3x60s)" }
@@ -717,7 +727,7 @@ namespace HealthTrack.Controllers
                         Title = "Full body mobility",
                         ExerciseCount = 10,
                         DurationMinutes = 35,
-                        Intensity = "3 sets â€¢ 8-12 reps",
+                        Intensity = "3 sets • 8-12 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "World's Greatest Stretch (3x5)", "Goblet Squat Pause (3x8)", "Face Pulls (3x15)", "Hanging Knee Raises (3x12)" }
@@ -729,7 +739,7 @@ namespace HealthTrack.Controllers
                         Title = "Active recovery & core",
                         ExerciseCount = 6,
                         DurationMinutes = 30,
-                        Intensity = "2 sets â€¢ 15 reps",
+                        Intensity = "2 sets • 15 reps",
                         Status = "Upcoming",
                         IsActiveSession = false,
                         ExerciseNames = new List<string> { "Zone 2 Incline Walk (20 min)", "Hamstring Flossing (2x10)", "Thoracic Spine Rotations (2x10)" }

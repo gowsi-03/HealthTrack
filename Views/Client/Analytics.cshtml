@@ -988,7 +988,14 @@
                     </div>
 
                     <div class="chart-metric-badge-row">
-                        <span class="chart-big-number">@Model.CurrentWeightKg.ToString("F1") kg</span>
+                        @if (Model.CurrentWeightKg > 0)
+                        {
+                            <span class="chart-big-number">@Model.CurrentWeightKg.ToString("F1") kg</span>
+                        }
+                        else
+                        {
+                            <span class="chart-big-number">-- kg</span>
+                        }
                         <span class="on-track-badge">
                             <span class="on-track-dot"></span>
                             <span>@Model.WeightTrendStatus</span>

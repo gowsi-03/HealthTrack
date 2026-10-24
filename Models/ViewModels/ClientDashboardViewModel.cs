@@ -14,6 +14,7 @@ namespace HealthTrack.Models.ViewModels
         public string FitnessGoal { get; set; } = "General Fitness";
         public string? TrainerName { get; set; }
         public string? TrainerId { get; set; }
+        public string? TrainerSpecialty { get; set; }
         public bool HasAssignedTrainer => !string.IsNullOrEmpty(TrainerId);
         public List<TrainerOption> AvailableTrainers { get; set; } = new();
 

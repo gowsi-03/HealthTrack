@@ -943,10 +943,16 @@
                             <span class="profile-meta-val">@Model.MemberSince</span>
                         </div>
                         <div class="profile-meta-row">
-                            <span class="profile-meta-label">Trainer</span>
+                            <span class="profile-meta-label">Coach</span>
                             @if (!string.IsNullOrEmpty(Model.TrainerId) || (Model.AssignedTrainer != "Not assigned yet" && Model.AssignedTrainer != "None"))
                             {
-                                <span class="profile-meta-val">@Model.AssignedTrainer</span>
+                                <span class="profile-meta-val d-inline-flex align-items-center gap-2 flex-wrap">
+                                    <span>@Model.AssignedTrainer</span>
+                                    @if (!string.IsNullOrEmpty(Model.TrainerSpecialty))
+                                    {
+                                        <span class="badge bg-light text-success border border-success border-opacity-25 fw-semibold" style="font-size: 0.72rem;">@Model.TrainerSpecialty</span>
+                                    }
+                                </span>
                             }
                             else
                             {
@@ -959,7 +965,7 @@
                             }
                         </div>
                         <div class="profile-meta-row">
-                            <span class="profile-meta-label">Primary goal</span>
+                            <span class="profile-meta-label">Client goal</span>
                             <span class="profile-meta-val">@Model.PrimaryGoal</span>
                         </div>
                     </div>

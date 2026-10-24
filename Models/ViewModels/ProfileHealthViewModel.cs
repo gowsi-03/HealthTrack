@@ -12,6 +12,7 @@ namespace HealthTrack.Models.ViewModels
         public string MemberSince { get; set; } = "January 2025";
         public string AssignedTrainer { get; set; } = "None";
         public string? TrainerId { get; set; }
+        public string? TrainerSpecialty { get; set; }
         public string PrimaryGoal { get; set; } = "General Fitness & Health";
         public string MembershipStatus { get; set; } = "Active member";
         public bool HasLoggedMeasurements { get; set; } = false;

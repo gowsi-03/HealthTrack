@@ -188,12 +188,14 @@ namespace HealthTrack.Controllers
                 {
                     vm.TrainerName = trainer.FullName;
                     vm.TrainerId = trainer.Id;
+                    vm.TrainerSpecialty = trainer.FitnessGoal ?? "General Fitness";
                 }
             }
             else if (isDemoUser)
             {
                 vm.TrainerName = "Alex Henderson";
                 vm.TrainerId = "demo-trainer-id";
+                vm.TrainerSpecialty = "Strength & Conditioning";
             }
             else
             {
@@ -1970,17 +1972,20 @@ namespace HealthTrack.Controllers
 
             // Determine assigned trainer
             string trainerName = "Not assigned yet";
+            string trainerSpecialty = "";
             if (!string.IsNullOrEmpty(user.TrainerId))
             {
                 var trainer = await _userManager.FindByIdAsync(user.TrainerId);
                 if (trainer != null && !string.IsNullOrWhiteSpace(trainer.FullName))
                 {
                     trainerName = trainer.FullName.Replace("Dr. ", "");
+                    trainerSpecialty = trainer.FitnessGoal ?? "Specialist & Coach";
                 }
             }
             else if (isDemoUser)
             {
                 trainerName = "Maya Patel";
+                trainerSpecialty = "Mobility & Injury Rehab";
             }
 
             // Fetch latest health log to inspect waist & body fat
@@ -2038,6 +2043,7 @@ namespace HealthTrack.Controllers
                 MemberSince = memberSince,
                 AssignedTrainer = trainerName,
                 TrainerId = user.TrainerId,
+                TrainerSpecialty = trainerSpecialty,
                 PrimaryGoal = !string.IsNullOrWhiteSpace(user.FitnessGoal) ? user.FitnessGoal : "General Fitness & Health",
                 MembershipStatus = "Active member",
                 HasLoggedMeasurements = hasLoggedMeasurements,

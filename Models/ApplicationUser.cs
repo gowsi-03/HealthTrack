@@ -36,7 +36,7 @@ namespace HealthTrack.Models
 
         [Display(Name = "Fitness Goal")]
         [StringLength(150)]
-        public string? FitnessGoal { get; set; } = "General Fitness & Health";
+        public string? FitnessGoal { get; set; }
 
         [Display(Name = "Bio / Coaching Philosophy")]
         [StringLength(1000)]

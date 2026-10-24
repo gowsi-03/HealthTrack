@@ -1136,12 +1136,12 @@
                         <div class="chart-box-header">
                             <div>
                                 <h2 class="box-title">System usage</h2>
-                                <p class="box-sub">Daily active users over 30 days</p>
+                                <p class="box-sub">Daily active users over @(Model.SelectedUsageTimeRange.ToLower())</p>
                             </div>
-                            <select class="select-filter-custom">
-                                <option selected>Last 30 days</option>
-                                <option>Last 7 days</option>
-                                <option>Last 90 days</option>
+                            <select class="select-filter-custom" onchange="window.location.href='/Admin?timeframe=' + encodeURIComponent(this.value)">
+                                <option value="Last 30 days" selected="@(Model.SelectedUsageTimeRange == "Last 30 days")">Last 30 days</option>
+                                <option value="Last 7 days" selected="@(Model.SelectedUsageTimeRange == "Last 7 days")">Last 7 days</option>
+                                <option value="Last 90 days" selected="@(Model.SelectedUsageTimeRange == "Last 90 days")">Last 90 days</option>
                             </select>
                         </div>
 

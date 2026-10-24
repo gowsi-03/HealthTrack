@@ -30,7 +30,7 @@ namespace HealthTrack.Controllers
         }
 
         // GET: /Admin or /Admin/Index
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string timeframe = "Last 30 days")
         {
             var currentAdmin = await _userManager.GetUserAsync(User);
             string adminName = currentAdmin?.FullName ?? currentAdmin?.UserName ?? "Admin";
@@ -89,17 +89,43 @@ namespace HealthTrack.Controllers
                 vm.TrainersPercentage = 0.0;
             }
 
-            // Dynamic System Usage Chart Data (Last 30 days)
+            // Dynamic System Usage Chart Data
+            vm.SelectedUsageTimeRange = timeframe;
             var today = DateTime.UtcNow;
-            vm.UsageLabels = new List<string>
+
+            if (timeframe == "Last 7 days")
             {
-                today.AddDays(-28).ToString("MMM dd"),
-                today.AddDays(-21).ToString("MMM dd"),
-                today.AddDays(-14).ToString("MMM dd"),
-                today.AddDays(-7).ToString("MMM dd"),
-                today.ToString("MMM dd")
-            };
-            vm.UsageData = new List<int> { activeCount, activeCount, activeCount, activeCount, activeCount };
+                var checkDates7 = Enumerable.Range(0, 7).Select(i => today.AddDays(-6 + i)).ToList();
+                vm.UsageLabels = checkDates7.Select(d => d.ToString("MMM dd")).ToList();
+                vm.UsageData = checkDates7.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+            }
+            else if (timeframe == "Last 90 days")
+            {
+                var checkDates90 = new List<DateTime> { today.AddDays(-60), today.AddDays(-30), today };
+                vm.UsageLabels = checkDates90.Select(d => d.ToString("MMM yyyy")).ToList();
+                vm.UsageData = checkDates90.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+            }
+            else
+            {
+                // Default: Last 30 days (5 weekly intervals)
+                var checkDates = new List<DateTime>
+                {
+                    today.AddDays(-28),
+                    today.AddDays(-21),
+                    today.AddDays(-14),
+                    today.AddDays(-7),
+                    today
+                };
+
+                vm.UsageLabels = checkDates.Select(d => d.ToString("MMM dd")).ToList();
+                vm.UsageData = checkDates.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+            }
 
             // Populate Recent Activity 100% from database users (Clients and Trainers only)
             var recentList = new List<AdminRecentActivityItem>();
@@ -1031,29 +1057,44 @@ namespace HealthTrack.Controllers
             var today = DateTime.UtcNow;
             if (vm.SelectedTimeframe == "Last 7 days")
             {
-                vm.GrowthChartLabels = new List<string> { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
-                vm.ActiveUsersChartData = new List<int> { activeUsers, activeUsers, activeUsers, activeUsers, activeUsers, activeUsers, activeUsers };
-                vm.WorkoutsChartData = new List<int> { 0, 0, 0, 0, 0, 0, vm.TotalWorkoutsLogged };
+                var checkDates7 = Enumerable.Range(0, 7).Select(i => today.AddDays(-6 + i)).ToList();
+                vm.GrowthChartLabels = checkDates7.Select(d => d.ToString("ddd")).ToList();
+                vm.ActiveUsersChartData = checkDates7.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+                vm.WorkoutsChartData = checkDates7.Select(d =>
+                    _context.WorkoutPlans.Count(w => w.CreatedAt.Date <= d.Date)
+                ).ToList();
             }
             else if (vm.SelectedTimeframe == "Last 90 days")
             {
-                vm.GrowthChartLabels = new List<string> { "Month 1", "Month 2", "Current" };
-                vm.ActiveUsersChartData = new List<int> { activeUsers, activeUsers, activeUsers };
-                vm.WorkoutsChartData = new List<int> { vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged };
+                var checkDates90 = new List<DateTime> { today.AddDays(-60), today.AddDays(-30), today };
+                vm.GrowthChartLabels = checkDates90.Select(d => d.ToString("MMM yyyy")).ToList();
+                vm.ActiveUsersChartData = checkDates90.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+                vm.WorkoutsChartData = checkDates90.Select(d =>
+                    _context.WorkoutPlans.Count(w => w.CreatedAt.Date <= d.Date)
+                ).ToList();
             }
             else
             {
                 // Default: Last 30 days
-                vm.GrowthChartLabels = new List<string>
+                var checkDates30 = new List<DateTime>
                 {
-                    today.AddDays(-28).ToString("MMM dd"),
-                    today.AddDays(-21).ToString("MMM dd"),
-                    today.AddDays(-14).ToString("MMM dd"),
-                    today.AddDays(-7).ToString("MMM dd"),
-                    today.ToString("MMM dd")
+                    today.AddDays(-28),
+                    today.AddDays(-21),
+                    today.AddDays(-14),
+                    today.AddDays(-7),
+                    today
                 };
-                vm.ActiveUsersChartData = new List<int> { activeUsers, activeUsers, activeUsers, activeUsers, activeUsers };
-                vm.WorkoutsChartData = new List<int> { vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged, vm.TotalWorkoutsLogged };
+                vm.GrowthChartLabels = checkDates30.Select(d => d.ToString("MMM dd")).ToList();
+                vm.ActiveUsersChartData = checkDates30.Select(d =>
+                    regularUsers.Count(u => u.CreatedAt.Date <= d.Date && (!u.LockoutEnd.HasValue || u.LockoutEnd.Value <= DateTimeOffset.UtcNow))
+                ).ToList();
+                vm.WorkoutsChartData = checkDates30.Select(d =>
+                    _context.WorkoutPlans.Count(w => w.CreatedAt.Date <= d.Date)
+                ).ToList();
             }
 
             // Real dynamic Chart 2: Weekly Engagement

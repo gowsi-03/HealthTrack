@@ -141,7 +141,7 @@ namespace HealthTrack.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login credentials. Please check your email and password.");
+                    ModelState.AddModelError(string.Empty, "Invalid email or password. Please try again.");
                     return Page();
                 }
             }

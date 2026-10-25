@@ -29,3 +29,53 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+
+/* Modern Error Banner & Validation Summary */
+.validation-summary-valid {
+  display: none !important;
+}
+
+.validation-summary-errors,
+.alert-danger {
+  background-color: #FEF2F2 !important;
+  border: 1px solid #FCA5A5 !important;
+  color: #991B1B !important;
+  border-radius: 10px !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08) !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.validation-summary-errors ul,
+.alert-danger ul {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.validation-summary-errors li,
+.alert-danger li {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #991B1B !important;
+}
+
+.validation-summary-errors li::before,
+.alert-danger li::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23DC2626'%3E%3Cpath d='M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 18px 18px;
+}

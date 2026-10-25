@@ -1349,6 +1349,13 @@ namespace HealthTrack.Controllers
         {
             var user = await GetCurrentClientUserAsync();
 
+            // Validate data annotations on BookAppointmentInputModel
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please fill in all required appointment fields correctly.";
+                return RedirectToAction(nameof(Appointments));
+            }
+
             var form = vm.BookingForm;
             if (form == null || string.IsNullOrWhiteSpace(form.Category))
             {

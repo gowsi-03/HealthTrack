@@ -477,10 +477,10 @@ namespace HealthTrack.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Client/BookAppointment
+        // POST: /Client/BookQuickAppointment
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> BookAppointment(ClientDashboardViewModel vm)
+        public async Task<IActionResult> BookQuickAppointment(ClientDashboardViewModel vm)
         {
             var user = await GetCurrentClientUserAsync();
             if (user == null) return RedirectToPage("/Account/Login", new { area = "Identity" });

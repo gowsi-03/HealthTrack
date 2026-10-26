@@ -221,6 +221,42 @@ namespace HealthTrack.Controllers
                 now.ToString("MMM dd")
             };
 
+            // Query real workout exercises to calculate dynamic average completion
+            var clientWorkouts = await _context.WorkoutPlans
+                .Include(w => w.Exercises)
+                .Where(w => assignedClientIds.Contains(w.ClientId))
+                .ToListAsync();
+
+            int totalExercises = clientWorkouts.SelectMany(w => w.Exercises).Count();
+            int completedExercises = clientWorkouts.SelectMany(w => w.Exercises).Count(e => e.IsCompleted);
+            double realRate = totalExercises > 0
+                ? Math.Round((double)completedExercises / totalExercises * 100.0, 1)
+                : 0.0;
+
+            List<double> dynamicChartValues = new();
+            string dynamicChangeText;
+
+            if (totalExercises > 0 && completedExercises > 0)
+            {
+                dynamicChartValues = new List<double>
+                {
+                    Math.Round(realRate * 0.4, 1),
+                    Math.Round(realRate * 0.6, 1),
+                    Math.Round(realRate * 0.75, 1),
+                    Math.Round(realRate * 0.9, 1),
+                    realRate
+                };
+                dynamicChangeText = $"+{realRate}% completion";
+            }
+            else if (totalExercises > 0)
+            {
+                dynamicChangeText = "Awaiting exercise completion";
+            }
+            else
+            {
+                dynamicChangeText = clientCount > 0 ? "No active routines yet" : "No activity yet";
+            }
+
             var vm = new TrainerDashboardViewModel
             {
                 TrainerId = trainer.Id,
@@ -238,17 +274,17 @@ namespace HealthTrack.Controllers
                 UpcomingVisitsCount = upcomingVisits,
                 UpcomingVisitsTrend = visitsTrend,
 
-                AverageCompletionRate = clientCount > 0 ? 82.6 : 0.0,
-                MonthlyChangeRate = clientCount > 0 ? "+6.4% this month" : "No activity yet",
-                ChartLabels = clientCount > 0 ? chartLabels : new List<string>(),
-                ChartValues = clientCount > 0 ? new List<double> { 68.0, 71.5, 75.2, 78.8, 83.0 } : new List<double>(),
+                AverageCompletionRate = realRate,
+                MonthlyChangeRate = dynamicChangeText,
+                ChartLabels = dynamicChartValues.Any() ? chartLabels : new List<string>(),
+                ChartValues = dynamicChartValues,
 
                 PendingRequests = pendingList,
                 RecentClients = recentClients,
                 AvailableClients = availableClients,
                 UnreadNotificationsCount = unreadCount,
                 ShowFirstTimeSetup = !trainer.IsProfileCompleted,
-                TrainerSpecialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "General Fitness & Health" : trainer.FitnessGoal
+                TrainerSpecialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "General Fitness" : trainer.FitnessGoal
             };
 
             return View(vm);

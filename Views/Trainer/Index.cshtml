@@ -1137,10 +1137,20 @@
 
                     <div class="big-metric-row">
                         <div class="big-metric-num">@Model.AverageCompletionRate%</div>
-                        <div class="trend-pill-mint">
-                            <span class="dot-green"></span>
-                            <span>@Model.MonthlyChangeRate</span>
-                        </div>
+                        @if (Model.AverageCompletionRate > 0)
+                        {
+                            <div class="trend-pill-mint">
+                                <span class="dot-green"></span>
+                                <span>@Model.MonthlyChangeRate</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="badge bg-light text-muted border px-2.5 py-1.5 fw-medium d-inline-flex align-items-center gap-1.5" style="font-size: 0.78rem;">
+                                <span class="bg-secondary rounded-circle" style="width: 6px; height: 6px; display: inline-block;"></span>
+                                <span>@Model.MonthlyChangeRate</span>
+                            </div>
+                        }
                     </div>
 
                     @if (Model.AssignedClientsCount > 0 && Model.ChartValues != null && Model.ChartValues.Any(v => v > 0))

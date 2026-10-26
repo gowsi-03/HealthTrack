@@ -48,7 +48,9 @@
             min-height: 100vh;
         }
 
-        /* Sidebar (Dark Navy) */
+        /* ========================================================= */
+        /* 1. SIDEBAR (Exact Match to Trainer Dashboard & Reports)   */
+        /* ========================================================= */
         .sidebar {
             width: 255px;
             background-color: var(--ht-navy);
@@ -67,6 +69,11 @@
             z-index: 100;
         }
 
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-track { background: rgba(11, 25, 44, 0.4); }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+
         .brand-header {
             display: flex;
             align-items: center;
@@ -75,20 +82,21 @@
             font-size: 1.35rem;
             color: #FFFFFF;
             text-decoration: none;
-            margin-bottom: 2rem;
-            padding: 0 0.5rem;
+            margin-bottom: 1.35rem;
+            padding-left: 0.5rem;
         }
+        .brand-header:hover { color: #FFFFFF; }
 
         .brand-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--ht-green) 0%, var(--ht-teal) 100%);
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #FFFFFF;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
         }
 
@@ -105,24 +113,24 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.75rem 0.95rem;
+            gap: 12px;
+            padding: 0.68rem 0.85rem;
             border-radius: 12px;
             color: #94A3B8;
             text-decoration: none;
+            font-size: 0.92rem;
             font-weight: 600;
-            font-size: 0.88rem;
             transition: all 0.2s ease;
         }
 
         .sidebar-link:hover {
             color: #FFFFFF;
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: var(--ht-navy-hover);
         }
 
         .sidebar-link.active {
+            background-color: rgba(255, 255, 255, 0.08);
             color: #FFFFFF;
-            background-color: rgba(16, 185, 129, 0.16);
-            font-weight: 700;
         }
 
         .sidebar-link-left {
@@ -131,42 +139,79 @@
             gap: 12px;
         }
 
+        .sidebar-link i { font-size: 1.15rem; }
+
         .active-dot {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             background-color: var(--ht-green);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
         }
 
         .sidebar-bottom-section {
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+            margin-top: 1.25rem;
+            flex-shrink: 0;
+            padding-bottom: 0.5rem;
         }
+
+        .support-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--ht-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .support-title { font-size: 0.88rem; font-weight: 700; color: #FFFFFF; margin-bottom: 0.25rem; }
+        .support-desc { font-size: 0.75rem; color: #94A3B8; margin-bottom: 0.65rem; line-height: 1.4; }
+        .support-link { font-size: 0.78rem; font-weight: 700; color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .support-link:hover { color: var(--ht-green); }
 
         .btn-signout {
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 100%;
-            padding: 0.7rem 0.95rem;
-            border-radius: 10px;
             color: #94A3B8;
-            background: transparent;
-            border: none;
-            font-size: 0.88rem;
+            text-decoration: none;
+            font-size: 0.9rem;
             font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            background: none;
+            border: none;
+            width: 100%;
             text-align: left;
-            transition: all 0.2s;
             cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-signout:hover {
+            color: #FFFFFF;
+            background-color: var(--ht-navy-hover);
         }
 
-        .btn-signout:hover {
-            color: #EF4444;
-            background: rgba(239, 68, 68, 0.1);
+        .link-public-site {
+            display: block;
+            color: #64748B;
+            font-size: 0.76rem;
+            text-decoration: none;
+            padding: 0.4rem 0.75rem 0 0.75rem;
+            transition: color 0.15s ease;
         }
+        .link-public-site:hover { color: #94A3B8; }
 
         /* Main Content */
         .main-wrapper {
@@ -446,13 +491,15 @@
     <!-- ========================================================= -->
     <aside class="sidebar">
         <div>
-            <a href="/Trainer" class="brand-header">
+            <!-- Brand Logo -->
+            <a href="/" class="brand-header">
                 <div class="brand-icon">
                     <i class="bi bi-heart-pulse-fill"></i>
                 </div>
                 <span>HealthTrack</span>
             </a>
 
+            <!-- Main Navigation -->
             <ul class="sidebar-nav">
                 <li>
                     <a href="/Trainer" class="sidebar-link">
@@ -468,13 +515,20 @@
                             <i class="bi bi-people"></i>
                             <span>My Clients</span>
                         </div>
-                        <span class="badge bg-secondary rounded-pill">@Model.AssignedClientsCount</span>
                     </a>
                 </li>
                 <li>
                     <a href="/Trainer/Workouts" class="sidebar-link">
                         <div class="sidebar-link-left">
-                            <i class="bi bi-lightning-charge"></i>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6.5 6.5 11 11"></path>
+                                <path d="m21 21-1-1"></path>
+                                <path d="m3 3 1 1"></path>
+                                <path d="m18 22 4-4"></path>
+                                <path d="m2 6 4-4"></path>
+                                <path d="m3 10 7-7"></path>
+                                <path d="m14 21 7-7"></path>
+                            </svg>
                             <span>Workout Plans</span>
                         </div>
                     </a>
@@ -482,7 +536,10 @@
                 <li>
                     <a href="/Trainer/Diet" class="sidebar-link">
                         <div class="sidebar-link-left">
-                            <i class="bi bi-egg-fried"></i>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 2a.75.75 0 0 1 .75.75v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.5a.5.5 0 0 0 1 0v-3.5a.75.75 0 0 1 1.5 0v3.75a3 3 0 0 1-2.25 2.9V21.25a.75.75 0 0 1-1.5 0V9.4a3 3 0 0 1-2.25-2.9V2.75A.75.75 0 0 1 7 2z"/>
+                                <path d="M16.5 2c-.28 0-.5.22-.5.5v8.5a.75.75 0 0 0 .75.75h.5v9.5a.75.75 0 0 0 1.5 0V2.7c0-.39-.31-.7-.75-.7h-1.5z"/>
+                            </svg>
                             <span>Diet Plans</span>
                         </div>
                     </a>
@@ -516,13 +573,26 @@
         </div>
 
         <div class="sidebar-bottom-section">
-            <form asp-area="Identity" asp-page="/Account/Logout" method="post" id="logoutForm">
-                @Html.AntiForgeryToken()
+            <div class="support-card">
+                <div class="support-icon">
+                    <i class="bi bi-heart-pulse"></i>
+                </div>
+                <div class="support-title">Need assistance?</div>
+                <div class="support-desc">Our care team is here to help.</div>
+                <a href="mailto:support@healthtrack.com" class="support-link">
+                    <span>Contact support</span>
+                    <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>
+                </a>
+            </div>
+
+            <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
                 <button type="submit" class="btn-signout">
                     <i class="bi bi-box-arrow-left"></i>
-                    <span>Sign Out</span>
+                    <span>Sign out</span>
                 </button>
             </form>
+
+            <a href="/" class="link-public-site">View public site</a>
         </div>
     </aside>
 

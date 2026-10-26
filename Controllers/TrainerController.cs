@@ -533,6 +533,8 @@ namespace HealthTrack.Controllers
                 TotalClientsCount = allClients.Count,
                 ActiveClientsCount = allClients.Count(c => c.Status == "Active"),
                 AtRiskClientsCount = allClients.Count(c => c.Status == "At risk"),
+                TotalResultsCount = totalResults,
+                PageSize = pageSize,
                 SearchTerm = search ?? string.Empty,
                 SelectedStatus = status ?? "All",
                 SelectedPlan = plan ?? "All",

@@ -15,7 +15,11 @@ namespace HealthTrack.Models.ViewModels
         public string SelectedStatus { get; set; } = "All";
         public string SelectedPlan { get; set; } = "All";
         public int CurrentPage { get; set; } = 1;
-        public int TotalPages { get; set; } = 3;
+        public int TotalPages { get; set; } = 1;
+        public int TotalResultsCount { get; set; } = 0;
+        public int PageSize { get; set; } = 4;
+        public int StartItemIndex => TotalResultsCount == 0 ? 0 : (CurrentPage - 1) * PageSize + 1;
+        public int EndItemIndex => Math.Min(CurrentPage * PageSize, TotalResultsCount);
 
         public List<TrainerClientItem> Clients { get; set; } = new();
 

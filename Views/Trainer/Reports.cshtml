@@ -1049,7 +1049,7 @@
                 </div>
             }
 
-            <!-- 2. Filters Row (Matching Mockup 1: Alex Morgan ⌵ | All metrics ⌵ | Apply filters) -->
+            <!-- 2. Client Selector Row -->
             <form method="get" asp-action="Reports" asp-controller="Trainer" class="filter-controls-row">
                 <!-- Client Dropdown -->
                 <div class="select-filter-box">
@@ -1075,20 +1075,6 @@
                     </select>
                     <i class="bi bi-chevron-down select-chevron"></i>
                 </div>
-
-                <!-- Metrics Dropdown -->
-                <div class="select-filter-box">
-                    <select name="metric">
-                        <option value="All metrics" selected>All metrics</option>
-                        <option value="Weight">Weight</option>
-                        <option value="Workouts">Workouts</option>
-                        <option value="Nutrition">Nutrition</option>
-                    </select>
-                    <i class="bi bi-chevron-down select-chevron"></i>
-                </div>
-
-                <!-- Apply Filters Button -->
-                <button type="submit" class="btn-apply-filters">Apply filters</button>
             </form>
 
             <!-- 3. Four KPI Metric Cards (Matching Mockup 1) -->

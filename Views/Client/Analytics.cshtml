@@ -902,37 +902,20 @@
                 </a>
             </div>
 
-            <!-- 2. Filter Row (Last 30 days v, All metrics v, Apply filters) -->
-            <form method="get" asp-action="Analytics" class="filter-row">
+            <!-- 2. Filter Row -->
+            <div class="filter-row">
                 <!-- Time range dropdown -->
                 <div class="dropdown">
                     <button class="filter-pill-btn dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                         <span>@Model.SelectedTimeRange</span>
                     </button>
                     <ul class="dropdown-menu shadow-sm border border-slate-100 rounded-3" aria-labelledby="timeRangeDropdown">
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 7 days&metric=@Model.SelectedMetric">Last 7 days</a></li>
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 30 days&metric=@Model.SelectedMetric">Last 30 days</a></li>
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 90 days&metric=@Model.SelectedMetric">Last 90 days</a></li>
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=This year&metric=@Model.SelectedMetric">This year</a></li>
+                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 7 Days">Last 7 Days</a></li>
+                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 30 Days">Last 30 Days</a></li>
+                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=All Time">All Time</a></li>
                     </ul>
                 </div>
-
-                <!-- Metrics dropdown -->
-                <div class="dropdown">
-                    <button class="filter-pill-btn dropdown-toggle" type="button" id="metricsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span>@Model.SelectedMetric</span>
-                    </button>
-                    <ul class="dropdown-menu shadow-sm border border-slate-100 rounded-3" aria-labelledby="metricsDropdown">
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=@Model.SelectedTimeRange&metric=All metrics">All metrics</a></li>
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=@Model.SelectedTimeRange&metric=Weight only">Weight only</a></li>
-                        <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=@Model.SelectedTimeRange&metric=Workouts only">Workouts only</a></li>
-                    </ul>
-                </div>
-
-                <button type="submit" class="btn-apply-filters">
-                    Apply filters
-                </button>
-            </form>
+            </div>
 
             <!-- 3. 4 KPI Metric Cards (Matching media_1792560789365_c98877d8.png) -->
             <div class="kpi-cards-grid">
@@ -980,9 +963,9 @@
                                 <span>@Model.SelectedTimeRange</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border border-slate-100 rounded-3">
-                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 7 Days&metric=@Model.SelectedMetric">Last 7 Days</a></li>
-                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 30 Days&metric=@Model.SelectedMetric">Last 30 Days</a></li>
-                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=All Time&metric=@Model.SelectedMetric">All Time</a></li>
+                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 7 Days">Last 7 Days</a></li>
+                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=Last 30 Days">Last 30 Days</a></li>
+                                <li><a class="dropdown-item small" href="/Client/Analytics?timeRange=All Time">All Time</a></li>
                             </ul>
                         </div>
                     </div>

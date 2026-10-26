@@ -1,6 +1,6 @@
 @model HealthTrack.Models.ViewModels.TrainerProfileViewModel
 @{
-    ViewData["Title"] = "Trainer Profile & Specialization - HealthTrack";
+    ViewData["Title"] = "Trainer Profile & Specialty - HealthTrack";
     Layout = null;
 }
 
@@ -507,7 +507,7 @@
                     <a href="/Trainer/Profile" class="sidebar-link active">
                         <div class="sidebar-link-left">
                             <i class="bi bi-person-gear"></i>
-                            <span>Profile & Specialization</span>
+                            <span>Profile & Specialty</span>
                         </div>
                         <span class="active-dot"></span>
                     </a>
@@ -565,7 +565,7 @@
             }
 
             <div class="page-eyebrow">COACH MANAGEMENT</div>
-            <h1 class="page-title">Profile & Specialization</h1>
+            <h1 class="page-title">Profile & Specialty</h1>
             <p class="page-subtitle">Configure your public coaching domain, certifications, bio, and client-facing information.</p>
 
             <!-- Hero Summary Banner -->
@@ -608,9 +608,9 @@
                 <input type="hidden" asp-for="Email" />
                 <input type="hidden" asp-for="Specialty" id="selectedSpecialtyInput" />
 
-                <!-- 1. Specialization Selection -->
+                <!-- 1. Specialty Selection -->
                 <div class="form-card">
-                    <h3 class="card-section-title">Coaching Domain & Specialization</h3>
+                    <h3 class="card-section-title">Coaching Domain & Specialty</h3>
                     <p class="card-section-desc">Select your primary training focus. This is prominently displayed to clients and in the administrator roster.</p>
 
                     <div class="specialty-grid">
@@ -672,7 +672,7 @@
                     </div>
 
                     <div id="customSpecialtyWrap" style="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" && Model.Specialty != "General Fitness" ? "" : "display: none;")">
-                        <label class="form-label-custom">Custom Specialization Name</label>
+                        <label class="form-label-custom">Custom Specialty Name</label>
                         <input type="text" id="customSpecialtyInput" class="input-custom" value="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" && Model.Specialty != "General Fitness" ? Model.Specialty : "")" placeholder="e.g. Senior Functional Fitness Specialist" oninput="updateCustomValue(this.value)" />
                     </div>
                 </div>

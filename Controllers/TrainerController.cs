@@ -212,14 +212,15 @@ namespace HealthTrack.Controllers
             string visitsTrend = upcomingVisits > 0 ? $"{upcomingVisits} upcoming session{(upcomingVisits == 1 ? "" : "s")}" : "0 upcoming sessions";
 
             var now = DateTime.UtcNow;
-            var chartLabels = new List<string>
+            var weeklyDates = new List<DateTime>
             {
-                now.AddDays(-28).ToString("MMM dd"),
-                now.AddDays(-21).ToString("MMM dd"),
-                now.AddDays(-14).ToString("MMM dd"),
-                now.AddDays(-7).ToString("MMM dd"),
-                now.ToString("MMM dd")
+                now.AddDays(-28),
+                now.AddDays(-21),
+                now.AddDays(-14),
+                now.AddDays(-7),
+                now
             };
+            var chartLabels = weeklyDates.Select(d => d.ToString("MMM dd")).ToList();
 
             // Query real workout exercises to calculate dynamic average completion
             var clientWorkouts = await _context.WorkoutPlans
@@ -238,14 +239,32 @@ namespace HealthTrack.Controllers
 
             if (totalExercises > 0 && completedExercises > 0)
             {
-                dynamicChartValues = new List<double>
+                // True timeline: prior weeks where no workouts existed remain at 0%
+                foreach (var targetDate in weeklyDates)
                 {
-                    Math.Round(realRate * 0.4, 1),
-                    Math.Round(realRate * 0.6, 1),
-                    Math.Round(realRate * 0.75, 1),
-                    Math.Round(realRate * 0.9, 1),
-                    realRate
-                };
+                    if (targetDate.Date == now.Date)
+                    {
+                        dynamicChartValues.Add(realRate);
+                    }
+                    else
+                    {
+                        var workoutsOnDate = clientWorkouts
+                            .Where(w => w.CreatedAt.Date <= targetDate.Date)
+                            .ToList();
+
+                        if (!workoutsOnDate.Any())
+                        {
+                            dynamicChartValues.Add(0.0);
+                        }
+                        else
+                        {
+                            int wTotal = workoutsOnDate.SelectMany(w => w.Exercises).Count();
+                            int wDone = workoutsOnDate.SelectMany(w => w.Exercises).Count(e => e.IsCompleted);
+                            double pastRate = wTotal > 0 ? Math.Round((double)wDone / wTotal * 100.0, 1) : 0.0;
+                            dynamicChartValues.Add(pastRate);
+                        }
+                    }
+                }
                 dynamicChangeText = $"+{realRate}% completion";
             }
             else if (totalExercises > 0)

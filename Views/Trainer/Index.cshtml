@@ -1475,57 +1475,67 @@
                                 <span class="badge bg-white text-muted border fw-normal">Click a card or enter custom</span>
                             </label>
                             
+                            @{
+                                var curSpec = Model.TrainerSpecialty ?? "";
+                                bool isStandardSpec = curSpec == "Strength & Conditioning" ||
+                                                      curSpec == "Clinical Nutrition" ||
+                                                      curSpec == "Fat Loss & Body Composition" ||
+                                                      curSpec == "Mobility & Injury Rehab" ||
+                                                      curSpec == "Cardio & Athletic Endurance" ||
+                                                      curSpec == "General Fitness";
+                                bool isGenFitness = curSpec == "General Fitness" || string.IsNullOrEmpty(curSpec);
+                            }
                             <!-- Hidden input holding chosen specialty -->
-                            <input type="hidden" name="specialty" id="setupSpecialtyInput" value="@(string.IsNullOrEmpty(Model.TrainerSpecialty) ? "Strength & Hypertrophy" : Model.TrainerSpecialty)" />
+                            <input type="hidden" name="specialty" id="setupSpecialtyInput" value="@(string.IsNullOrEmpty(curSpec) ? "General Fitness" : curSpec)" />
 
                             <div class="row g-2 mb-2" id="setupSpecialtyGrid">
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(Model.TrainerSpecialty == "Strength & Hypertrophy" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Strength & Hypertrophy" style="cursor: pointer; transition: all 0.15s ease;">
-                                        <div class="d-flex align-items-center gap-2 mb-1">
-                                            <i class="bi bi-fire text-danger fs-5"></i>
-                                            <span class="fw-bold text-dark small">Strength & Hypertrophy</span>
-                                        </div>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Heavy lifting, muscle building, powerlifting</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Weight Loss & Metabolic Conditioning" style="cursor: pointer; transition: all 0.15s ease;">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(curSpec == "Strength & Conditioning" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Strength & Conditioning" style="cursor: pointer; transition: all 0.15s ease;">
                                         <div class="d-flex align-items-center gap-2 mb-1">
                                             <i class="bi bi-lightning-charge text-warning fs-5"></i>
-                                            <span class="fw-bold text-dark small">Weight Loss & HIIT</span>
+                                            <span class="fw-bold text-dark small">Strength & Conditioning</span>
                                         </div>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Fat loss, metabolic conditioning, body composition</p>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Hypertrophy, athletic endurance, compound lifting</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Sports Nutrition & Dietetics" style="cursor: pointer; transition: all 0.15s ease;">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(curSpec == "Clinical Nutrition" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Clinical Nutrition" style="cursor: pointer; transition: all 0.15s ease;">
                                         <div class="d-flex align-items-center gap-2 mb-1">
                                             <i class="bi bi-egg-fried text-success fs-5"></i>
-                                            <span class="fw-bold text-dark small">Sports Nutrition</span>
+                                            <span class="fw-bold text-dark small">Clinical Nutrition</span>
                                         </div>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Macro coaching, meal planning, sports nutrition</p>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Macro balancing, dietary planning, metabolic optimization</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Functional Movement & Rehabilitation" style="cursor: pointer; transition: all 0.15s ease;">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(curSpec == "Fat Loss & Body Composition" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Fat Loss & Body Composition" style="cursor: pointer; transition: all 0.15s ease;">
                                         <div class="d-flex align-items-center gap-2 mb-1">
-                                            <i class="bi bi-activity text-info fs-5"></i>
-                                            <span class="fw-bold text-dark small">Rehab & Mobility</span>
+                                            <i class="bi bi-fire text-danger fs-5"></i>
+                                            <span class="fw-bold text-dark small">Fat Loss & Toning</span>
                                         </div>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Post-injury recovery, joint health, corrective exercise</p>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Caloric deficit management, HIIT, body composition</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="Endurance, Cardio & HIIT" style="cursor: pointer; transition: all 0.15s ease;">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(curSpec == "Mobility & Injury Rehab" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Mobility & Injury Rehab" style="cursor: pointer; transition: all 0.15s ease;">
                                         <div class="d-flex align-items-center gap-2 mb-1">
-                                            <i class="bi bi-stopwatch text-primary fs-5"></i>
-                                            <span class="fw-bold text-dark small">Endurance & Cardio</span>
+                                            <i class="bi bi-shield-plus text-info fs-5"></i>
+                                            <span class="fw-bold text-dark small">Mobility & Rehab</span>
                                         </div>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Running, marathon prep, aerobic conditioning</p>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">Corrective posture, joint health, injury recovery</p>
                                     </div>
                                 </div>
                                 <div class="col-md-4 col-sm-6">
-                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer bg-white" data-value="General Fitness & Health" style="cursor: pointer; transition: all 0.15s ease;">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(curSpec == "Cardio & Athletic Endurance" ? "border-success bg-white shadow-sm" : "bg-white")" data-value="Cardio & Athletic Endurance" style="cursor: pointer; transition: all 0.15s ease;">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <i class="bi bi-speedometer2 text-primary fs-5"></i>
+                                            <span class="fw-bold text-dark small">Cardio Endurance</span>
+                                        </div>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">VO2 max conditioning, marathon prep, aerobic pacing</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="card h-100 p-3 setup-spec-card border rounded-3 cursor-pointer @(isGenFitness ? "border-success bg-white shadow-sm" : "bg-white")" data-value="General Fitness" style="cursor: pointer; transition: all 0.15s ease;">
                                         <div class="d-flex align-items-center gap-2 mb-1">
                                             <i class="bi bi-heart-pulse text-success fs-5"></i>
                                             <span class="fw-bold text-dark small">General Fitness</span>
@@ -1541,7 +1551,7 @@
                                     <span class="input-group-text bg-white text-muted border-end-0">
                                         <i class="bi bi-pencil"></i>
                                     </span>
-                                    <input type="text" id="customSpecialtyInput" class="form-control bg-white border-start-0" placeholder="Or enter custom specialty (e.g. Boxing Coach, Yoga & Flexibility, Pilates)..." />
+                                    <input type="text" id="customSpecialtyInput" class="form-control bg-white border-start-0" value="@(!isStandardSpec && !string.IsNullOrEmpty(curSpec) ? curSpec : "")" placeholder="Or enter custom specialty (e.g. Boxing Coach, Yoga & Flexibility, Pilates)..." />
                                 </div>
                             </div>
                         </div>

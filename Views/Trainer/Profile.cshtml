@@ -654,7 +654,15 @@
                             </div>
                         </div>
 
-                        <div class="specialty-card @(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" ? "selected" : "")" onclick="chooseCustomSpecialty(this)">
+                        <div class="specialty-card @(Model.Specialty == "General Fitness" ? "selected" : "")" onclick="chooseSpecialty('General Fitness', this)">
+                            <div class="specialty-icon"><i class="bi bi-heart-pulse"></i></div>
+                            <div>
+                                <div class="specialty-info-title">General Fitness</div>
+                                <div class="specialty-info-sub">Holistic wellness, functional movement, and daily wellness.</div>
+                            </div>
+                        </div>
+
+                        <div class="specialty-card @(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" && Model.Specialty != "General Fitness" ? "selected" : "")" onclick="chooseCustomSpecialty(this)">
                             <div class="specialty-icon"><i class="bi bi-pencil-square"></i></div>
                             <div>
                                 <div class="specialty-info-title">Custom Domain</div>
@@ -663,9 +671,9 @@
                         </div>
                     </div>
 
-                    <div id="customSpecialtyWrap" style="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" ? "" : "display: none;")">
+                    <div id="customSpecialtyWrap" style="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" && Model.Specialty != "General Fitness" ? "" : "display: none;")">
                         <label class="form-label-custom">Custom Specialization Name</label>
-                        <input type="text" id="customSpecialtyInput" class="input-custom" value="@Model.Specialty" placeholder="e.g. Senior Functional Fitness Specialist" oninput="updateCustomValue(this.value)" />
+                        <input type="text" id="customSpecialtyInput" class="input-custom" value="@(Model.Specialty != "Strength & Conditioning" && Model.Specialty != "Clinical Nutrition" && Model.Specialty != "Fat Loss & Body Composition" && Model.Specialty != "Mobility & Injury Rehab" && Model.Specialty != "Cardio & Athletic Endurance" && Model.Specialty != "General Fitness" ? Model.Specialty : "")" placeholder="e.g. Senior Functional Fitness Specialist" oninput="updateCustomValue(this.value)" />
                     </div>
                 </div>
 

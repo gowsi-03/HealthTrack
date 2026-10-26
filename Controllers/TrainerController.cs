@@ -511,8 +511,8 @@ namespace HealthTrack.Controllers
 
             var filteredList = filtered.ToList();
 
-            // Pagination calculated dynamically from live records
-            int pageSize = 4;
+            // Pagination calculated dynamically from live records (8 clients per page)
+            int pageSize = 8;
             int totalResults = filteredList.Count;
             int totalPages = (int)Math.Ceiling((double)totalResults / pageSize);
             if (totalPages < 1) totalPages = 1;

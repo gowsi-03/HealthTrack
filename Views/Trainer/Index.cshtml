@@ -732,7 +732,7 @@
         }
 
         .custom-trainer-table tr:hover td {
-            background-color: #F8FAFC;
+            background-color: transparent;
         }
 
         .client-cell {
@@ -1299,8 +1299,8 @@
                             }
                             else
                             {
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                <tr class="empty-state-row">
+                                    <td colspan="6" class="text-center py-5 text-muted" style="background-color: transparent !important;">
                                         <div class="d-flex flex-column align-items-center justify-content-center">
                                             <i class="bi bi-people text-secondary mb-2" style="font-size: 2rem;"></i>
                                             <div class="fw-semibold text-dark mb-1">No Assigned Clients Yet</div>

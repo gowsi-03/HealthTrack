@@ -644,7 +644,7 @@
             border-bottom: none;
         }
         .table-custom tbody tr:hover td {
-            background-color: #FAFCFF;
+            background-color: transparent;
         }
 
         .btn-dots-menu {
@@ -1089,8 +1089,8 @@
                             }
                             else
                             {
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                <tr class="empty-state-row">
+                                    <td colspan="6" class="text-center py-5 text-muted" style="background-color: transparent !important;">
                                         <div style="font-size: 2rem; color: #CBD5E1; margin-bottom: 0.5rem;"><i class="bi bi-clipboard2-pulse"></i></div>
                                         <strong style="color: #475569;">No biometric measurements recorded yet.</strong><br />
                                         <span class="small text-muted">Click "Record measurement" above to log your first entry.</span>

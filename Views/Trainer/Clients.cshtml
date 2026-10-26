@@ -571,7 +571,7 @@
         }
 
         .custom-clients-table tr:hover td {
-            background-color: #F8FAFC;
+            background-color: transparent;
         }
 
         .client-avatar-cell {
@@ -973,8 +973,8 @@
                         <tbody>
                             @if (!Model.Clients.Any())
                             {
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                <tr class="empty-state-row">
+                                    <td colspan="6" class="text-center py-5 text-muted" style="background-color: transparent !important;">
                                         <i class="bi bi-people text-secondary" style="font-size: 2rem;"></i>
                                         <p class="mt-2 mb-1 fw-semibold">No assigned clients yet</p>
                                         <small class="text-muted">When a client books a consultation or selects you as their coach, they will appear here automatically.</small>

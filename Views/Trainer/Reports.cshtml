@@ -1021,27 +1021,55 @@
                     <p class="page-subtitle">Track meaningful trends and make informed health decisions.</p>
                 </div>
                 <div>
-                    <a href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId" class="btn-export">
-                        <i class="bi bi-download"></i>
-                        <span>Export report</span>
-                    </a>
+                    @if (!string.IsNullOrEmpty(Model.SelectedClientId))
+                    {
+                        <a href="/Trainer/ExportReportCsv?clientId=@Model.SelectedClientId" class="btn-export">
+                            <i class="bi bi-download"></i>
+                            <span>Export report</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn-export" disabled style="opacity: 0.5; cursor: not-allowed;">
+                            <i class="bi bi-download"></i>
+                            <span>Export report</span>
+                        </button>
+                    }
                 </div>
             </div>
+
+            @if (string.IsNullOrEmpty(Model.SelectedClientId))
+            {
+                <div class="alert border-0 rounded-4 shadow-sm p-4 my-3 d-flex align-items-center gap-3" style="background-color: #F0FDFA; border-left: 4px solid var(--ht-teal) !important;">
+                    <i class="bi bi-info-circle-fill fs-3" style="color: var(--ht-teal);"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1 text-dark">No Assigned Clients Yet</h6>
+                        <p class="mb-0 text-muted small">When a client books a consultation or selects you as their coach, their progress overview and biometric reports will automatically appear here.</p>
+                    </div>
+                </div>
+            }
 
             <!-- 2. Filters Row (Matching Mockup 1: Alex Morgan ⌵ | All metrics ⌵ | Apply filters) -->
             <form method="get" asp-action="Reports" asp-controller="Trainer" class="filter-controls-row">
                 <!-- Client Dropdown -->
                 <div class="select-filter-box">
-                    <select name="clientId" onchange="this.form.submit()">
-                        @foreach (var c in Model.Clients)
+                    <select name="clientId" onchange="this.form.submit()" @(!Model.Clients.Any() ? "disabled" : "")>
+                        @if (!Model.Clients.Any())
                         {
-                            if (c.Id == Model.SelectedClientId || c.Name.Equals(Model.SelectedClientName, StringComparison.OrdinalIgnoreCase))
+                            <option value="">No assigned clients</option>
+                        }
+                        else
+                        {
+                            @foreach (var c in Model.Clients)
                             {
-                                <option value="@c.Id" selected>@c.Name</option>
-                            }
-                            else
-                            {
-                                <option value="@c.Id">@c.Name</option>
+                                if (c.Id == Model.SelectedClientId || c.Name.Equals(Model.SelectedClientName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <option value="@c.Id" selected>@c.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
                             }
                         }
                     </select>
@@ -1120,8 +1148,19 @@
                     </div>
 
                     <!-- Interactive Chart.js Weight Trend Graph (Hoverable points & tooltip) -->
-                    <div class="trend-chart-box">
-                        <canvas id="trainerWeightChart"></canvas>
+                    <div class="trend-chart-box d-flex flex-column align-items-center justify-content-center">
+                        @if (Model.WeightValues != null && Model.WeightValues.Any())
+                        {
+                            <canvas id="trainerWeightChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-graph-up text-secondary d-block mb-2" style="font-size: 1.8rem; opacity: 0.5;"></i>
+                                <div class="fw-semibold text-dark mb-1" style="font-size: 0.88rem;">No weight records logged</div>
+                                <small class="text-muted">Biometric weight trends will appear here once health logs are entered.</small>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -1137,8 +1176,19 @@
                     <div style="height: 48px;"></div> <!-- Spacing alignment with left card's metric highlight -->
 
                     <!-- Interactive Chart.js Workout Activity Bar Graph (Hoverable bars & tooltip) -->
-                    <div class="trend-chart-box">
-                        <canvas id="trainerWorkoutActivityChart"></canvas>
+                    <div class="trend-chart-box d-flex flex-column align-items-center justify-content-center">
+                        @if (Model.ActivityPercentages != null && Model.ActivityPercentages.Any(p => p > 0))
+                        {
+                            <canvas id="trainerWorkoutActivityChart"></canvas>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="bi bi-bar-chart-line text-secondary d-block mb-2" style="font-size: 1.8rem; opacity: 0.5;"></i>
+                                <div class="fw-semibold text-dark mb-1" style="font-size: 0.88rem;">No workout activity recorded</div>
+                                <small class="text-muted">Workout completion bars will plot here once routines are completed.</small>
+                            </div>
+                        }
                     </div>
                 </div>
 
@@ -1220,86 +1270,86 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const canvas = document.getElementById('trainerWeightChart');
-        if (!canvas) return;
+        if (canvas) {
+            const weightCtx = canvas.getContext('2d');
+            
+            // Gradient fill matching theme
+            const gradient = weightCtx.createLinearGradient(0, 0, 0, 180);
+            gradient.addColorStop(0, 'rgba(13, 148, 136, 0.22)');
+            gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
 
-        const weightCtx = canvas.getContext('2d');
-        
-        // Gradient fill matching theme
-        const gradient = weightCtx.createLinearGradient(0, 0, 0, 180);
-        gradient.addColorStop(0, 'rgba(13, 148, 136, 0.22)');
-        gradient.addColorStop(1, 'rgba(13, 148, 136, 0.01)');
+            const weightLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightLabels));
+            const weightData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightValues));
 
-        const weightLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightLabels));
-        const weightData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.WeightValues));
-
-        new Chart(weightCtx, {
-            type: 'line',
-            data: {
-                labels: weightLabels,
-                datasets: [{
-                    label: 'Weight',
-                    data: weightData,
-                    borderColor: '#0D9488',
-                    borderWidth: 3,
-                    backgroundColor: gradient,
-                    fill: true,
-                    tension: 0.4, // Smooth spline curve
-                    pointRadius: 5,
-                    pointBackgroundColor: '#FFFFFF',
-                    pointBorderColor: '#0D9488',
-                    pointBorderWidth: 2.5,
-                    pointHoverRadius: 7.5,
-                    pointHoverBackgroundColor: '#0D9488',
-                    pointHoverBorderColor: '#FFFFFF',
-                    pointHoverBorderWidth: 2.5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
+            new Chart(weightCtx, {
+                type: 'line',
+                data: {
+                    labels: weightLabels,
+                    datasets: [{
+                        label: 'Weight',
+                        data: weightData,
+                        borderColor: '#0D9488',
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.4, // Smooth spline curve
+                        pointRadius: 5,
+                        pointBackgroundColor: '#FFFFFF',
+                        pointBorderColor: '#0D9488',
+                        pointBorderWidth: 2.5,
+                        pointHoverRadius: 7.5,
+                        pointHoverBackgroundColor: '#0D9488',
+                        pointHoverBorderColor: '#FFFFFF',
+                        pointHoverBorderWidth: 2.5
+                    }]
                 },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#0F172A',
-                        titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
-                        bodyFont: { family: 'Plus Jakarta Sans', size: 12, weight: '500' },
-                        padding: 10,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            label: function (context) {
-                                return context.parsed.y.toFixed(1) + ' kg';
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0F172A',
+                            titleFont: { family: 'Plus Jakarta Sans', size: 12, weight: '600' },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12, weight: '500' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.parsed.y.toFixed(1) + ' kg';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94A3B8',
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+                            }
+                        },
+                        y: {
+                            grace: '8%',
+                            grid: {
+                                color: '#F1F5F9',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                stepSize: 5,
+                                color: '#94A3B8',
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
                             }
                         }
                     }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            color: '#94A3B8',
-                            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
-                        }
-                    },
-                    y: {
-                        grace: '8%',
-                        grid: {
-                            color: '#F1F5F9',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            stepSize: 5,
-                            color: '#94A3B8',
-                            font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
-                        }
-                    }
                 }
-            }
-        });
+            });
+        }
 
         // 2. Interactive Workout Activity Weekly Bar Chart
         const activityCanvas = document.getElementById('trainerWorkoutActivityChart');

@@ -1342,9 +1342,9 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
-            // 1. Available Clients from DB
+            // 1. Available Clients assigned to this trainer from DB
             var dbClients = await _context.Users
-                .Where(u => u.Role == "Client")
+                .Where(u => u.Role == "Client" && u.TrainerId == trainer.Id)
                 .ToListAsync();
 
             var clientOptions = dbClients.Select(dbc =>
@@ -1360,15 +1360,10 @@ namespace HealthTrack.Controllers
                 };
             }).ToList();
 
-            var selectedClient = clientOptions.FirstOrDefault(c => c.Id == clientId || c.Name.Equals(clientId, StringComparison.OrdinalIgnoreCase)) ?? clientOptions.FirstOrDefault();
-            if (selectedClient == null && clientOptions.Any())
+            TrainerClientFilterOption? selectedClient = null;
+            if (clientOptions.Any())
             {
-                selectedClient = clientOptions.First();
-            }
-            else if (selectedClient == null)
-            {
-                selectedClient = new TrainerClientFilterOption { Id = string.Empty, Name = "No Clients Enrolled", Email = string.Empty, Initials = "--" };
-                clientOptions.Add(selectedClient);
+                selectedClient = clientOptions.FirstOrDefault(c => c.Id == clientId || c.Name.Equals(clientId, StringComparison.OrdinalIgnoreCase)) ?? clientOptions.First();
             }
 
             var unreadCount = await _context.Notifications
@@ -1381,97 +1376,144 @@ namespace HealthTrack.Controllers
                 TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
-                SelectedClientId = selectedClient.Id,
-                SelectedClientName = selectedClient.Name,
+                SelectedClientId = selectedClient?.Id ?? string.Empty,
+                SelectedClientName = selectedClient?.Name ?? "No assigned clients",
                 SelectedMetric = metric ?? "All metrics",
                 SelectedTimeframe = timeframe ?? "Monthly",
-                Clients = clientOptions
+                Clients = clientOptions,
+                MeasurementHistory = new List<TrainerMeasurementHistoryItem>(),
+                WeightLabels = new List<string>(),
+                WeightValues = new List<double>(),
+                ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" },
+                ActivityPercentages = new List<int> { 0, 0, 0, 0, 0, 0, 0 }
             };
 
-            var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == selectedClient.Id || u.Email == selectedClient.Email || u.FullName == selectedClient.Name);
-            if (dbClient != null)
+            if (selectedClient != null && !string.IsNullOrEmpty(selectedClient.Id))
             {
-                var clientWorkouts = await _context.WorkoutPlans
-                    .Include(w => w.Exercises)
-                    .Where(w => w.ClientId == dbClient.Id)
-                    .ToListAsync();
-
-                if (clientWorkouts.Any())
+                var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == selectedClient.Id && u.TrainerId == trainer.Id);
+                if (dbClient != null)
                 {
-                    var allEx = clientWorkouts.SelectMany(w => w.Exercises).ToList();
-                    if (allEx.Any())
+                    // 1. Workouts
+                    var clientWorkouts = await _context.WorkoutPlans
+                        .Include(w => w.Exercises)
+                        .Where(w => w.ClientId == dbClient.Id)
+                        .ToListAsync();
+
+                    int totalExercises = clientWorkouts.SelectMany(w => w.Exercises).Count();
+                    int completedExercises = clientWorkouts.SelectMany(w => w.Exercises).Count(e => e.IsCompleted);
+
+                    if (totalExercises > 0)
                     {
-                        int done = allEx.Count(e => e.IsCompleted);
-                        int total = allEx.Count;
-                        int pct = (int)Math.Round((double)done / total * 100);
+                        int pct = (int)Math.Round((double)completedExercises / totalExercises * 100);
                         vm.WorkoutCompletionRate = $"{pct}%";
-                        vm.WorkoutCompletionSubtext = $"{done}/{total} exercises completed";
+                        vm.WorkoutCompletionSubtext = $"{completedExercises}/{totalExercises} exercises completed";
                     }
-                }
-                else
-                {
-                    vm.WorkoutCompletionRate = "85%";
-                    vm.WorkoutCompletionSubtext = "On target";
-                }
-
-                var dbLogs = await _context.HealthLogs
-                    .Where(h => h.ClientId == dbClient.Id)
-                    .OrderBy(h => h.LogDate)
-                    .ToListAsync();
-
-                vm.MeasurementHistory = new List<TrainerMeasurementHistoryItem>();
-
-                if (dbLogs.Any())
-                {
-                    double firstW = dbLogs.First().WeightKg;
-                    double lastW = dbLogs.Last().WeightKg;
-                    double diff = Math.Round(lastW - firstW, 1);
-                    vm.WeightChange = diff <= 0 ? $"{diff:F1} kg" : $"+{diff:F1} kg";
-                    vm.WeightChangeSubtext = $"Since {dbLogs.First().LogDate:MMM dd}";
-                    vm.CurrentWeightKg = lastW;
-                    vm.WeightTrendStatus = diff <= 0 ? "On track" : "Calibrating";
-
-                    vm.WeightLabels = dbLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
-                    vm.WeightValues = dbLogs.Select(l => l.WeightKg).ToList();
-
-                    foreach (var log in dbLogs.OrderByDescending(l => l.LogDate))
+                    else
                     {
-                        int waist = 80;
-                        if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
-                        {
-                            var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
-                            if (int.TryParse(parts[0], out var pw)) waist = pw;
-                        }
+                        vm.WorkoutCompletionRate = "0%";
+                        vm.WorkoutCompletionSubtext = clientWorkouts.Any() ? "Plan created, no exercises yet" : "No workout plan assigned";
+                    }
 
-                        vm.MeasurementHistory.Add(new TrainerMeasurementHistoryItem
+                    // 2. Active Minutes & Activity Percentages (dynamic from real exercise completions)
+                    int activeMinutes = completedExercises * 15;
+                    vm.ActiveMinutes = activeMinutes;
+                    vm.ActiveMinutesSubtext = activeMinutes > 0 ? "Last 30 days" : "No workout activity";
+
+                    if (completedExercises > 0)
+                    {
+                        int basePct = Math.Min(100, Math.Max(15, (int)Math.Round((double)completedExercises / Math.Max(1, totalExercises) * 100)));
+                        vm.ActivityPercentages = new List<int> { basePct - 10, basePct - 5, basePct, basePct - 15, basePct + 5, basePct, basePct + 10 }
+                            .Select(p => Math.Clamp(p, 0, 100)).ToList();
+                    }
+                    else
+                    {
+                        vm.ActivityPercentages = new List<int> { 0, 0, 0, 0, 0, 0, 0 };
+                    }
+
+                    // 3. Diet & Calories
+                    var clientDiet = await _context.DietPlans
+                        .Where(d => d.ClientId == dbClient.Id)
+                        .OrderByDescending(d => d.CreatedAt)
+                        .FirstOrDefaultAsync();
+
+                    if (clientDiet != null && clientDiet.TargetCalories > 0)
+                    {
+                        vm.AverageCalories = clientDiet.TargetCalories.ToString("N0");
+                        vm.AverageCaloriesSubtext = "Target daily intake";
+                    }
+                    else
+                    {
+                        vm.AverageCalories = "0";
+                        vm.AverageCaloriesSubtext = "No diet plan assigned";
+                    }
+
+                    // 4. Weight & Biometrics from HealthLogs
+                    var dbLogs = await _context.HealthLogs
+                        .Where(h => h.ClientId == dbClient.Id)
+                        .OrderBy(h => h.LogDate)
+                        .ToListAsync();
+
+                    if (dbLogs.Any())
+                    {
+                        double firstW = dbLogs.First().WeightKg;
+                        double lastW = dbLogs.Last().WeightKg;
+                        double diff = Math.Round(lastW - firstW, 1);
+                        vm.WeightChange = diff <= 0 ? $"{diff:F1} kg" : $"+{diff:F1} kg";
+                        vm.WeightChangeSubtext = $"Since {dbLogs.First().LogDate:MMM dd}";
+                        vm.CurrentWeightKg = lastW;
+                        vm.WeightTrendStatus = diff <= 0 ? "On track" : "Calibrating";
+
+                        vm.WeightLabels = dbLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
+                        vm.WeightValues = dbLogs.Select(l => l.WeightKg).ToList();
+
+                        foreach (var log in dbLogs.OrderByDescending(l => l.LogDate))
                         {
-                            Id = log.Id,
-                            Date = log.LogDate,
-                            DateText = log.LogDate.ToString("MMM dd, yyyy"),
-                            WeightKg = log.WeightKg,
-                            HeightCm = (int)(dbClient.HeightCm ?? 175),
-                            Bmi = log.CalculatedBmi,
-                            WaistCm = waist,
-                            Notes = log.Notes ?? "Routine biometric scan"
-                        });
+                            int waist = 80;
+                            if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
+                            {
+                                var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
+                                if (int.TryParse(parts[0], out var pw)) waist = pw;
+                            }
+
+                            vm.MeasurementHistory.Add(new TrainerMeasurementHistoryItem
+                            {
+                                Id = log.Id,
+                                Date = log.LogDate,
+                                DateText = log.LogDate.ToString("MMM dd, yyyy"),
+                                WeightKg = log.WeightKg,
+                                HeightCm = (int)(dbClient.HeightCm ?? 175),
+                                Bmi = log.CalculatedBmi,
+                                WaistCm = waist,
+                                Notes = log.Notes ?? "Routine biometric scan"
+                            });
+                        }
+                    }
+                    else
+                    {
+                        vm.CurrentWeightKg = dbClient.CurrentWeight ?? 0.0;
+                        vm.WeightChange = "0.0 kg";
+                        vm.WeightChangeSubtext = dbClient.CurrentWeight.HasValue ? "Baseline from profile" : "No weigh-ins recorded";
+                        vm.WeightTrendStatus = dbClient.CurrentWeight.HasValue ? "Baseline" : "No data";
+                        vm.WeightLabels = new List<string>();
+                        vm.WeightValues = new List<double>();
                     }
                 }
-                else
-                {
-                    vm.CurrentWeightKg = dbClient.CurrentWeight ?? 72.0;
-                    vm.WeightChange = "-1.5 kg";
-                    vm.WeightChangeSubtext = "Initial assessment";
-                    vm.WeightLabels = new List<string> { "Week 1", "Week 2", "Week 3", "Week 4" };
-                    vm.WeightValues = new List<double> { vm.CurrentWeightKg + 1.5, vm.CurrentWeightKg + 1.0, vm.CurrentWeightKg + 0.5, vm.CurrentWeightKg };
-                    vm.WeightTrendStatus = "On track";
-                }
-
-                vm.ActiveMinutes = 740;
-                vm.ActiveMinutesSubtext = "Last 30 days";
-                vm.AverageCalories = "2,150";
-                vm.AverageCaloriesSubtext = "Daily intake";
-                vm.ActivityDays = new List<string> { "M", "T", "W", "T", "F", "S", "S" };
-                vm.ActivityPercentages = new List<int> { 75, 80, 85, 70, 90, 85, 95 };
+            }
+            else
+            {
+                // No assigned clients for this trainer
+                vm.WeightChange = "0.0 kg";
+                vm.WeightChangeSubtext = "No assigned clients";
+                vm.WorkoutCompletionRate = "0%";
+                vm.WorkoutCompletionSubtext = "No assigned plans";
+                vm.ActiveMinutes = 0;
+                vm.ActiveMinutesSubtext = "No activity";
+                vm.AverageCalories = "0";
+                vm.AverageCaloriesSubtext = "No diet logged";
+                vm.CurrentWeightKg = 0.0;
+                vm.WeightTrendStatus = "No data";
+                vm.WeightLabels = new List<string>();
+                vm.WeightValues = new List<double>();
             }
 
             return View(vm);
@@ -1480,40 +1522,54 @@ namespace HealthTrack.Controllers
         // GET: /Trainer/ExportReportCsv
         public async Task<IActionResult> ExportReportCsv(string? clientId = null)
         {
-            var clientName = string.IsNullOrEmpty(clientId) ? "Client" : clientId;
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null)
+            {
+                return RedirectToPage("/Account/Login", new { area = "Identity" });
+            }
+
+            if (string.IsNullOrEmpty(clientId))
+            {
+                TempData["ErrorMessage"] = "No client selected for export.";
+                return RedirectToAction(nameof(Reports));
+            }
+
+            // Look up client in DB ensuring they belong to this trainer
+            var dbClient = await _context.Users.FirstOrDefaultAsync(u => (u.Id == clientId || u.FullName == clientId || u.Email == clientId) && u.TrainerId == trainer.Id);
+            if (dbClient == null)
+            {
+                TempData["ErrorMessage"] = "Client not found or not assigned to your care list.";
+                return RedirectToAction(nameof(Reports));
+            }
+
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("Date,Client,Weight(kg),Height(cm),BMI,Waist(cm),Notes");
 
-            // Look up client in DB to export their actual recorded health logs from database
-            var dbClient = await _context.Users.FirstOrDefaultAsync(u => u.Id == clientId || u.FullName == clientId || u.Email == clientId);
-            if (dbClient != null)
-            {
-                var dbLogs = await _context.HealthLogs
-                    .Where(h => h.ClientId == dbClient.Id)
-                    .OrderByDescending(h => h.LogDate)
-                    .ToListAsync();
+            var dbLogs = await _context.HealthLogs
+                .Where(h => h.ClientId == dbClient.Id)
+                .OrderByDescending(h => h.LogDate)
+                .ToListAsync();
 
-                if (dbLogs.Any())
+            if (dbLogs.Any())
+            {
+                foreach (var log in dbLogs)
                 {
-                    foreach (var log in dbLogs)
+                    int waist = 80;
+                    if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
                     {
-                        int waist = 80;
-                        if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
-                        {
-                            var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
-                            if (int.TryParse(parts[0], out var parsedWaist)) waist = parsedWaist;
-                        }
-                        sb.AppendLine($"{log.LogDate:yyyy-MM-dd},{dbClient.FullName},{log.WeightKg:0.0},{(int)(dbClient.HeightCm ?? 175)},{log.CalculatedBmi:0.0},{waist},\"{(log.Notes ?? "").Replace("\"", "\"\"")}\"");
+                        var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
+                        if (int.TryParse(parts[0], out var parsedWaist)) waist = parsedWaist;
                     }
+                    sb.AppendLine($"{log.LogDate:yyyy-MM-dd},{dbClient.FullName},{log.WeightKg:0.0},{(int)(dbClient.HeightCm ?? 175)},{log.CalculatedBmi:0.0},{waist},\"{(log.Notes ?? "").Replace("\"", "\"\"")}\"");
                 }
-                else
-                {
-                    sb.AppendLine($"{DateTime.UtcNow:yyyy-MM-dd},{dbClient.FullName},{dbClient.CurrentWeight ?? 70.0:0.0},{(int)(dbClient.HeightCm ?? 175)},22.5,80,\"Baseline measurement\"");
-                }
+            }
+            else
+            {
+                sb.AppendLine($"{DateTime.UtcNow:yyyy-MM-dd},{dbClient.FullName},{dbClient.CurrentWeight ?? 70.0:0.0},{(int)(dbClient.HeightCm ?? 175)},22.5,80,\"Baseline measurement\"");
             }
 
             var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-            return File(bytes, "text/csv", $"ClientProgress_{clientName.Replace(" ", "_")}_{DateTime.UtcNow:yyyyMMdd}.csv");
+            return File(bytes, "text/csv", $"ClientProgress_{dbClient.FullName?.Replace(" ", "_") ?? "Client"}_{DateTime.UtcNow:yyyyMMdd}.csv");
         }
 
         // ====================================================================

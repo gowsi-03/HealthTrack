@@ -1645,35 +1645,33 @@ namespace HealthTrack.Controllers
                     }
 
                     // 4. Weight & Biometrics from HealthLogs
-                    if (chartLogs.Any())
+                    // In real life, users log weight at most once per day/week/month.
+                    // Consolidate same-day logs so there is strictly 1 weight point per calendar date.
+                    var dailyChartLogs = chartLogs
+                        .GroupBy(l => l.LogDate.Date)
+                        .Select(g =>
+                            g.OrderByDescending(l => !string.IsNullOrEmpty(l.Notes) && (l.Notes.Contains("waist:") || l.Notes.Contains("measurement") || l.Notes.Contains("biometric") || (!l.Notes.Contains("Meal Logged") && !l.Notes.Contains("Morning hydration"))))
+                             .ThenBy(l => l.LogDate)
+                             .Last()
+                        )
+                        .OrderBy(l => l.LogDate)
+                        .ToList();
+
+                    if (dailyChartLogs.Any())
                     {
-                        double firstW = chartLogs.First().WeightKg;
-                        double lastW = chartLogs.Last().WeightKg;
+                        double firstW = dailyChartLogs.First().WeightKg;
+                        double lastW = dailyChartLogs.Last().WeightKg;
                         double diff = Math.Round(lastW - firstW, 1);
                         vm.WeightChange = diff <= 0 ? $"{diff:F1} kg" : $"+{diff:F1} kg";
-                        var firstLocal = DateTime.SpecifyKind(chartLogs.First().LogDate, DateTimeKind.Utc).ToLocalTime();
                         vm.WeightChangeSubtext = selectedTimeframe == "Last 7 Days"
-                            ? $"Past 7 days (since {firstLocal:MMM dd})"
-                            : (selectedTimeframe == "Last 30 Days" ? $"Past 30 days (since {firstLocal:MMM dd})" : $"All-time (since {firstLocal:MMM dd, yyyy})");
+                            ? $"Past 7 days (since {dailyChartLogs.First().LogDate:MMM dd})"
+                            : (selectedTimeframe == "Last 30 Days" ? $"Past 30 days (since {dailyChartLogs.First().LogDate:MMM dd})" : $"All-time (since {dailyChartLogs.First().LogDate:MMM dd, yyyy})");
                         vm.CurrentWeightKg = lastW;
                         vm.WeightTrendStatus = diff <= 0 ? "On track" : "Calibrating";
 
-                        bool allSameDay = chartLogs.Select(l => l.LogDate.Date).Distinct().Count() <= 1;
-                        bool hasDuplicates = chartLogs.GroupBy(l => l.LogDate.Date).Any(g => g.Count() > 1);
-
-                        if (allSameDay)
-                        {
-                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("h:mm tt")).ToList();
-                        }
-                        else if (hasDuplicates)
-                        {
-                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd h:mm tt")).ToList();
-                        }
-                        else
-                        {
-                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd")).ToList();
-                        }
-                        vm.WeightValues = chartLogs.Select(l => l.WeightKg).ToList();
+                        // Strictly format as clean calendar dates (MMM dd) - NO TIME
+                        vm.WeightLabels = dailyChartLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
+                        vm.WeightValues = dailyChartLogs.Select(l => l.WeightKg).ToList();
                     }
                     else if (allLogs.Any())
                     {
@@ -1694,8 +1692,18 @@ namespace HealthTrack.Controllers
                         vm.WeightValues = new List<double>();
                     }
 
-                    // Populate complete history table from allLogs
-                    foreach (var log in allLogs.OrderByDescending(l => l.LogDate))
+                    // Populate measurement history table (one entry per date, clean date format with NO TIME)
+                    var dailyHistoryLogs = allLogs
+                        .GroupBy(l => l.LogDate.Date)
+                        .Select(g =>
+                            g.OrderByDescending(l => !string.IsNullOrEmpty(l.Notes) && (l.Notes.Contains("waist:") || l.Notes.Contains("measurement") || l.Notes.Contains("biometric") || (!l.Notes.Contains("Meal Logged") && !l.Notes.Contains("Morning hydration"))))
+                             .ThenBy(l => l.LogDate)
+                             .Last()
+                        )
+                        .OrderByDescending(l => l.LogDate)
+                        .ToList();
+
+                    foreach (var log in dailyHistoryLogs)
                     {
                         int waist = 80;
                         if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
@@ -1704,18 +1712,18 @@ namespace HealthTrack.Controllers
                             if (int.TryParse(parts[0], out var pw)) waist = pw;
                         }
 
-                        var logLocal = DateTime.SpecifyKind(log.LogDate, DateTimeKind.Utc).ToLocalTime();
-
                         vm.MeasurementHistory.Add(new TrainerMeasurementHistoryItem
                         {
                             Id = log.Id,
                             Date = log.LogDate,
-                            DateText = logLocal.ToString("MMM dd, yyyy · h:mm tt"),
+                            DateText = log.LogDate.ToString("MMM dd, yyyy"),
                             WeightKg = log.WeightKg,
                             HeightCm = (int)(dbClient.HeightCm ?? 175),
                             Bmi = log.CalculatedBmi,
                             WaistCm = waist,
-                            Notes = log.Notes ?? "Routine biometric scan"
+                            Notes = (!string.IsNullOrEmpty(log.Notes) && !log.Notes.StartsWith("Meal Logged") && !log.Notes.StartsWith("Morning hydration"))
+                                ? log.Notes
+                                : "Routine biometric check"
                         });
                     }
                 }

@@ -1536,7 +1536,18 @@ namespace HealthTrack.Controllers
                 .OrderByDescending(l => l.LogDate)
                 .ToListAsync();
 
-            vm.MeasurementHistory = logs.Select(l =>
+            // Real life biometric measurements (1 per date, clean date format with NO TIME)
+            var dailyHistoryLogs = logs
+                .GroupBy(l => l.LogDate.Date)
+                .Select(g =>
+                    g.OrderByDescending(l => !string.IsNullOrEmpty(l.Notes) && (l.Notes.Contains("waist:") || l.Notes.Contains("measurement") || l.Notes.Contains("biometric") || (!l.Notes.Contains("Meal Logged") && !l.Notes.Contains("Morning hydration"))))
+                     .ThenBy(l => l.LogDate)
+                     .Last()
+                )
+                .OrderByDescending(l => l.LogDate)
+                .ToList();
+
+            vm.MeasurementHistory = dailyHistoryLogs.Select(l =>
             {
                 int waist = 82;
                 if (l.Notes != null && l.Notes.Contains("waist:", StringComparison.OrdinalIgnoreCase))
@@ -1549,22 +1560,22 @@ namespace HealthTrack.Controllers
                     waist = 80 + (int)Math.Round((l.WeightKg - 70) * 1.0);
                 }
 
-                var logLocal = DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime();
-
                 return new MeasurementHistoryItem
                 {
                     Id = l.Id,
                     Date = l.LogDate,
-                    DateText = logLocal.ToString("MMM dd, yyyy · h:mm tt"),
+                    DateText = l.LogDate.ToString("MMM dd, yyyy"),
                     WeightKg = l.WeightKg,
                     HeightCm = (int)(user.HeightCm ?? 175),
                     Bmi = l.CalculatedBmi > 0 ? l.CalculatedBmi : Math.Round(l.WeightKg / Math.Pow((user.HeightCm ?? 175) / 100.0, 2), 1),
                     WaistCm = waist,
-                    Notes = l.Notes ?? ""
+                    Notes = (!string.IsNullOrEmpty(l.Notes) && !l.Notes.StartsWith("Meal Logged") && !l.Notes.StartsWith("Morning hydration"))
+                        ? l.Notes
+                        : "Routine biometric check"
                 };
             }).ToList();
 
-            // Filter logs for Weight trend based on selectedTimeRange
+            // Filter logs for Weight trend based on selectedTimeRange (strictly 1 weigh-in per date)
             var chartLogs = logs.OrderBy(l => l.LogDate).ToList();
             if (selectedTimeRange == "Last 7 Days")
             {
@@ -1577,36 +1588,32 @@ namespace HealthTrack.Controllers
                 chartLogs = chartLogs.Where(l => l.LogDate >= cutoff).ToList();
             }
 
-            if (chartLogs.Any())
+            var dailyChartLogs = chartLogs
+                .GroupBy(l => l.LogDate.Date)
+                .Select(g =>
+                    g.OrderByDescending(l => !string.IsNullOrEmpty(l.Notes) && (l.Notes.Contains("waist:") || l.Notes.Contains("measurement") || l.Notes.Contains("biometric") || (!l.Notes.Contains("Meal Logged") && !l.Notes.Contains("Morning hydration"))))
+                     .ThenBy(l => l.LogDate)
+                     .Last()
+                )
+                .OrderBy(l => l.LogDate)
+                .ToList();
+
+            if (dailyChartLogs.Any())
             {
-                var latest = chartLogs.Last();
-                var oldest = chartLogs.First();
+                var latest = dailyChartLogs.Last();
+                var oldest = dailyChartLogs.First();
                 vm.CurrentWeightKg = latest.WeightKg;
 
                 double diff = Math.Round(latest.WeightKg - oldest.WeightKg, 1);
                 vm.WeightChange = $"{(diff >= 0 ? "+" : "")}{diff} kg";
-                var oldestLocal = DateTime.SpecifyKind(oldest.LogDate, DateTimeKind.Utc).ToLocalTime();
                 vm.WeightChangePeriod = selectedTimeRange == "Last 7 Days"
-                    ? $"Past 7 days (since {oldestLocal:MMM dd})"
-                    : (selectedTimeRange == "Last 30 Days" ? $"Past 30 days (since {oldestLocal:MMM dd})" : $"All-time (since {oldestLocal:MMM dd, yyyy})");
+                    ? $"Past 7 days (since {oldest.LogDate:MMM dd})"
+                    : (selectedTimeRange == "Last 30 Days" ? $"Past 30 days (since {oldest.LogDate:MMM dd})" : $"All-time (since {oldest.LogDate:MMM dd, yyyy})");
                 vm.WeightTrendStatus = diff <= 0 ? "On track" : "Progressing";
 
-                bool allSameDay = chartLogs.Select(l => l.LogDate.Date).Distinct().Count() <= 1;
-                bool hasDuplicates = chartLogs.GroupBy(l => l.LogDate.Date).Any(g => g.Count() > 1);
-
-                if (allSameDay)
-                {
-                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("h:mm tt")).ToList();
-                }
-                else if (hasDuplicates)
-                {
-                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd h:mm tt")).ToList();
-                }
-                else
-                {
-                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd")).ToList();
-                }
-                vm.WeightValues = chartLogs.Select(l => l.WeightKg).ToList();
+                // Strictly clean calendar dates (MMM dd) - NO TIME
+                vm.WeightLabels = dailyChartLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
+                vm.WeightValues = dailyChartLogs.Select(l => l.WeightKg).ToList();
             }
             else if (logs.Any())
             {

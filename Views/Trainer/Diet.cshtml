@@ -1154,7 +1154,14 @@
                                         {
                                             <span class="status-badge-active">
                                                 <span class="status-dot-green"></span>
-                                                <span>On track</span>
+                                                <span>Active</span>
+                                            </span>
+                                        }
+                                        else if (item.Status == "Archived")
+                                        {
+                                            <span class="badge rounded-pill fw-semibold" style="background-color: #F3F4F6; color: #4B5563; padding: 5px 12px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;">
+                                                <i class="bi bi-archive-fill text-muted" style="font-size: 0.8rem;"></i>
+                                                <span>Archived</span>
                                             </span>
                                         }
                                         else

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
@@ -18,6 +18,8 @@ namespace HealthTrack.Models
         public int TargetCalories { get; set; } = 2000;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsActive { get; set; } = true;
 
         [Required]
         public string ClientId { get; set; } = string.Empty;

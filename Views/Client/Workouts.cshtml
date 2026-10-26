@@ -992,6 +992,56 @@
                 </div>
             }
 
+            <!-- ================================================= -->
+            <!-- PROGRAM HISTORY & PREVIOUS PHASES                -->
+            <!-- ================================================= -->
+            @if (Model.PastPlans != null && Model.PastPlans.Any())
+            {
+                <div class="mt-5 pt-3">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                        <div>
+                            <h3 class="section-header-title mb-0">Program History & Previous Phases</h3>
+                            <div class="section-header-sub">Review completed routines and prior coaching protocols.</div>
+                        </div>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill fw-semibold" style="font-size: 0.8rem;">
+                            @Model.PastPlans.Count @(Model.PastPlans.Count == 1 ? "Past Routine" : "Past Routines")
+                        </span>
+                    </div>
+
+                    <div class="row g-4">
+                        @foreach (var past in Model.PastPlans)
+                        {
+                            <div class="col-lg-6">
+                                <div class="card border-0 rounded-4 p-4 shadow-sm bg-white h-100 position-relative" style="border: 1px solid #E2E8F0 !important;">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <span class="badge @(past.Status == "Completed" ? "bg-success bg-opacity-10 text-success" : "bg-secondary bg-opacity-10 text-secondary") px-2.5 py-1 rounded-pill fw-semibold" style="font-size: 0.78rem;">
+                                            <i class="bi @(past.Status == "Completed" ? "bi-check-circle-fill text-success" : "bi-archive-fill text-muted") me-1"></i>
+                                            @past.Status
+                                        </span>
+                                        <span class="text-muted small">Assigned @past.AssignedDate.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                    <h4 class="fw-bold text-dark mb-1" style="font-size: 1.1rem;">@past.Title</h4>
+                                    <p class="text-muted small mb-3">@(past.Description ?? $"{past.TotalExercises} exercises")</p>
+
+                                    <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress" style="width: 80px; height: 6px; border-radius: 4px; background-color: #F1F5F9;">
+                                                <div class="progress-bar @(past.CompletionPercentage == 100 ? "bg-success" : "bg-primary")" style="width: @past.CompletionPercentage%;"></div>
+                                            </div>
+                                            <span class="small fw-bold text-dark">@past.CompletionPercentage%</span>
+                                            <span class="small text-muted">(@past.CompletedExercises/@past.TotalExercises completed)</span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" onclick="openPastPlanModal(@past.Id)">
+                                            <i class="bi bi-eye me-1"></i> View Routine
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
         </main>
     </div>
 
@@ -1086,15 +1136,84 @@
     </div>
 </div>
 
+<!-- ========================================================= -->
+<!-- MODAL: VIEW PAST / ARCHIVED PLAN ROUTINE                  -->
+<!-- ========================================================= -->
+<div class="modal fade" id="pastPlanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <div class="badge bg-secondary bg-opacity-10 text-secondary px-2.5 py-1 rounded-pill fw-semibold small mb-1">
+                        <i class="bi bi-archive-fill text-muted me-1"></i> Archived Routine
+                    </div>
+                    <h5 class="modal-title fw-bold" id="pastPlanModalTitle">Plan Details</h5>
+                    <div class="small text-muted" id="pastPlanModalSub">Past coaching protocol</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="exercise-checklist mt-2" id="pastPlanExercisesContainer">
+                    <!-- Dynamic exercises inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary w-100 rounded-3 py-2 fw-semibold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     const logModal = new bootstrap.Modal(document.getElementById('logWorkoutModal'));
     const planModal = new bootstrap.Modal(document.getElementById('planModal'));
+    const pastPlanModal = document.getElementById('pastPlanModal') ? new bootstrap.Modal(document.getElementById('pastPlanModal')) : null;
+
+    const pastPlansData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((Model.PastPlans ?? new List<HealthTrack.Models.ViewModels.PastWorkoutPlanItem>()).Select(p => new {
+        id = p.Id,
+        title = p.Title,
+        description = p.Description,
+        assigned = p.AssignedDate.ToString("MMM dd, yyyy"),
+        status = p.Status,
+        exercises = (p.Exercises ?? new List<HealthTrack.Models.WorkoutExercise>()).Select(e => new { name = e.Name, sets = e.Sets, reps = e.Reps, isCompleted = e.IsCompleted }).ToList()
+    })));
 
     function openLogModal() { logModal.show(); }
     function openLogWorkoutModal() { logModal.show(); }
     function openPlanModal() { planModal.show(); }
+
+    function openPastPlanModal(planId) {
+        if (!pastPlanModal) return;
+        const plan = pastPlansData.find(p => p.id === planId);
+        if (!plan) return;
+
+        document.getElementById('pastPlanModalTitle').textContent = plan.title;
+        document.getElementById('pastPlanModalSub').textContent = `Assigned ${plan.assigned} • ${plan.status}`;
+
+        const container = document.getElementById('pastPlanExercisesContainer');
+        if (plan.exercises && plan.exercises.length > 0) {
+            container.innerHTML = plan.exercises.map(ex => `
+                <div class="d-flex align-items-center justify-content-between p-3 mb-2 rounded-3 border" style="background: #FAFAFA;">
+                    <div class="d-flex align-items-center gap-3">
+                        <i class="bi ${ex.isCompleted ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'}" style="font-size: 1.25rem;"></i>
+                        <div>
+                            <div class="fw-bold text-dark">${ex.name}</div>
+                            <span class="small text-muted">Target: ${ex.sets} ${ex.reps ? '• ' + ex.reps : ''}</span>
+                        </div>
+                    </div>
+                    <span class="badge ${ex.isCompleted ? 'bg-success' : 'bg-light text-secondary'} rounded-pill px-3 py-1.5">
+                        ${ex.isCompleted ? 'Completed' : 'Pending'}
+                    </span>
+                </div>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="text-center py-4 text-muted">No exercises recorded for this routine.</div>';
+        }
+
+        pastPlanModal.show();
+    }
 
     function openSessionModal(title, time, count) {
         document.getElementById('planModalTitle').textContent = title + ' (' + count + ' exercises)';

@@ -28,6 +28,9 @@ namespace HealthTrack.Models.ViewModels
         // Active Program Exercises List
         public List<WorkoutExercise> Exercises { get; set; } = new();
 
+        // Past / Archived Workout Routines History
+        public List<PastWorkoutPlanItem> PastPlans { get; set; } = new();
+
         // Form for logging a completed session
         public LogWorkoutInputModel LogWorkoutForm { get; set; } = new();
         public int UnreadNotificationsCount { get; set; } = 0;
@@ -66,5 +69,19 @@ namespace HealthTrack.Models.ViewModels
         [StringLength(250)]
         [Display(Name = "Workout Notes & Performance")]
         public string? Notes { get; set; } = "Completed all sets, increased weight on bench press.";
+    }
+
+    public class PastWorkoutPlanItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public DateTime AssignedDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
+        public int TotalExercises { get; set; }
+        public int CompletedExercises { get; set; }
+        public int CompletionPercentage { get; set; }
+        public string Status { get; set; } = "Completed";
+        public List<WorkoutExercise> Exercises { get; set; } = new();
     }
 }

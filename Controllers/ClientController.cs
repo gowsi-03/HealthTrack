@@ -172,13 +172,21 @@ namespace HealthTrack.Controllers
             vm.ActiveWorkoutPlan = await _context.WorkoutPlans
                 .Include(w => w.Exercises)
                 .OrderByDescending(w => w.CreatedAt)
-                .FirstOrDefaultAsync(w => w.ClientId == user.Id);
+                .FirstOrDefaultAsync(w => w.ClientId == user.Id && w.IsActive)
+                ?? await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
+                    .OrderByDescending(w => w.CreatedAt)
+                    .FirstOrDefaultAsync(w => w.ClientId == user.Id);
 
             // 3. Fetch Active Diet Plan
             vm.ActiveDietPlan = await _context.DietPlans
                 .Include(d => d.Meals)
                 .OrderByDescending(d => d.CreatedAt)
-                .FirstOrDefaultAsync(d => d.ClientId == user.Id);
+                .FirstOrDefaultAsync(d => d.ClientId == user.Id && d.IsActive)
+                ?? await _context.DietPlans
+                    .Include(d => d.Meals)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .FirstOrDefaultAsync(d => d.ClientId == user.Id);
 
             // 4. Fetch Trainer Info
             if (!string.IsNullOrEmpty(user.TrainerId))
@@ -648,11 +656,15 @@ namespace HealthTrack.Controllers
                 if (trainer != null) vm.TrainerName = trainer.FullName;
             }
 
-            // Fetch active workout plan from DB
-            var plan = await _context.WorkoutPlans
+            // Fetch all workout plans for this client
+            var allPlans = await _context.WorkoutPlans
                 .Include(w => w.Exercises)
+                .Where(w => w.ClientId == user.Id)
                 .OrderByDescending(w => w.CreatedAt)
-                .FirstOrDefaultAsync(w => w.ClientId == user.Id);
+                .ToListAsync();
+
+            var plan = allPlans.FirstOrDefault(w => w.IsActive) ?? allPlans.FirstOrDefault();
+            var pastPlans = allPlans.Where(w => w.Id != plan?.Id).ToList();
 
             if (plan != null)
             {
@@ -763,6 +775,26 @@ namespace HealthTrack.Controllers
                 vm.WeeklySessions = new List<WorkoutSessionItem>();
                 vm.Exercises = new List<WorkoutExercise>();
             }
+
+            vm.PastPlans = pastPlans.Select(p =>
+            {
+                int tot = p.Exercises.Count;
+                int comp = p.Exercises.Count(e => e.IsCompleted);
+                int pct = tot > 0 ? (int)Math.Round((double)comp / tot * 100) : 0;
+                return new PastWorkoutPlanItem
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    AssignedDate = p.CreatedAt,
+                    CompletedDate = p.CompletedAt,
+                    TotalExercises = tot,
+                    CompletedExercises = comp,
+                    CompletionPercentage = pct,
+                    Status = pct == 100 ? "Completed" : "Archived",
+                    Exercises = p.Exercises.ToList()
+                };
+            }).ToList();
 
             vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
 

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HealthTrack.Models
@@ -17,6 +17,10 @@ namespace HealthTrack.Models
         public string? Description { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime? CompletedAt { get; set; }
 
         [Required]
         public string ClientId { get; set; } = string.Empty;

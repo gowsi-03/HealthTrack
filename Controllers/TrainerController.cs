@@ -98,8 +98,8 @@ namespace HealthTrack.Controllers
 
             // Query Active Plans
             var assignedClientIds = clients.Select(c => c.Id).ToList();
-            var activeWorkouts = await _context.WorkoutPlans.CountAsync(w => assignedClientIds.Contains(w.ClientId));
-            var activeDiets = await _context.DietPlans.CountAsync(d => assignedClientIds.Contains(d.ClientId));
+            var activeWorkouts = await _context.WorkoutPlans.CountAsync(w => assignedClientIds.Contains(w.ClientId) && w.IsActive);
+            var activeDiets = await _context.DietPlans.CountAsync(d => assignedClientIds.Contains(d.ClientId) && d.IsActive);
             int totalPlans = activeWorkouts + activeDiets;
 
             // Query Upcoming Visits / Appointments
@@ -164,9 +164,13 @@ namespace HealthTrack.Controllers
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
                 var latestWorkout = await _context.WorkoutPlans
-                    .Where(w => w.ClientId == c.Id)
+                    .Where(w => w.ClientId == c.Id && w.IsActive)
                     .OrderByDescending(w => w.CreatedAt)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync()
+                    ?? await _context.WorkoutPlans
+                        .Where(w => w.ClientId == c.Id)
+                        .OrderByDescending(w => w.CreatedAt)
+                        .FirstOrDefaultAsync();
                 var planName = latestWorkout?.Title ?? (!string.IsNullOrEmpty(c.FitnessGoal) ? c.FitnessGoal : "Custom Wellness Plan");
 
                 var logs = await _context.HealthLogs
@@ -222,11 +226,19 @@ namespace HealthTrack.Controllers
             };
             var chartLabels = weeklyDates.Select(d => d.ToString("MMM dd")).ToList();
 
-            // Query real workout exercises to calculate dynamic average completion
+            // Query real workout exercises to calculate dynamic average completion of active protocols
             var clientWorkouts = await _context.WorkoutPlans
                 .Include(w => w.Exercises)
-                .Where(w => assignedClientIds.Contains(w.ClientId))
+                .Where(w => assignedClientIds.Contains(w.ClientId) && w.IsActive)
                 .ToListAsync();
+
+            if (!clientWorkouts.Any())
+            {
+                clientWorkouts = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
+                    .Where(w => assignedClientIds.Contains(w.ClientId))
+                    .ToListAsync();
+            }
 
             int totalExercises = clientWorkouts.SelectMany(w => w.Exercises).Count();
             int completedExercises = clientWorkouts.SelectMany(w => w.Exercises).Count(e => e.IsCompleted);
@@ -410,11 +422,18 @@ namespace HealthTrack.Controllers
 
             if (model.PlanType == "Diet")
             {
+                // Archive previous active diet plans for this client
+                var previousDiets = await _context.DietPlans
+                    .Where(d => d.ClientId == client.Id && d.IsActive)
+                    .ToListAsync();
+                foreach (var pd in previousDiets) pd.IsActive = false;
+
                 var diet = new DietPlan
                 {
                     ClientId = client.Id,
                     Title = model.Title,
                     TargetCalories = model.TargetCalories > 0 ? model.TargetCalories : 2100,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -428,12 +447,23 @@ namespace HealthTrack.Controllers
             }
             else
             {
+                // Archive previous active workout plans for this client
+                var previousWorkouts = await _context.WorkoutPlans
+                    .Where(w => w.ClientId == client.Id && w.IsActive)
+                    .ToListAsync();
+                foreach (var pw in previousWorkouts)
+                {
+                    pw.IsActive = false;
+                    pw.CompletedAt = DateTime.UtcNow;
+                }
+
                 var workout = new WorkoutPlan
                 {
                     ClientId = client.Id,
                     TrainerId = trainer.Id,
                     Title = model.Title,
                     Description = model.Description ?? "Personalized progressive training routine.",
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -506,9 +536,13 @@ namespace HealthTrack.Controllers
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
                 var latestWorkout = await _context.WorkoutPlans
-                    .Where(w => w.ClientId == dbc.Id)
+                    .Where(w => w.ClientId == dbc.Id && w.IsActive)
                     .OrderByDescending(w => w.CreatedAt)
-                    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync()
+                    ?? await _context.WorkoutPlans
+                        .Where(w => w.ClientId == dbc.Id)
+                        .OrderByDescending(w => w.CreatedAt)
+                        .FirstOrDefaultAsync();
                 var planName = latestWorkout?.Title ?? (!string.IsNullOrEmpty(dbc.FitnessGoal) ? dbc.FitnessGoal : "Strength & mobility");
 
                 var logs = await _context.HealthLogs
@@ -781,6 +815,15 @@ namespace HealthTrack.Controllers
                 if (inits.Length > 2) inits = inits.Substring(0, 2);
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
+                int totalEx = r.Exercises.Count;
+                int completedEx = r.Exercises.Count(e => e.IsCompleted);
+                int compPercentage = totalEx > 0 ? (int)Math.Round((double)completedEx / totalEx * 100) : 0;
+
+                string statusText = r.IsActive ? "Active" : (compPercentage == 100 ? "Completed" : "Archived");
+                string lastSessionText = r.IsActive 
+                    ? (completedEx > 0 ? $"{completedEx} of {totalEx} Completed" : "Awaiting start") 
+                    : (r.CompletedAt.HasValue ? $"Completed {r.CompletedAt.Value:MMM dd}" : "Archived Routine");
+
                 clientRoutines.Add(new ClientWorkoutRoutineItem
                 {
                     ClientId = r.ClientId,
@@ -789,10 +832,10 @@ namespace HealthTrack.Controllers
                     ClientInitials = inits,
                     RoutineTitle = r.Title,
                     Category = "Strength & Mobility",
-                    DurationText = !string.IsNullOrEmpty(r.Description) ? r.Description : "4 days/wk · 8 wks",
-                    CompletionPercentage = 85,
-                    Status = "Active",
-                    LastCompletedSession = "Active Routine"
+                    DurationText = !string.IsNullOrEmpty(r.Description) ? r.Description : $"{totalEx} exercises",
+                    CompletionPercentage = compPercentage,
+                    Status = statusText,
+                    LastCompletedSession = lastSessionText
                 });
             }
 
@@ -800,16 +843,20 @@ namespace HealthTrack.Controllers
                 .Where(n => n.UserId == trainer.Id && !n.IsRead)
                 .CountAsync();
 
+            var activeRoutines = clientRoutines.Where(r => r.Status == "Active").ToList();
+
             var vm = new TrainerWorkoutsViewModel
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
                 TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
-                TotalActiveProgramsCount = clientRoutines.Count,
+                TotalActiveProgramsCount = activeRoutines.Count,
                 TotalTemplatesCount = templates.Count,
-                AvgCompletionRate = clientRoutines.Any() ? 85 : 0,
-                WeeklyCompletedSessions = clientRoutines.Count * 4,
+                AvgCompletionRate = activeRoutines.Any() 
+                    ? (int)Math.Round(activeRoutines.Average(r => r.CompletionPercentage)) 
+                    : (clientRoutines.Any() ? (int)Math.Round(clientRoutines.Average(r => r.CompletionPercentage)) : 0),
+                WeeklyCompletedSessions = clientRoutines.Count(r => r.CompletionPercentage > 0),
                 Templates = templates,
                 ClientRoutines = clientRoutines,
                 AvailableClients = availableClients
@@ -855,6 +902,16 @@ namespace HealthTrack.Controllers
                     client.TrainerId = trainer.Id;
                 }
 
+                // Archive previous active workout plans for this client
+                var previousWorkouts = await _context.WorkoutPlans
+                    .Where(w => w.ClientId == client.Id && w.IsActive)
+                    .ToListAsync();
+                foreach (var pw in previousWorkouts)
+                {
+                    pw.IsActive = false;
+                    pw.CompletedAt = DateTime.UtcNow;
+                }
+
                 var newPlan = new WorkoutPlan
                 {
                     Title = model.Title.Trim(),
@@ -863,6 +920,7 @@ namespace HealthTrack.Controllers
                         : $"{model.DurationWeeks} Weeks · {model.DaysPerWeek} days/week",
                     ClientId = client.Id,
                     TrainerId = trainer.Id,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -1092,7 +1150,7 @@ namespace HealthTrack.Controllers
                     MealsLoggedToday = Math.Max(1, mealsScheduled - 1),
                     TotalMealsScheduled = mealsScheduled,
                     AdherencePercentage = 88,
-                    Status = "Active",
+                    Status = d.IsActive ? "Active" : "Archived",
                     LastMealLogged = d.Meals.LastOrDefault()?.Description ?? "Balanced meal logged"
                 });
             }
@@ -1107,7 +1165,7 @@ namespace HealthTrack.Controllers
                 TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
-                TotalActiveDietPlans = clientRosters.Count,
+                TotalActiveDietPlans = clientRosters.Count(r => r.Status == "Active"),
                 TotalTemplatesCount = templates.Count,
                 AvgMacroAdherence = clientRosters.Any() ? 88 : 0,
                 WeeklyMealLogsCount = clientRosters.Count * 7,
@@ -1156,11 +1214,18 @@ namespace HealthTrack.Controllers
                     client.TrainerId = trainer.Id;
                 }
 
+                // Archive previous active diet plans for this client
+                var previousDiets = await _context.DietPlans
+                    .Where(d => d.ClientId == client.Id && d.IsActive)
+                    .ToListAsync();
+                foreach (var pd in previousDiets) pd.IsActive = false;
+
                 var newPlan = new DietPlan
                 {
                     Title = model.Title.Trim(),
                     TargetCalories = model.TargetCalories > 0 ? model.TargetCalories : 2000,
                     ClientId = client.Id,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 

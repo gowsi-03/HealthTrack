@@ -429,15 +429,10 @@ namespace HealthTrack.Controllers
 
             var allClients = new List<TrainerClientItem>();
 
-            // Query clients assigned to this trainer or general clients if none specifically assigned
+            // Query strictly clients assigned to this trainer
             var dbClients = await _context.Users
-                .Where(u => u.Role == "Client" && (u.TrainerId == trainer.Id || string.IsNullOrEmpty(u.TrainerId)))
+                .Where(u => u.Role == "Client" && u.TrainerId == trainer.Id)
                 .ToListAsync();
-
-            if (!dbClients.Any())
-            {
-                dbClients = await _context.Users.Where(u => u.Role == "Client").ToListAsync();
-            }
 
             foreach (var dbc in dbClients)
             {
@@ -610,14 +605,10 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
+            // Query strictly clients assigned to this trainer
             var dbClients = await _context.Users
-                .Where(u => u.Role == "Client" && (u.TrainerId == trainer.Id || string.IsNullOrEmpty(u.TrainerId)))
+                .Where(u => u.Role == "Client" && u.TrainerId == trainer.Id)
                 .ToListAsync();
-
-            if (!dbClients.Any())
-            {
-                dbClients = await _context.Users.Where(u => u.Role == "Client").ToListAsync();
-            }
 
             var availableClients = dbClients.Select(c => new ClientDropdownOption
             {
@@ -910,14 +901,10 @@ namespace HealthTrack.Controllers
                 return RedirectToPage("/Account/Login", new { area = "Identity" });
             }
 
+            // Query strictly clients assigned to this trainer
             var dbClients = await _context.Users
-                .Where(u => u.Role == "Client" && (u.TrainerId == trainer.Id || string.IsNullOrEmpty(u.TrainerId)))
+                .Where(u => u.Role == "Client" && u.TrainerId == trainer.Id)
                 .ToListAsync();
-
-            if (!dbClients.Any())
-            {
-                dbClients = await _context.Users.Where(u => u.Role == "Client").ToListAsync();
-            }
 
             var availableClients = dbClients.Select(c => new ClientDropdownOption
             {

@@ -452,7 +452,7 @@ namespace HealthTrack.Controllers
                 }
 
                 int assignedCount = clientCounts.ContainsKey(t.Id) ? clientCounts[t.Id] : 0;
-                string spec = string.IsNullOrWhiteSpace(t.FitnessGoal) ? "Certified Performance Coach" : t.FitnessGoal;
+                string spec = string.IsNullOrWhiteSpace(t.FitnessGoal) ? "General Fitness" : t.FitnessGoal;
 
                 trainerList.Add(new AdminTrainerListItemViewModel
                 {
@@ -662,7 +662,7 @@ namespace HealthTrack.Controllers
                 }
 
                 string tName = a.Trainer?.FullName ?? "Specialist";
-                string tSpec = a.Trainer?.FitnessGoal ?? "Certified Performance Coach";
+                string tSpec = a.Trainer?.FitnessGoal ?? "General Fitness";
                 string tInits = "TR";
                 if (!string.IsNullOrWhiteSpace(tName))
                 {
@@ -1021,7 +1021,7 @@ namespace HealthTrack.Controllers
                 int delivered = await _context.Appointments.CountAsync(a => a.TrainerId == t.Id && (a.Status == "Completed" || a.Status == "Confirmed" || a.Status == "Approved"));
                 double completionRate = totalTrainerAppts > 0 ? Math.Round(((double)delivered / totalTrainerAppts) * 100.0, 1) : 100.0;
                 string status = clientCount >= 3 ? "High Performing" : (clientCount >= 1 ? "Optimal Load" : "Available Capacity");
-                string spec = string.IsNullOrWhiteSpace(t.FitnessGoal) ? "Certified Performance Coach" : t.FitnessGoal;
+                string spec = string.IsNullOrWhiteSpace(t.FitnessGoal) ? "General Fitness" : t.FitnessGoal;
 
                 vm.CoachLeaderboard.Add(new AdminCoachPerformanceItemViewModel
                 {

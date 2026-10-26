@@ -1603,7 +1603,7 @@ namespace HealthTrack.Controllers
                 FullName = trainer.FullName ?? trainer.UserName ?? "Coach",
                 Email = trainer.Email ?? "",
                 PhoneNumber = trainer.PhoneNumber,
-                Specialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "Strength & Conditioning" : trainer.FitnessGoal,
+                Specialty = string.IsNullOrWhiteSpace(trainer.FitnessGoal) ? "General Fitness" : trainer.FitnessGoal,
                 Certifications = trainer.Certifications ?? "Certified Personal Trainer",
                 Bio = trainer.Bio ?? "Dedicated to empowering clients through evidence-based progressive programming, structured accountability, and tailored nutritional balance.",
                 JoinedDate = trainer.CreatedAt > DateTime.MinValue ? trainer.CreatedAt.ToString("MMM dd, yyyy") : DateTime.UtcNow.ToString("MMM dd, yyyy"),

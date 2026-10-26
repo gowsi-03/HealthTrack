@@ -84,7 +84,6 @@ namespace HealthTrack.Controllers
             {
                 var latestLog = logs.Last();
                 vm.CurrentWeight = latestLog.WeightKg;
-                vm.CaloriesBurned = latestLog.CaloriesBurned;
 
                 // BMI Calculation
                 if (vm.HeightCm > 0)
@@ -120,8 +119,18 @@ namespace HealthTrack.Controllers
                     vm.WeightChangeThisMonth = "Initial record";
                 }
 
-                // Populate Chart Data
-                foreach (var log in logs.TakeLast(6))
+                // Populate Chart Data (Strictly 1 weigh-in per calendar date, NO duplicates)
+                var dailyDashboardLogs = logs
+                    .GroupBy(l => l.LogDate.Date)
+                    .Select(g =>
+                        g.OrderByDescending(l => !string.IsNullOrEmpty(l.Notes) && (l.Notes.Contains("waist:") || l.Notes.Contains("measurement") || l.Notes.Contains("biometric") || (!l.Notes.Contains("Meal Logged") && !l.Notes.Contains("Morning hydration"))))
+                         .ThenBy(l => l.LogDate)
+                         .Last()
+                    )
+                    .OrderBy(l => l.LogDate)
+                    .ToList();
+
+                foreach (var log in dailyDashboardLogs.TakeLast(6))
                 {
                     vm.ChartLabels.Add(log.LogDate.ToString("MMM dd"));
                     vm.ChartWeights.Add(log.WeightKg);
@@ -177,6 +186,19 @@ namespace HealthTrack.Controllers
                     .Include(w => w.Exercises)
                     .OrderByDescending(w => w.CreatedAt)
                     .FirstOrDefaultAsync(w => w.ClientId == user.Id);
+
+            // Auto-calculate Calories Burned from completed exercises in active workout routine
+            int completedExercises = vm.ActiveWorkoutPlan?.Exercises?.Count(e => e.IsCompleted) ?? 0;
+            int totalExercises = vm.ActiveWorkoutPlan?.Exercises?.Count ?? 0;
+            vm.CaloriesBurned = completedExercises * 60;
+            if (completedExercises > 0)
+            {
+                vm.CaloriesTrendText = $"{completedExercises}/{totalExercises} exercises completed";
+            }
+            else
+            {
+                vm.CaloriesTrendText = totalExercises > 0 ? "Complete routine to burn calories" : "No workout routine assigned";
+            }
 
             // 3. Fetch Active Diet Plan
             vm.ActiveDietPlan = await _context.DietPlans
@@ -454,19 +476,50 @@ namespace HealthTrack.Controllers
                 double hM = (user.HeightCm ?? 175.0) / 100.0;
                 double bmi = Math.Round(vm.QuickMeasurement.WeightKg / (hM * hM), 1);
 
-                var log = new HealthLog
+                // Auto-calculate calories burned from completed workout exercises
+                var activeWorkout = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
+                    .Where(w => w.ClientId == user.Id && w.IsActive)
+                    .OrderByDescending(w => w.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                int completedEx = activeWorkout?.Exercises?.Count(e => e.IsCompleted) ?? 0;
+                int autoCalories = completedEx * 60;
+
+                // Daily Upsert: Check if a weigh-in already exists for today
+                var today = DateTime.UtcNow.Date;
+                var todayLog = await _context.HealthLogs
+                    .Where(l => l.ClientId == user.Id && l.LogDate >= today && !l.Notes.StartsWith("Meal Logged"))
+                    .OrderByDescending(l => l.LogDate)
+                    .FirstOrDefaultAsync();
+
+                if (todayLog != null)
                 {
-                    ClientId = user.Id,
-                    LogDate = DateTime.UtcNow,
-                    WeightKg = vm.QuickMeasurement.WeightKg,
-                    CalculatedBmi = bmi,
-                    CaloriesBurned = vm.QuickMeasurement.CaloriesBurned,
-                    WaterIntakeLiters = vm.QuickMeasurement.WaterIntakeLiters,
-                    Notes = vm.QuickMeasurement.Notes ?? "Daily measurement log"
-                };
+                    // Update today's measurement (Never create duplicate records for same day!)
+                    todayLog.WeightKg = vm.QuickMeasurement.WeightKg;
+                    todayLog.CalculatedBmi = bmi;
+                    todayLog.LogDate = DateTime.UtcNow;
+                    todayLog.CaloriesBurned = autoCalories > 0 ? autoCalories : todayLog.CaloriesBurned;
+                    if (vm.QuickMeasurement.WaterIntakeLiters > 0) todayLog.WaterIntakeLiters = vm.QuickMeasurement.WaterIntakeLiters;
+                    if (!string.IsNullOrWhiteSpace(vm.QuickMeasurement.Notes)) todayLog.Notes = vm.QuickMeasurement.Notes;
+                }
+                else
+                {
+                    // First weigh-in today: create new entry
+                    var log = new HealthLog
+                    {
+                        ClientId = user.Id,
+                        LogDate = DateTime.UtcNow,
+                        WeightKg = vm.QuickMeasurement.WeightKg,
+                        CalculatedBmi = bmi,
+                        CaloriesBurned = autoCalories,
+                        WaterIntakeLiters = vm.QuickMeasurement.WaterIntakeLiters > 0 ? vm.QuickMeasurement.WaterIntakeLiters : 2.5,
+                        Notes = !string.IsNullOrWhiteSpace(vm.QuickMeasurement.Notes) ? vm.QuickMeasurement.Notes : "Daily measurement log"
+                    };
+                    _context.HealthLogs.Add(log);
+                }
 
                 user.CurrentWeight = vm.QuickMeasurement.WeightKg;
-                _context.HealthLogs.Add(log);
 
                 // Live Sync: Notify trainer
                 var trainerId = user.TrainerId;
@@ -1684,18 +1737,47 @@ namespace HealthTrack.Controllers
             double heightM = (form.HeightCm > 0 ? form.HeightCm : (user.HeightCm ?? 178)) / 100.0;
             double bmi = Math.Round(form.WeightKg / (heightM * heightM), 1);
 
-            var log = new HealthLog
-            {
-                ClientId = user.Id,
-                LogDate = form.MeasurementDate != default ? form.MeasurementDate : DateTime.UtcNow,
-                WeightKg = form.WeightKg,
-                CalculatedBmi = bmi,
-                CaloriesBurned = 450,
-                WaterIntakeLiters = 2.5,
-                Notes = $"Biometrics - waist:{form.WaistCm} cm - {form.Notes ?? "Client recorded measurement"}"
-            };
+            // Auto-calculate calories burned from completed workout exercises
+            var activeWorkout = await _context.WorkoutPlans
+                .Include(w => w.Exercises)
+                .Where(w => w.ClientId == user.Id && w.IsActive)
+                .OrderByDescending(w => w.CreatedAt)
+                .FirstOrDefaultAsync();
 
-            _context.HealthLogs.Add(log);
+            int completedEx = activeWorkout?.Exercises?.Count(e => e.IsCompleted) ?? 0;
+            int autoCalories = completedEx * 60;
+
+            // Daily Upsert: Check if an entry already exists for target date
+            var targetDate = form.MeasurementDate != default ? form.MeasurementDate.Date : DateTime.UtcNow.Date;
+            var targetDateEnd = targetDate.AddDays(1);
+            var existingLog = await _context.HealthLogs
+                .Where(l => l.ClientId == user.Id && l.LogDate >= targetDate && l.LogDate < targetDateEnd && !l.Notes.StartsWith("Meal Logged"))
+                .OrderByDescending(l => l.LogDate)
+                .FirstOrDefaultAsync();
+
+            string notes = $"Biometrics - waist:{form.WaistCm} cm - {form.Notes ?? "Client recorded measurement"}";
+
+            if (existingLog != null)
+            {
+                existingLog.WeightKg = form.WeightKg;
+                existingLog.CalculatedBmi = bmi;
+                existingLog.CaloriesBurned = autoCalories > 0 ? autoCalories : existingLog.CaloriesBurned;
+                existingLog.Notes = notes;
+            }
+            else
+            {
+                var log = new HealthLog
+                {
+                    ClientId = user.Id,
+                    LogDate = form.MeasurementDate != default ? form.MeasurementDate : DateTime.UtcNow,
+                    WeightKg = form.WeightKg,
+                    CalculatedBmi = bmi,
+                    CaloriesBurned = autoCalories > 0 ? autoCalories : 450,
+                    WaterIntakeLiters = 2.5,
+                    Notes = notes
+                };
+                _context.HealthLogs.Add(log);
+            }
 
             user.CurrentWeight = form.WeightKg;
             if (form.HeightCm > 0) user.HeightCm = form.HeightCm;

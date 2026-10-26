@@ -1150,7 +1150,6 @@
                             <div class="stat-icon-wrapper stat-icon-green">
                                 <i class="bi bi-speedometer2"></i>
                             </div>
-                            <span class="stat-dots" onclick="openMeasurementModal()" title="Log new weight"><i class="bi bi-three-dots"></i></span>
                         </div>
                         <div class="stat-label">Current weight</div>
                         <div class="stat-value">
@@ -1177,7 +1176,6 @@
                             <div class="stat-icon-wrapper stat-icon-blue">
                                 <i class="bi bi-heart-pulse-fill"></i>
                             </div>
-                            <span class="stat-dots" onclick="openMeasurementModal()" title="View BMI info"><i class="bi bi-three-dots"></i></span>
                         </div>
                         <div class="stat-label">Body mass index</div>
                         <div class="stat-value">
@@ -1204,7 +1202,6 @@
                             <div class="stat-icon-wrapper stat-icon-orange">
                                 <i class="bi bi-fire"></i>
                             </div>
-                            <span class="stat-dots" onclick="openMeasurementModal()" title="Log calories"><i class="bi bi-three-dots"></i></span>
                         </div>
                         <div class="stat-label">Calories burned</div>
                         <div class="stat-value">
@@ -1517,9 +1514,9 @@
                         <label class="form-label fw-semibold small text-muted">Current Weight (kg)</label>
                         <input asp-for="QuickMeasurement.WeightKg" class="form-control rounded-3" step="0.1" required />
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small text-muted">Calories Burned (kcal)</label>
-                        <input asp-for="QuickMeasurement.CaloriesBurned" class="form-control rounded-3" type="number" required />
+                    <div class="p-2.5 rounded-3 mb-3 d-flex align-items-center gap-2" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <i class="bi bi-fire text-danger" style="font-size: 1.15rem;"></i>
+                        <span class="small text-muted">Calories burned are auto-calculated from your workout activity.</span>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold small text-muted">Water Intake (Liters)</label>

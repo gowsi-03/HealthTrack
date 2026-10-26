@@ -21,6 +21,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -597,12 +598,39 @@
             background-color: #10B981;
         }
 
-        /* SVG Spline Chart */
+        /* Chart Area & Empty State */
         .chart-container-trainer {
             width: 100%;
             height: 200px;
             position: relative;
             margin-top: 1rem;
+        }
+
+        .chart-empty-state-container {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem 1rem;
+            background-color: #FAFCFF;
+            border: 1px dashed #E2E8F0;
+            border-radius: 14px;
+            margin-top: 1rem;
+        }
+
+        .chart-empty-state-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: #F1F5F9;
+            color: #94A3B8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 0.6rem;
         }
 
         /* Pending Requests List */
@@ -1115,64 +1143,26 @@
                         </div>
                     </div>
 
-                    <!-- SVG Spline Area Chart matching Image 1 curve -->
-                    <div class="chart-container-trainer">
-                        <svg viewBox="0 0 600 200" preserveAspectRatio="none" style="width: 100%; height: 100%; overflow: visible;">
-                            <defs>
-                                <linearGradient id="trainerChartGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#0D9488" stop-opacity="0.28" />
-                                    <stop offset="100%" stop-color="#0D9488" stop-opacity="0.0" />
-                                </linearGradient>
-                            </defs>
-
-                            <!-- Horizontal Gridlines & Y-axis labels -->
-                            <g stroke="#F1F5F9" stroke-dasharray="3,3">
-                                <line x1="40" y1="20" x2="590" y2="20" stroke="#F1F5F9" stroke-width="1" />
-                                <line x1="40" y1="65" x2="590" y2="65" stroke="#F1F5F9" stroke-width="1" />
-                                <line x1="40" y1="110" x2="590" y2="110" stroke="#F1F5F9" stroke-width="1" />
-                                <line x1="40" y1="155" x2="590" y2="155" stroke="#F1F5F9" stroke-width="1" />
-                            </g>
-
-                            <text x="25" y="24" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="end">80</text>
-                            <text x="25" y="69" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="end">75</text>
-                            <text x="25" y="114" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="end">70</text>
-                            <text x="25" y="159" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="end">65</text>
-
-                            <!-- Gradient Area Fill under Curve -->
-                            <path d="M 60 150 
-                                     C 130 148, 170 135, 200 130 
-                                     C 260 120, 290 105, 335 98 
-                                     C 410 85, 450 60, 480 50 
-                                     C 520 40, 560 38, 560 38 
-                                     L 560 170 L 60 170 Z" 
-                                  fill="url(#trainerChartGradient)" />
-
-                            <!-- Main Green Spline Line Curve -->
-                            <path d="M 60 150 
-                                     C 130 148, 170 135, 200 130 
-                                     C 260 120, 290 105, 335 98 
-                                     C 410 85, 450 60, 480 50 
-                                     C 520 40, 560 38, 560 38" 
-                                  fill="none" 
-                                  stroke="#0D9488" 
-                                  stroke-width="3.5" 
-                                  stroke-linecap="round" />
-
-                            <!-- Key Milestone Dots Matching Screenshot -->
-                            <circle cx="60" cy="150" r="5" fill="#FFFFFF" stroke="#0D9488" stroke-width="3" />
-                            <circle cx="200" cy="130" r="5" fill="#FFFFFF" stroke="#0D9488" stroke-width="3" />
-                            <circle cx="335" cy="98" r="5" fill="#FFFFFF" stroke="#0D9488" stroke-width="3" />
-                            <circle cx="480" cy="50" r="5" fill="#FFFFFF" stroke="#0D9488" stroke-width="3" />
-                            <circle cx="560" cy="38" r="5" fill="#FFFFFF" stroke="#0D9488" stroke-width="3" />
-
-                            <!-- X Axis Date Labels -->
-                            <text x="60" y="185" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">Mar 01</text>
-                            <text x="200" y="185" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">Mar 08</text>
-                            <text x="335" y="185" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">Mar 15</text>
-                            <text x="480" y="185" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">Mar 22</text>
-                            <text x="560" y="185" fill="#94A3B8" font-size="11" font-weight="600" text-anchor="middle">Mar 29</text>
-                        </svg>
-                    </div>
+                    @if (Model.AssignedClientsCount > 0 && Model.ChartValues != null && Model.ChartValues.Any(v => v > 0))
+                    {
+                        <!-- Dynamic Progress Chart -->
+                        <div class="chart-container-trainer">
+                            <canvas id="clientProgressChart"></canvas>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Clean Empty State when 0 clients / no activity -->
+                        <div class="chart-empty-state-container">
+                            <div class="chart-empty-state-icon">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <div class="fw-semibold text-dark mb-1">No progress activity recorded yet</div>
+                            <p class="text-muted small mb-0" style="max-width: 360px;">
+                                When your assigned clients begin logging routines and workout completions, their progress trend curve will appear here.
+                            </p>
+                        </div>
+                    }
                 </div>
 
                 <!-- Right: Pending requests Card -->
@@ -1629,6 +1619,83 @@
                             c.style.backgroundColor = '#FFFFFF';
                         });
                         if (hiddenInput) hiddenInput.value = this.value.trim();
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+@if (Model.AssignedClientsCount > 0 && Model.ChartValues != null && Model.ChartValues.Any(v => v > 0))
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const chartCanvas = document.getElementById('clientProgressChart');
+            if (chartCanvas) {
+                const ctx = chartCanvas.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                gradient.addColorStop(0, 'rgba(13, 148, 136, 0.28)');
+                gradient.addColorStop(1, 'rgba(13, 148, 136, 0.0)');
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartLabels)),
+                        datasets: [{
+                            label: 'Average Completion (%)',
+                            data: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartValues)),
+                            borderColor: '#0D9488',
+                            borderWidth: 3,
+                            backgroundColor: gradient,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#FFFFFF',
+                            pointBorderColor: '#0D9488',
+                            pointBorderWidth: 3,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#0F172A',
+                                titleFont: { size: 12, weight: 'bold' },
+                                bodyFont: { size: 12 },
+                                padding: 10,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.parsed.y + '% completion';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 50,
+                                max: 100,
+                                grid: {
+                                    color: '#F1F5F9',
+                                    borderDash: [3, 3]
+                                },
+                                ticks: {
+                                    color: '#94A3B8',
+                                    font: { size: 11, weight: '600' }
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#94A3B8',
+                                    font: { size: 11, weight: '600' }
+                                }
+                            }
+                        }
                     }
                 });
             }

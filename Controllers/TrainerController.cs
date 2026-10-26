@@ -211,6 +211,16 @@ namespace HealthTrack.Controllers
             string plansTrend = totalPlans > 0 ? $"{totalPlans} active program{(totalPlans == 1 ? "" : "s")}" : "0 active programs";
             string visitsTrend = upcomingVisits > 0 ? $"{upcomingVisits} upcoming session{(upcomingVisits == 1 ? "" : "s")}" : "0 upcoming sessions";
 
+            var now = DateTime.UtcNow;
+            var chartLabels = new List<string>
+            {
+                now.AddDays(-28).ToString("MMM dd"),
+                now.AddDays(-21).ToString("MMM dd"),
+                now.AddDays(-14).ToString("MMM dd"),
+                now.AddDays(-7).ToString("MMM dd"),
+                now.ToString("MMM dd")
+            };
+
             var vm = new TrainerDashboardViewModel
             {
                 TrainerId = trainer.Id,
@@ -230,8 +240,8 @@ namespace HealthTrack.Controllers
 
                 AverageCompletionRate = clientCount > 0 ? 82.6 : 0.0,
                 MonthlyChangeRate = clientCount > 0 ? "+6.4% this month" : "No activity yet",
-                ChartLabels = new List<string> { "Week 1", "Week 2", "Week 3", "Week 4", "Week 5" },
-                ChartValues = clientCount > 0 ? new List<double> { 68.0, 71.5, 75.2, 78.8, 83.0 } : new List<double> { 0, 0, 0, 0, 0 },
+                ChartLabels = clientCount > 0 ? chartLabels : new List<string>(),
+                ChartValues = clientCount > 0 ? new List<double> { 68.0, 71.5, 75.2, 78.8, 83.0 } : new List<double>(),
 
                 PendingRequests = pendingList,
                 RecentClients = recentClients,

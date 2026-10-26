@@ -164,14 +164,23 @@ namespace HealthTrack.Controllers
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
                 var latestWorkout = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
                     .Where(w => w.ClientId == c.Id && w.IsActive)
                     .OrderByDescending(w => w.CreatedAt)
                     .FirstOrDefaultAsync()
                     ?? await _context.WorkoutPlans
+                        .Include(w => w.Exercises)
                         .Where(w => w.ClientId == c.Id)
                         .OrderByDescending(w => w.CreatedAt)
                         .FirstOrDefaultAsync();
                 var planName = latestWorkout?.Title ?? (!string.IsNullOrEmpty(c.FitnessGoal) ? c.FitnessGoal : "Custom Wellness Plan");
+
+                int clientCompRate = 0;
+                if (latestWorkout != null && latestWorkout.Exercises.Any())
+                {
+                    int doneEx = latestWorkout.Exercises.Count(e => e.IsCompleted);
+                    clientCompRate = (int)Math.Round((double)doneEx / latestWorkout.Exercises.Count * 100);
+                }
 
                 var logs = await _context.HealthLogs
                     .Where(h => h.ClientId == c.Id)
@@ -199,10 +208,10 @@ namespace HealthTrack.Controllers
                     ClientName = c.FullName ?? "Client",
                     Initials = inits,
                     ActivePlan = planName,
-                    CompletionPercentage = 85,
+                    CompletionPercentage = clientCompRate,
                     WeightChange = weightChange,
                     IsWeightLoss = isLoss,
-                    Status = "Active"
+                    Status = latestWorkout != null ? "Active" : "New Client"
                 });
             }
 
@@ -536,21 +545,30 @@ namespace HealthTrack.Controllers
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
                 var latestWorkout = await _context.WorkoutPlans
+                    .Include(w => w.Exercises)
                     .Where(w => w.ClientId == dbc.Id && w.IsActive)
                     .OrderByDescending(w => w.CreatedAt)
                     .FirstOrDefaultAsync()
                     ?? await _context.WorkoutPlans
+                        .Include(w => w.Exercises)
                         .Where(w => w.ClientId == dbc.Id)
                         .OrderByDescending(w => w.CreatedAt)
                         .FirstOrDefaultAsync();
-                var planName = latestWorkout?.Title ?? (!string.IsNullOrEmpty(dbc.FitnessGoal) ? dbc.FitnessGoal : "Strength & mobility");
+                var planName = latestWorkout?.Title ?? (!string.IsNullOrEmpty(dbc.FitnessGoal) ? dbc.FitnessGoal : "Custom Wellness Plan");
+
+                int clientCompRate = 0;
+                if (latestWorkout != null && latestWorkout.Exercises.Any())
+                {
+                    int doneEx = latestWorkout.Exercises.Count(e => e.IsCompleted);
+                    clientCompRate = (int)Math.Round((double)doneEx / latestWorkout.Exercises.Count * 100);
+                }
 
                 var logs = await _context.HealthLogs
                     .Where(h => h.ClientId == dbc.Id)
                     .OrderBy(h => h.LogDate)
                     .ToListAsync();
 
-                string weightChange = "-1.5 kg";
+                string weightChange = "0.0 kg";
                 bool isLoss = true;
                 if (logs.Count >= 2)
                 {
@@ -565,7 +583,9 @@ namespace HealthTrack.Controllers
                     isLoss = diff >= 0;
                 }
 
-                string clientStatus = logs.Count == 0 && (dbc.CurrentWeight == null) ? "At risk" : "Active";
+                double curW = dbc.CurrentWeight ?? (logs.Any() ? logs.Last().WeightKg : 0.0);
+                double tarW = dbc.TargetWeight ?? 0.0;
+                string clientStatus = logs.Count == 0 && (dbc.CurrentWeight == null) ? "New Client" : "Active";
 
                 allClients.Add(new TrainerClientItem
                 {
@@ -574,12 +594,12 @@ namespace HealthTrack.Controllers
                     Email = dbc.Email ?? string.Empty,
                     Initials = inits,
                     ActivePlan = planName,
-                    CompletionPercentage = 85,
+                    CompletionPercentage = clientCompRate,
                     WeightChange = weightChange,
                     IsWeightLoss = isLoss,
                     Status = clientStatus,
-                    CurrentWeight = dbc.CurrentWeight ?? 72.0,
-                    TargetWeight = dbc.TargetWeight ?? 70.0,
+                    CurrentWeight = curW,
+                    TargetWeight = tarW,
                     JoinedDate = dbc.CreatedAt > DateTime.MinValue ? dbc.CreatedAt.ToString("MMM yyyy") : DateTime.UtcNow.ToString("MMM yyyy")
                 });
             }
@@ -781,10 +801,6 @@ namespace HealthTrack.Controllers
                     w.Title.Equals(t.Title, StringComparison.OrdinalIgnoreCase) ||
                     w.Title.StartsWith(t.Title, StringComparison.OrdinalIgnoreCase) ||
                     w.Title.IndexOf(t.Title, StringComparison.OrdinalIgnoreCase) >= 0);
-                if (assignedCount == 0)
-                {
-                    assignedCount = Math.Max(1, dbClients.Count / 3);
-                }
 
                 return new WorkoutTemplateItem
                 {
@@ -1101,11 +1117,6 @@ namespace HealthTrack.Controllers
                     d.Title.Equals(t.Title, StringComparison.OrdinalIgnoreCase) ||
                     d.Title.StartsWith(t.Title, StringComparison.OrdinalIgnoreCase) ||
                     d.Title.IndexOf(t.Title, StringComparison.OrdinalIgnoreCase) >= 0);
-                if (assignedCount == 0)
-                {
-                    assignedCount = Math.Max(1, dbClients.Count / 3);
-                }
-
                 return new DietTemplateItem
                 {
                     Id = t.Id.ToString(),
@@ -1127,6 +1138,14 @@ namespace HealthTrack.Controllers
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync();
 
+            var todayStart = DateTime.UtcNow.Date;
+            var weekAgo = DateTime.UtcNow.AddDays(-7);
+            var assignedClientIds = dbClients.Select(c => c.Id).ToList();
+
+            var recentDietHealthLogs = await _context.HealthLogs
+                .Where(l => assignedClientIds.Contains(l.ClientId) && l.LogDate >= weekAgo)
+                .ToListAsync();
+
             var clientRosters = new List<ClientDietRosterItem>();
             foreach (var d in dbDiets)
             {
@@ -1136,6 +1155,18 @@ namespace HealthTrack.Controllers
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
                 int mealsScheduled = d.Meals.Count > 0 ? d.Meals.Count : 4;
+                int targetProtein = (int)Math.Round((d.TargetCalories * 0.25) / 4.0);
+
+                int mealsLoggedToday = recentDietHealthLogs
+                    .Count(l => l.ClientId == d.ClientId && l.LogDate >= todayStart && l.Notes != null && 
+                        (l.Notes.Contains("meal", StringComparison.OrdinalIgnoreCase) || 
+                         l.Notes.Contains("Breakfast", StringComparison.OrdinalIgnoreCase) || 
+                         l.Notes.Contains("Dinner", StringComparison.OrdinalIgnoreCase) || 
+                         l.Notes.Contains("Lunch", StringComparison.OrdinalIgnoreCase) || 
+                         l.Notes.Contains("Snack", StringComparison.OrdinalIgnoreCase) || 
+                         l.Notes.Contains("Nutrition", StringComparison.OrdinalIgnoreCase)));
+
+                int adherence = mealsScheduled > 0 ? Math.Min(100, (int)Math.Round((double)mealsLoggedToday / mealsScheduled * 100)) : 0;
 
                 clientRosters.Add(new ClientDietRosterItem
                 {
@@ -1146,18 +1177,27 @@ namespace HealthTrack.Controllers
                     PlanTitle = d.Title,
                     Category = "Balanced Nutrition",
                     TargetCalories = d.TargetCalories,
-                    TargetProtein = 130,
-                    MealsLoggedToday = Math.Max(1, mealsScheduled - 1),
+                    TargetProtein = targetProtein,
+                    MealsLoggedToday = mealsLoggedToday,
                     TotalMealsScheduled = mealsScheduled,
-                    AdherencePercentage = 88,
+                    AdherencePercentage = adherence,
                     Status = d.IsActive ? "Active" : "Archived",
                     LastMealLogged = d.Meals.LastOrDefault()?.Description ?? "Balanced meal logged"
                 });
             }
 
+            int weeklyMealLogs = recentDietHealthLogs.Count(l => l.Notes != null && 
+                (l.Notes.Contains("meal", StringComparison.OrdinalIgnoreCase) || 
+                 l.Notes.Contains("Nutrition", StringComparison.OrdinalIgnoreCase) || 
+                 l.Notes.Contains("Breakfast", StringComparison.OrdinalIgnoreCase) || 
+                 l.Notes.Contains("Lunch", StringComparison.OrdinalIgnoreCase) || 
+                 l.Notes.Contains("Dinner", StringComparison.OrdinalIgnoreCase)));
+
             var unreadCount = await _context.Notifications
                 .Where(n => n.UserId == trainer.Id && !n.IsRead)
                 .CountAsync();
+
+            var activeDietRosters = clientRosters.Where(r => r.Status == "Active").ToList();
 
             var vm = new TrainerDietViewModel
             {
@@ -1165,10 +1205,12 @@ namespace HealthTrack.Controllers
                 TrainerEmail = trainer.Email ?? string.Empty,
                 TrainerInitials = GetUserInitials(trainer.FullName, "TR"),
                 UnreadNotificationsCount = unreadCount,
-                TotalActiveDietPlans = clientRosters.Count(r => r.Status == "Active"),
+                TotalActiveDietPlans = activeDietRosters.Count,
                 TotalTemplatesCount = templates.Count,
-                AvgMacroAdherence = clientRosters.Any() ? 88 : 0,
-                WeeklyMealLogsCount = clientRosters.Count * 7,
+                AvgMacroAdherence = activeDietRosters.Any() 
+                    ? (int)Math.Round(activeDietRosters.Average(r => r.AdherencePercentage)) 
+                    : (clientRosters.Any() ? (int)Math.Round(clientRosters.Average(r => r.AdherencePercentage)) : 0),
+                WeeklyMealLogsCount = weeklyMealLogs,
                 Templates = templates,
                 ClientDietRosters = clientRosters,
                 AvailableClients = availableClients
@@ -1534,21 +1576,36 @@ namespace HealthTrack.Controllers
                         vm.WorkoutCompletionSubtext = clientWorkouts.Any() ? "Plan created, no exercises yet" : "No workout plan assigned";
                     }
 
-                    // 2. Active Minutes & Activity Percentages (dynamic from real exercise completions)
+                    // Fetch client health logs for biometrics and activity
+                    var dbLogs = await _context.HealthLogs
+                        .Where(h => h.ClientId == dbClient.Id)
+                        .OrderBy(h => h.LogDate)
+                        .ToListAsync();
+
+                    // 2. Active Minutes & Activity Percentages (dynamic from real exercise completions and logs)
                     int activeMinutes = completedExercises * 15;
                     vm.ActiveMinutes = activeMinutes;
                     vm.ActiveMinutesSubtext = activeMinutes > 0 ? "Last 30 days" : "No workout activity";
 
-                    if (completedExercises > 0)
+                    var startOfWeek = DateTime.UtcNow.Date.AddDays(-(int)(DateTime.UtcNow.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)DateTime.UtcNow.DayOfWeek - 1));
+                    var weekDays = Enumerable.Range(0, 7).Select(i => startOfWeek.AddDays(i)).ToList();
+                    var dayPercentages = new List<int>();
+
+                    foreach (var day in weekDays)
                     {
-                        int basePct = Math.Min(100, Math.Max(15, (int)Math.Round((double)completedExercises / Math.Max(1, totalExercises) * 100)));
-                        vm.ActivityPercentages = new List<int> { basePct - 10, basePct - 5, basePct, basePct - 15, basePct + 5, basePct, basePct + 10 }
-                            .Select(p => Math.Clamp(p, 0, 100)).ToList();
+                        if (day > DateTime.UtcNow.Date)
+                        {
+                            dayPercentages.Add(0);
+                        }
+                        else
+                        {
+                            bool hadWorkout = clientWorkouts.Any(w => w.CreatedAt.Date <= day && w.Exercises.Any(e => e.IsCompleted));
+                            bool hadLog = dbLogs.Any(l => l.LogDate.Date == day);
+                            int dayVal = (hadWorkout && hadLog) ? 100 : (hadWorkout || hadLog ? 75 : 0);
+                            dayPercentages.Add(dayVal);
+                        }
                     }
-                    else
-                    {
-                        vm.ActivityPercentages = new List<int> { 0, 0, 0, 0, 0, 0, 0 };
-                    }
+                    vm.ActivityPercentages = dayPercentages;
 
                     // 3. Diet & Calories
                     var clientDiet = await _context.DietPlans
@@ -1568,10 +1625,6 @@ namespace HealthTrack.Controllers
                     }
 
                     // 4. Weight & Biometrics from HealthLogs
-                    var dbLogs = await _context.HealthLogs
-                        .Where(h => h.ClientId == dbClient.Id)
-                        .OrderBy(h => h.LogDate)
-                        .ToListAsync();
 
                     if (dbLogs.Any())
                     {

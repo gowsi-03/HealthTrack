@@ -299,6 +299,15 @@ namespace HealthTrack.Controllers
                 }
             }
 
+            var breakfastMeal = vm.ActiveDietPlan?.Meals.FirstOrDefault(m => m.MealType.Equals("Breakfast", StringComparison.OrdinalIgnoreCase));
+            var dinnerMeal = vm.ActiveDietPlan?.Meals.FirstOrDefault(m => m.MealType.Equals("Dinner", StringComparison.OrdinalIgnoreCase));
+
+            string breakfastTitle = !string.IsNullOrWhiteSpace(breakfastMeal?.Description) ? breakfastMeal.Description : "Healthy breakfast";
+            string breakfastSub = breakfastMeal != null ? $"8:30 AM • {breakfastMeal.Calories} kcal" : "8:30 AM • 420 kcal";
+
+            string dinnerTitle = !string.IsNullOrWhiteSpace(dinnerMeal?.Description) ? dinnerMeal.Description : "Log evening meal";
+            string dinnerSub = dinnerMeal != null ? $"7:30 PM • Target {dinnerMeal.Calories} kcal" : "7:30 PM • Target 560 kcal";
+
             vm.TodayPlanItems = new List<DailyPlanItem>
             {
                 new DailyPlanItem
@@ -313,8 +322,8 @@ namespace HealthTrack.Controllers
                 new DailyPlanItem
                 {
                     Id = 2,
-                    Title = "Healthy breakfast",
-                    Subtitle = "8:30 AM • 420 kcal",
+                    Title = breakfastTitle,
+                    Subtitle = breakfastSub,
                     Category = "Meal",
                     IsCompleted = hasBreakfastToday,
                     ActionButtonText = hasBreakfastToday ? "Done" : "Log"
@@ -331,8 +340,8 @@ namespace HealthTrack.Controllers
                 new DailyPlanItem
                 {
                     Id = 4,
-                    Title = "Log evening meal",
-                    Subtitle = "7:30 PM • Target 560 kcal",
+                    Title = dinnerTitle,
+                    Subtitle = dinnerSub,
                     Category = "Meal",
                     IsCompleted = hasEveningMealToday,
                     ActionButtonText = hasEveningMealToday ? "Done" : "Log"
@@ -914,14 +923,13 @@ namespace HealthTrack.Controllers
                     string time = defaultTimes.ContainsKey(meal.MealType) ? defaultTimes[meal.MealType] : $"{8 + (idx * 3)}:00 PM";
                     bool isLogged = todayMealLogs.Any(n => n != null && n.Contains(meal.MealType, StringComparison.OrdinalIgnoreCase));
 
-                    string ingredients = meal.MealType switch
-                    {
-                        "Breakfast" => "0% Greek yogurt (200g), fresh blueberries (50g), strawberries (50g), whole grain almond granola (40g), drizzle of organic honey.",
-                        "Lunch" => "Grilled herb chicken breast (180g), tri-color organic quinoa (120g cooked), steamed broccoli florets, avocado slices (40g), extra virgin olive oil drizzle.",
-                        "Afternoon snack" => "Crisp Gala or Honeycrisp apple (1 large), natural smooth unsalted almond butter (2 tbsp / 30g).",
-                        "Dinner" => "Atlantic salmon fillet (180g) baked with lemon and dill, wild brown rice (120g cooked), roasted asparagus spears & baby spinach with garlic.",
-                        _ => meal.Description
-                    };
+                    string ingredients = !string.IsNullOrWhiteSpace(meal.Description) 
+                        ? meal.Description 
+                        : "Nutritious balanced meal tailored to your program goals.";
+
+                    int protein = (int)Math.Round((meal.Calories * 0.25) / 4.0);
+                    int carbs = (int)Math.Round((meal.Calories * 0.50) / 4.0);
+                    int fats = (int)Math.Round((meal.Calories * 0.25) / 9.0);
 
                     vm.ScheduledMeals.Add(new MealScheduleItem
                     {
@@ -930,9 +938,9 @@ namespace HealthTrack.Controllers
                         MealType = meal.MealType,
                         Description = meal.Description,
                         Calories = meal.Calories,
-                        ProteinGrams = meal.Calories > 500 ? 35 : (meal.Calories > 300 ? 25 : 10),
-                        CarbsGrams = meal.Calories > 500 ? 60 : (meal.Calories > 300 ? 45 : 25),
-                        FatsGrams = meal.Calories > 500 ? 18 : (meal.Calories > 300 ? 12 : 7),
+                        ProteinGrams = protein,
+                        CarbsGrams = carbs,
+                        FatsGrams = fats,
                         Ingredients = ingredients,
                         IsLogged = isLogged
                     });

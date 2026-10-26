@@ -1127,10 +1127,7 @@
                             }
                             else
                             {
-                                <option value="Dr. Maya Patel">Dr. Maya Patel (Health & Wellness Physician)</option>
-                                <option value="Chris Williams">Chris Williams (Senior Performance Coach)</option>
-                                <option value="Dr. Nina Ford">Dr. Nina Ford (Clinical Nutritionist)</option>
-                                <option value="Alex Henderson">Alex Henderson (Head Coach)</option>
+                                <option value="" disabled selected>No certified coaches available currently</option>
                             }
                         </select>
                     </div>
@@ -1293,15 +1290,7 @@
     }
 
     function updateSpecialistOptions() {
-        var cat = document.getElementById('consultCategorySelect').value;
-        var spec = document.getElementById('specialistSelect');
-        if (cat === 'Health Consultation') {
-            spec.value = 'Dr. Maya Patel';
-        } else if (cat === 'Personal Training') {
-            spec.value = 'Chris Williams';
-        } else if (cat === 'Nutrition Review') {
-            spec.value = 'Dr. Nina Ford';
-        }
+        // Keeps user's selected trainer dynamically without forcing hardcoded names
     }
 </script>
 

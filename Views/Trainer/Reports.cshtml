@@ -1132,10 +1132,10 @@
                             <div class="chart-card-title">Weight trend</div>
                             <div class="chart-card-subtitle">Kilograms over time</div>
                         </div>
-                        <select class="timeframe-pill-select" onchange="window.location.href='/Trainer/Reports?clientId=@Model.SelectedClientId&timeframe='+this.value">
-                            <option value="Monthly" selected>Monthly</option>
-                            <option value="Quarterly">Quarterly</option>
-                            <option value="Yearly">Yearly</option>
+                        <select class="timeframe-pill-select" onchange="window.location.href='/Trainer/Reports?clientId=@Model.SelectedClientId&timeframe='+encodeURIComponent(this.value)">
+                            <option value="Last 7 Days" selected="@(Model.SelectedTimeframe == "Last 7 Days")">Last 7 Days</option>
+                            <option value="Last 30 Days" selected="@(Model.SelectedTimeframe == "Last 30 Days")">Last 30 Days</option>
+                            <option value="All Time" selected="@(Model.SelectedTimeframe == "All Time")">All Time</option>
                         </select>
                     </div>
 
@@ -1331,19 +1331,24 @@
                             grid: { display: false },
                             ticks: {
                                 color: '#94A3B8',
-                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
                             }
                         },
                         y: {
-                            grace: '8%',
+                            grace: '10%',
                             grid: {
                                 color: '#F1F5F9',
                                 drawBorder: false
                             },
                             ticks: {
-                                stepSize: 5,
                                 color: '#94A3B8',
-                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' }
+                                font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                                callback: function (value) {
+                                    return value.toFixed(1) + ' kg';
+                                }
                             }
                         }
                     }

@@ -1513,38 +1513,23 @@ namespace HealthTrack.Controllers
 
             bool isDemoUser = false;
 
+            string selectedTimeRange = timeRange switch
+            {
+                "Last 7 Days" or "7" or "7days" or "Weekly" => "Last 7 Days",
+                "All Time" or "All" or "Yearly" => "All Time",
+                _ => "Last 30 Days"
+            };
+
             var vm = new ProgressAnalyticsViewModel
             {
                 ClientId = user.Id,
                 FullName = user.FullName ?? user.UserName ?? "Client",
                 Email = user.Email ?? string.Empty,
-                SelectedTimeRange = timeRange ?? "Last 30 days",
+                SelectedTimeRange = selectedTimeRange,
                 SelectedMetric = metric ?? "All metrics",
                 HeightCm = (int)(user.HeightCm ?? 175),
                 CurrentWeightKg = user.CurrentWeight ?? 0
             };
-
-            // Ensure demo client has the 4 reference measurements matching media_1792560803059_1970f462.png
-            if (isDemoUser)
-            {
-                var hasRefLogs = await _context.HealthLogs.AnyAsync(l => l.ClientId == user.Id && l.Notes != null && l.Notes.Contains("waist:82"));
-                if (!hasRefLogs)
-                {
-                    var oldLogs = await _context.HealthLogs.Where(l => l.ClientId == user.Id).ToListAsync();
-                    if (oldLogs.Any())
-                    {
-                        _context.HealthLogs.RemoveRange(oldLogs);
-                    }
-
-                    _context.HealthLogs.AddRange(
-                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 1), WeightKg = 74.0, CalculatedBmi = 23.4, CaloriesBurned = 450, WaterIntakeLiters = 2.5, Notes = "Baseline sprint phase measurement - waist:84 cm" },
-                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 15), WeightKg = 73.8, CalculatedBmi = 23.3, CaloriesBurned = 480, WaterIntakeLiters = 2.7, Notes = "Mid-cycle body composition scan - waist:84 cm" },
-                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 3, 29), WeightKg = 73.1, CalculatedBmi = 23.1, CaloriesBurned = 460, WaterIntakeLiters = 2.8, Notes = "End of month progress evaluation - waist:83 cm" },
-                        new HealthLog { ClientId = user.Id, LogDate = new DateTime(2025, 4, 12), WeightKg = 72.4, CalculatedBmi = 22.8, CaloriesBurned = 510, WaterIntakeLiters = 3.0, Notes = "Post-workout biometric weigh-in - waist:82 cm" }
-                    );
-                    await _context.SaveChangesAsync();
-                }
-            }
 
             var logs = await _context.HealthLogs
                 .Where(l => l.ClientId == user.Id && l.WeightKg > 0)
@@ -1564,11 +1549,13 @@ namespace HealthTrack.Controllers
                     waist = 80 + (int)Math.Round((l.WeightKg - 70) * 1.0);
                 }
 
+                var logLocal = DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime();
+
                 return new MeasurementHistoryItem
                 {
                     Id = l.Id,
                     Date = l.LogDate,
-                    DateText = l.LogDate.ToString("MMM dd, yyyy"),
+                    DateText = logLocal.ToString("MMM dd, yyyy · h:mm tt"),
                     WeightKg = l.WeightKg,
                     HeightCm = (int)(user.HeightCm ?? 175),
                     Bmi = l.CalculatedBmi > 0 ? l.CalculatedBmi : Math.Round(l.WeightKg / Math.Pow((user.HeightCm ?? 175) / 100.0, 2), 1),
@@ -1577,58 +1564,68 @@ namespace HealthTrack.Controllers
                 };
             }).ToList();
 
-            if (isDemoUser)
+            // Filter logs for Weight trend based on selectedTimeRange
+            var chartLogs = logs.OrderBy(l => l.LogDate).ToList();
+            if (selectedTimeRange == "Last 7 Days")
             {
-                vm.WeightChange = "-3.8 kg";
-                vm.WeightChangePeriod = "Since Jan 14";
-                vm.WorkoutCompletionRate = "87%";
-                vm.WorkoutCompletionChange = "+8% this month";
-                vm.ActiveMinutes = 742;
-                vm.ActiveMinutesPeriod = "Last 30 days";
-                vm.AverageCalories = "2,120";
-                vm.AverageCaloriesPeriod = "Daily intake";
-                vm.CurrentWeightKg = 72.4;
-                vm.WeightTrendStatus = "On track";
-
-                vm.WeightLabels = new List<string> { "Mar 01", "Mar 08", "Mar 15", "Mar 22", "Mar 29" };
-                vm.WeightValues = new List<double> { 68.2, 70.4, 73.1, 75.8, 77.4 };
+                var cutoff = DateTime.UtcNow.AddDays(-7);
+                chartLogs = chartLogs.Where(l => l.LogDate >= cutoff).ToList();
             }
-            else
+            else if (selectedTimeRange == "Last 30 Days")
             {
-                // Real user dynamic calculations
-                if (logs.Any())
+                var cutoff = DateTime.UtcNow.AddDays(-30);
+                chartLogs = chartLogs.Where(l => l.LogDate >= cutoff).ToList();
+            }
+
+            if (chartLogs.Any())
+            {
+                var latest = chartLogs.Last();
+                var oldest = chartLogs.First();
+                vm.CurrentWeightKg = latest.WeightKg;
+
+                double diff = Math.Round(latest.WeightKg - oldest.WeightKg, 1);
+                vm.WeightChange = $"{(diff >= 0 ? "+" : "")}{diff} kg";
+                var oldestLocal = DateTime.SpecifyKind(oldest.LogDate, DateTimeKind.Utc).ToLocalTime();
+                vm.WeightChangePeriod = selectedTimeRange == "Last 7 Days"
+                    ? $"Past 7 days (since {oldestLocal:MMM dd})"
+                    : (selectedTimeRange == "Last 30 Days" ? $"Past 30 days (since {oldestLocal:MMM dd})" : $"All-time (since {oldestLocal:MMM dd, yyyy})");
+                vm.WeightTrendStatus = diff <= 0 ? "On track" : "Progressing";
+
+                bool allSameDay = chartLogs.Select(l => l.LogDate.Date).Distinct().Count() <= 1;
+                bool hasDuplicates = chartLogs.GroupBy(l => l.LogDate.Date).Any(g => g.Count() > 1);
+
+                if (allSameDay)
                 {
-                    var latest = logs.First();
-                    vm.CurrentWeightKg = latest.WeightKg;
-
-                    if (logs.Count >= 2)
-                    {
-                        var oldest = logs.Last();
-                        double diff = Math.Round(latest.WeightKg - oldest.WeightKg, 1);
-                        vm.WeightChange = $"{(diff >= 0 ? "+" : "")}{diff} kg";
-                        vm.WeightChangePeriod = $"Since {oldest.LogDate:MMM dd}";
-                        vm.WeightTrendStatus = diff <= 0 ? "On track" : "Progressing";
-                    }
-                    else
-                    {
-                        vm.WeightChange = "0.0 kg";
-                        vm.WeightChangePeriod = "Initial entry";
-                        vm.WeightTrendStatus = "Baseline set";
-                    }
-
-                    var ascLogs = logs.OrderBy(l => l.LogDate).ToList();
-                    vm.WeightLabels = ascLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
-                    vm.WeightValues = ascLogs.Select(l => l.WeightKg).ToList();
+                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("h:mm tt")).ToList();
+                }
+                else if (hasDuplicates)
+                {
+                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd h:mm tt")).ToList();
                 }
                 else
                 {
-                    vm.CurrentWeightKg = user.CurrentWeight ?? 0;
-                    vm.WeightChange = "0.0 kg";
-                    vm.WeightChangePeriod = "Awaiting first log";
-                    vm.WeightTrendStatus = "Awaiting weigh-in";
-                    vm.WeightLabels = new List<string>();
-                    vm.WeightValues = new List<double>();
+                    vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd")).ToList();
                 }
+                vm.WeightValues = chartLogs.Select(l => l.WeightKg).ToList();
+            }
+            else if (logs.Any())
+            {
+                vm.CurrentWeightKg = logs.First().WeightKg;
+                vm.WeightChange = "0.0 kg";
+                vm.WeightChangePeriod = $"No logs in {selectedTimeRange.ToLower()}";
+                vm.WeightTrendStatus = "No recent data";
+                vm.WeightLabels = new List<string>();
+                vm.WeightValues = new List<double>();
+            }
+            else
+            {
+                vm.CurrentWeightKg = user.CurrentWeight ?? 0;
+                vm.WeightChange = "0.0 kg";
+                vm.WeightChangePeriod = "Awaiting first log";
+                vm.WeightTrendStatus = "Awaiting weigh-in";
+                vm.WeightLabels = new List<string>();
+                vm.WeightValues = new List<double>();
+            }
 
                 // Workout completion rate from real database workouts
                 var userWorkouts = await _context.WorkoutPlans
@@ -1657,7 +1654,6 @@ namespace HealthTrack.Controllers
                     ? ((int)logs.Where(l => l.CaloriesBurned > 0).Average(l => l.CaloriesBurned)).ToString("N0")
                     : "0";
                 vm.AverageCaloriesPeriod = "Daily average";
-            }
 
             vm.UnreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
 

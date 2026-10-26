@@ -1532,6 +1532,13 @@ namespace HealthTrack.Controllers
                 .Where(n => n.UserId == trainer.Id && !n.IsRead)
                 .CountAsync();
 
+            string selectedTimeframe = timeframe switch
+            {
+                "Last 7 Days" or "7" or "7days" or "Weekly" => "Last 7 Days",
+                "All Time" or "All" or "Yearly" => "All Time",
+                _ => "Last 30 Days"
+            };
+
             var vm = new TrainerReportsViewModel
             {
                 TrainerName = (!string.IsNullOrWhiteSpace(trainer.FullName)) ? trainer.FullName.Replace("Dr. ", "") : (trainer.UserName?.Split('@')[0] ?? "Trainer"),
@@ -1541,7 +1548,7 @@ namespace HealthTrack.Controllers
                 SelectedClientId = selectedClient?.Id ?? string.Empty,
                 SelectedClientName = selectedClient?.Name ?? "No assigned clients",
                 SelectedMetric = metric ?? "All metrics",
-                SelectedTimeframe = timeframe ?? "Monthly",
+                SelectedTimeframe = selectedTimeframe,
                 Clients = clientOptions,
                 MeasurementHistory = new List<TrainerMeasurementHistoryItem>(),
                 WeightLabels = new List<string>(),
@@ -1577,10 +1584,23 @@ namespace HealthTrack.Controllers
                     }
 
                     // Fetch client health logs for biometrics and activity
-                    var dbLogs = await _context.HealthLogs
+                    var allLogs = await _context.HealthLogs
                         .Where(h => h.ClientId == dbClient.Id)
                         .OrderBy(h => h.LogDate)
                         .ToListAsync();
+
+                    // Filter logs for Weight trend based on selectedTimeframe
+                    var chartLogs = allLogs;
+                    if (selectedTimeframe == "Last 7 Days")
+                    {
+                        var cutoff = DateTime.UtcNow.AddDays(-7);
+                        chartLogs = allLogs.Where(h => h.LogDate >= cutoff).ToList();
+                    }
+                    else if (selectedTimeframe == "Last 30 Days")
+                    {
+                        var cutoff = DateTime.UtcNow.AddDays(-30);
+                        chartLogs = allLogs.Where(h => h.LogDate >= cutoff).ToList();
+                    }
 
                     // 2. Active Minutes & Activity Percentages (dynamic from real exercise completions and logs)
                     int activeMinutes = completedExercises * 15;
@@ -1600,7 +1620,7 @@ namespace HealthTrack.Controllers
                         else
                         {
                             bool hadWorkout = clientWorkouts.Any(w => w.CreatedAt.Date <= day && w.Exercises.Any(e => e.IsCompleted));
-                            bool hadLog = dbLogs.Any(l => l.LogDate.Date == day);
+                            bool hadLog = allLogs.Any(l => l.LogDate.Date == day);
                             int dayVal = (hadWorkout && hadLog) ? 100 : (hadWorkout || hadLog ? 75 : 0);
                             dayPercentages.Add(dayVal);
                         }
@@ -1625,41 +1645,44 @@ namespace HealthTrack.Controllers
                     }
 
                     // 4. Weight & Biometrics from HealthLogs
-
-                    if (dbLogs.Any())
+                    if (chartLogs.Any())
                     {
-                        double firstW = dbLogs.First().WeightKg;
-                        double lastW = dbLogs.Last().WeightKg;
+                        double firstW = chartLogs.First().WeightKg;
+                        double lastW = chartLogs.Last().WeightKg;
                         double diff = Math.Round(lastW - firstW, 1);
                         vm.WeightChange = diff <= 0 ? $"{diff:F1} kg" : $"+{diff:F1} kg";
-                        vm.WeightChangeSubtext = $"Since {dbLogs.First().LogDate:MMM dd}";
+                        var firstLocal = DateTime.SpecifyKind(chartLogs.First().LogDate, DateTimeKind.Utc).ToLocalTime();
+                        vm.WeightChangeSubtext = selectedTimeframe == "Last 7 Days"
+                            ? $"Past 7 days (since {firstLocal:MMM dd})"
+                            : (selectedTimeframe == "Last 30 Days" ? $"Past 30 days (since {firstLocal:MMM dd})" : $"All-time (since {firstLocal:MMM dd, yyyy})");
                         vm.CurrentWeightKg = lastW;
                         vm.WeightTrendStatus = diff <= 0 ? "On track" : "Calibrating";
 
-                        vm.WeightLabels = dbLogs.Select(l => l.LogDate.ToString("MMM dd")).ToList();
-                        vm.WeightValues = dbLogs.Select(l => l.WeightKg).ToList();
+                        bool allSameDay = chartLogs.Select(l => l.LogDate.Date).Distinct().Count() <= 1;
+                        bool hasDuplicates = chartLogs.GroupBy(l => l.LogDate.Date).Any(g => g.Count() > 1);
 
-                        foreach (var log in dbLogs.OrderByDescending(l => l.LogDate))
+                        if (allSameDay)
                         {
-                            int waist = 80;
-                            if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
-                            {
-                                var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
-                                if (int.TryParse(parts[0], out var pw)) waist = pw;
-                            }
-
-                            vm.MeasurementHistory.Add(new TrainerMeasurementHistoryItem
-                            {
-                                Id = log.Id,
-                                Date = log.LogDate,
-                                DateText = log.LogDate.ToString("MMM dd, yyyy"),
-                                WeightKg = log.WeightKg,
-                                HeightCm = (int)(dbClient.HeightCm ?? 175),
-                                Bmi = log.CalculatedBmi,
-                                WaistCm = waist,
-                                Notes = log.Notes ?? "Routine biometric scan"
-                            });
+                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("h:mm tt")).ToList();
                         }
+                        else if (hasDuplicates)
+                        {
+                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd h:mm tt")).ToList();
+                        }
+                        else
+                        {
+                            vm.WeightLabels = chartLogs.Select(l => DateTime.SpecifyKind(l.LogDate, DateTimeKind.Utc).ToLocalTime().ToString("MMM dd")).ToList();
+                        }
+                        vm.WeightValues = chartLogs.Select(l => l.WeightKg).ToList();
+                    }
+                    else if (allLogs.Any())
+                    {
+                        vm.CurrentWeightKg = allLogs.Last().WeightKg;
+                        vm.WeightChange = "0.0 kg";
+                        vm.WeightChangeSubtext = $"No logs in {selectedTimeframe.ToLower()}";
+                        vm.WeightTrendStatus = "No recent data";
+                        vm.WeightLabels = new List<string>();
+                        vm.WeightValues = new List<double>();
                     }
                     else
                     {
@@ -1669,6 +1692,31 @@ namespace HealthTrack.Controllers
                         vm.WeightTrendStatus = dbClient.CurrentWeight.HasValue ? "Baseline" : "No data";
                         vm.WeightLabels = new List<string>();
                         vm.WeightValues = new List<double>();
+                    }
+
+                    // Populate complete history table from allLogs
+                    foreach (var log in allLogs.OrderByDescending(l => l.LogDate))
+                    {
+                        int waist = 80;
+                        if (!string.IsNullOrEmpty(log.Notes) && log.Notes.Contains("waist:"))
+                        {
+                            var parts = log.Notes.Split("waist:")[1].Trim().Split(' ');
+                            if (int.TryParse(parts[0], out var pw)) waist = pw;
+                        }
+
+                        var logLocal = DateTime.SpecifyKind(log.LogDate, DateTimeKind.Utc).ToLocalTime();
+
+                        vm.MeasurementHistory.Add(new TrainerMeasurementHistoryItem
+                        {
+                            Id = log.Id,
+                            Date = log.LogDate,
+                            DateText = logLocal.ToString("MMM dd, yyyy · h:mm tt"),
+                            WeightKg = log.WeightKg,
+                            HeightCm = (int)(dbClient.HeightCm ?? 175),
+                            Bmi = log.CalculatedBmi,
+                            WaistCm = waist,
+                            Notes = log.Notes ?? "Routine biometric scan"
+                        });
                     }
                 }
             }

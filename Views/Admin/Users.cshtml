@@ -61,11 +61,29 @@
             position: sticky;
             top: 0;
             height: 100vh;
+            max-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
             padding: 1.5rem 1.15rem;
             flex-shrink: 0;
             z-index: 100;
         }
 
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(11, 25, 44, 0.4);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        .brand-header,
         .sidebar-brand {
             display: flex;
             align-items: center;
@@ -74,8 +92,12 @@
             font-size: 1.35rem;
             color: #FFFFFF;
             text-decoration: none;
-            margin-bottom: 2rem;
+            margin-bottom: 1.35rem;
             padding-left: 0.5rem;
+        }
+        .brand-header:hover,
+        .sidebar-brand:hover {
+            color: #FFFFFF;
         }
 
         .brand-icon {
@@ -87,12 +109,12 @@
             align-items: center;
             justify-content: center;
             color: #FFFFFF;
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
         }
 
         .nav-category {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 800;
             letter-spacing: 0.12em;
             color: #64748B;
@@ -101,8 +123,11 @@
             margin-bottom: 0.5rem;
         }
 
-        .sidebar-menu {
+        .sidebar-menu,
+        .sidebar-nav {
             list-style: none;
+            padding: 0;
+            margin: 0;
             display: flex;
             flex-direction: column;
             gap: 4px;
@@ -112,12 +137,14 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.75rem 0.95rem;
+            gap: 12px;
+            padding: 0.65rem 0.85rem;
             border-radius: 12px;
             color: #94A3B8;
             text-decoration: none;
+            font-size: 0.92rem;
             font-weight: 600;
-            font-size: 0.9rem;
+            white-space: nowrap;
             transition: all 0.2s ease;
         }
 
@@ -127,9 +154,9 @@
         }
 
         .sidebar-link.active {
+            background-color: rgba(255, 255, 255, 0.08);
             color: #FFFFFF;
-            background-color: rgba(16, 185, 129, 0.16);
-            font-weight: 700;
+            font-weight: 600;
         }
 
         .sidebar-link-left {
@@ -143,7 +170,7 @@
         }
 
         .sidebar-link.active .sidebar-link-left i {
-            color: #10B981;
+            color: #FFFFFF;
         }
 
         .active-dot {
@@ -151,81 +178,92 @@
             height: 7px;
             border-radius: 50%;
             background-color: #10B981;
-            box-shadow: 0 0 8px #10B981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
         }
 
         /* Sidebar Support Card & Logout */
-        .sidebar-bottom {
+        .sidebar-bottom,
+        .sidebar-bottom-section {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            padding-top: 1.5rem;
+            margin-top: 1.25rem;
+            flex-shrink: 0;
+            padding-bottom: 0.75rem;
         }
 
         .support-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(30, 41, 59, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .support-icon {
             width: 32px;
             height: 32px;
-            border-radius: 10px;
-            background: rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
             color: #10B981;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.95rem;
             margin-bottom: 0.75rem;
-            font-size: 1rem;
         }
 
         .support-title {
-            color: #FFFFFF;
+            font-size: 0.88rem;
             font-weight: 700;
-            font-size: 0.85rem;
-            margin-bottom: 0.2rem;
+            color: #FFFFFF;
+            margin-bottom: 0.25rem;
         }
 
         .support-desc {
-            color: #94A3B8;
             font-size: 0.75rem;
-            line-height: 1.4;
+            color: #94A3B8;
             margin-bottom: 0.65rem;
+            line-height: 1.4;
         }
 
         .support-link {
-            color: #10B981;
-            text-decoration: none;
+            font-size: 0.78rem;
             font-weight: 700;
-            font-size: 0.75rem;
+            color: #FFFFFF;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            transition: gap 0.2s ease;
+        }
+
+        .support-link:hover {
+            color: #10B981;
+            gap: 8px;
         }
 
         .btn-signout {
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 100%;
-            padding: 0.7rem 0.95rem;
-            border-radius: 10px;
             color: #94A3B8;
-            background: transparent;
-            border: none;
-            font-size: 0.88rem;
+            text-decoration: none;
+            font-size: 0.9rem;
             font-weight: 600;
+            padding: 0.6rem 0.75rem;
+            border-radius: 10px;
+            background: none;
+            border: none;
+            width: 100%;
             text-align: left;
-            transition: all 0.2s;
             cursor: pointer;
+            transition: all 0.15s ease;
         }
 
         .btn-signout:hover {
             color: #EF4444;
-            background: rgba(239, 68, 68, 0.1);
+            background-color: rgba(239, 68, 68, 0.1);
         }
 
         .public-site-link {
@@ -758,11 +796,11 @@
     <aside class="sidebar">
         <div>
             <!-- Brand Logo -->
-            <a href="/Admin" class="sidebar-brand">
+            <a href="/Admin" class="brand-header">
                 <div class="brand-icon">
-                    <i class="bi bi-heart"></i>
+                    <i class="bi bi-heart-pulse-fill"></i>
                 </div>
-                <span>Health<span style="color: #10B981;">Track</span></span>
+                <span>HealthTrack</span>
             </a>
 
             <!-- Navigation Links -->
@@ -827,7 +865,7 @@
                     <i class="bi bi-heart-pulse"></i>
                 </div>
                 <div class="support-title">Need assistance?</div>
-                <div class="support-desc">Our care team is here to help.</div>
+                <div class="support-desc">Our medical & coaching team is here to assist your schedule.</div>
                 <a href="mailto:support@healthtrack.com" class="support-link">
                     <span>Contact support</span>
                     <i class="bi bi-chevron-right" style="font-size: 0.7rem;"></i>

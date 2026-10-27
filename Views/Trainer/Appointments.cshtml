@@ -1096,10 +1096,19 @@
                                     <i class="bi bi-clock"></i>
                                     <span>@item.TimeSlot · @item.DurationMinutes min</span>
                                 </div>
-                                @if (!string.IsNullOrWhiteSpace(item.Notes) && !item.Notes.StartsWith("Client booked consultation", StringComparison.OrdinalIgnoreCase))
+                                @if (!string.IsNullOrWhiteSpace(item.SessionFocus))
                                 {
-                                    <div class="mt-1 small text-muted" style="font-size: 0.78rem; max-width: 380px;">
-                                        <i class="bi bi-chat-left-quote-fill text-success me-1"></i><span class="fst-italic text-secondary">@(item.Notes.Length > 80 ? item.Notes.Substring(0, 77) + "..." : item.Notes)</span>
+                                    <div class="mt-1 small text-muted" style="font-size: 0.78rem; max-width: 420px;">
+                                        <i class="bi bi-card-text me-1 text-secondary"></i><span class="text-secondary fw-medium">Focus: @(item.SessionFocus.Length > 75 ? item.SessionFocus.Substring(0, 72) + "..." : item.SessionFocus)</span>
+                                    </div>
+                                }
+                                @if (item.HasFeedback)
+                                {
+                                    <div class="mt-1.5 small" style="max-width: 450px;">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 text-wrap text-start" style="font-size: 0.78rem; line-height: 1.35;">
+                                            <i class="bi bi-chat-left-quote-fill flex-shrink-0"></i>
+                                            <span>Feedback: @(item.Feedback.Length > 80 ? item.Feedback.Substring(0, 77) + "..." : item.Feedback)</span>
+                                        </span>
                                     </div>
                                 }
                             </div>
@@ -1113,7 +1122,7 @@
                                     <span class="dot-green"></span>
                                     <span>Approved</span>
                                 </span>
-                                <button type="button" class="btn-feedback-appt" onclick="openFeedbackModal(@item.Id, '@item.ClientName.Replace("'", "\\'")', '@item.AppointmentDate.ToString("yyyy-MM-dd")', '@item.TimeSlot', '@((item.Notes ?? "").Replace("'", "\\'").Replace("\r", "").Replace("\n", " "))')">
+                                <button type="button" class="btn-feedback-appt" onclick="openFeedbackModal(@item.Id, '@item.ClientName.Replace("'", "\\'")', '@item.AppointmentDate.ToString("yyyy-MM-dd")', '@item.TimeSlot', '@item.SessionFocus.Replace("'", "\\'").Replace("\r", "").Replace("\n", " ")', '@item.Feedback.Replace("'", "\\'").Replace("\r", "").Replace("\n", " ")')">
                                     <i class="bi bi-chat-left-text me-1"></i>Feedback
                                 </button>
                                 <button type="button" class="btn-view-appt" onclick="openViewModal('@item.ClientName', '@item.ClientEmail', '@item.ConsultationType', '@item.DayNumber @item.MonthText', '@item.TimeSlot', '@item.DurationMinutes', '@item.Status', '@item.Notes.Replace("'", "\\'")')">
@@ -1147,7 +1156,7 @@
                                 <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-1.5 rounded-pill fw-semibold">
                                     @item.Status
                                 </span>
-                                <button type="button" class="btn-feedback-appt" onclick="openFeedbackModal(@item.Id, '@item.ClientName.Replace("'", "\\'")', '@item.AppointmentDate.ToString("yyyy-MM-dd")', '@item.TimeSlot', '@((item.Notes ?? "").Replace("'", "\\'").Replace("\r", "").Replace("\n", " "))')">
+                                <button type="button" class="btn-feedback-appt" onclick="openFeedbackModal(@item.Id, '@item.ClientName.Replace("'", "\\'")', '@item.AppointmentDate.ToString("yyyy-MM-dd")', '@item.TimeSlot', '@item.SessionFocus.Replace("'", "\\'").Replace("\r", "").Replace("\n", " ")', '@item.Feedback.Replace("'", "\\'").Replace("\r", "").Replace("\n", " ")')">
                                     <i class="bi bi-chat-left-text me-1"></i>Feedback
                                 </button>
                                 <button type="button" class="btn-view-appt" onclick="openViewModal('@item.ClientName', '@item.ClientEmail', '@item.ConsultationType', '@item.DayNumber @item.MonthText', '@item.TimeSlot', '@item.DurationMinutes', '@item.Status', '@item.Notes.Replace("'", "\\'")')">
@@ -1318,10 +1327,25 @@
                             <input type="text" id="feedbackTimeSlot" class="form-control rounded-3 bg-light py-2" readonly />
                         </div>
                     </div>
+
+                    <!-- Separate Session Notes Field (Only visible when session notes exist) -->
+                    <div class="mb-3" id="feedbackSessionNotesGroup" style="display: none;">
+                        <label class="form-label fw-semibold small text-muted text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
+                            <i class="bi bi-journal-text me-1 text-primary"></i>Session Notes / Client Focus
+                        </label>
+                        <div class="p-2.5 px-3 rounded-3 bg-light border text-secondary small fw-medium" id="feedbackSessionNotesDisplay" style="line-height: 1.45; font-size: 0.84rem;"></div>
+                    </div>
+
+                    <!-- Dedicated Posture & Technique Feedback Field -->
                     <div class="mb-2">
-                        <label class="form-label fw-semibold small text-dark">Posture & Technique Feedback Notes <span class="text-danger">*</span></label>
-                        <textarea name="feedbackNotes" id="feedbackNotesText" class="form-control rounded-3" rows="4" placeholder="e.g. Form check: maintain neutral spine on Romanian deadlifts; increase daily hydration." required></textarea>
-                        <div class="form-text text-muted small">These notes are visible to the client in their consultation review history.</div>
+                        <label class="form-label fw-semibold small text-dark d-flex align-items-center justify-content-between">
+                            <span>Posture & Technique Feedback <span class="text-danger">*</span></span>
+                            <span class="text-muted fw-normal" style="font-size: 0.74rem;">Visible to client in consultation history</span>
+                        </label>
+                        <textarea name="feedbackNotes" id="feedbackNotesText" class="form-control rounded-3" rows="4" placeholder="Enter posture, form and technique review notes (e.g. Form check: maintain neutral spine on Romanian deadlifts; increase daily hydration.)" required></textarea>
+                        <div class="form-text text-muted small mt-1">
+                            <i class="bi bi-info-circle me-1"></i>These notes provide direct technique feedback and will appear on the client's consultation card.
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-top px-4 py-3 bg-light rounded-bottom-4">
@@ -1416,12 +1440,25 @@
         modal.show();
     }
 
-    function openFeedbackModal(id, clientName, dateStr, timeSlot, existingNotes) {
+    function openFeedbackModal(id, clientName, dateStr, timeSlot, sessionNotes, existingFeedback) {
         document.getElementById('feedbackApptId').value = id;
         document.getElementById('feedbackClientName').value = clientName;
         document.getElementById('feedbackDate').value = dateStr;
         document.getElementById('feedbackTimeSlot').value = timeSlot;
-        document.getElementById('feedbackNotesText').value = existingNotes;
+
+        // Session Notes field: shown if notes exist, hidden if not needed
+        var notesGroup = document.getElementById('feedbackSessionNotesGroup');
+        var notesDisplay = document.getElementById('feedbackSessionNotesDisplay');
+        if (sessionNotes && sessionNotes.trim().length > 0) {
+            notesDisplay.innerText = sessionNotes.trim();
+            notesGroup.style.display = 'block';
+        } else {
+            notesGroup.style.display = 'none';
+            notesDisplay.innerText = '';
+        }
+
+        // Dedicated Feedback field (starts empty if no feedback yet, not prefilled with session notes)
+        document.getElementById('feedbackNotesText').value = existingFeedback ? existingFeedback.trim() : '';
 
         var modal = new bootstrap.Modal(document.getElementById('feedbackApptModal'));
         modal.show();

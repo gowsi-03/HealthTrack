@@ -1385,7 +1385,32 @@ namespace HealthTrack.Controllers
                     else if (dba.Notes.Contains("NUTRITION REVIEW", StringComparison.OrdinalIgnoreCase)) consultType = "NUTRITION REVIEW";
                     else if (dba.Notes.Contains("POSTURE", StringComparison.OrdinalIgnoreCase)) consultType = "POSTURE & REHAB";
                     else if (dba.Notes.Contains("HEALTH CONSULTATION", StringComparison.OrdinalIgnoreCase)) consultType = "HEALTH CONSULTATION";
-                    else if (dba.Notes.Contains("·")) consultType = dba.Notes.Split('·')[0].Trim().ToUpper();
+                    else if (dba.Notes.Contains("·"))
+                    {
+                        var cand = dba.Notes.Split('·')[0].Trim().ToUpper();
+                        if (cand.Length <= 25) consultType = cand;
+                    }
+                }
+
+                string sessionFocus = string.Empty;
+                string feedback = string.Empty;
+                bool hasFeedback = false;
+
+                if (!string.IsNullOrWhiteSpace(dba.Notes))
+                {
+                    if (dba.Status == "Completed" ||
+                        dba.Notes.StartsWith("Form check", StringComparison.OrdinalIgnoreCase) ||
+                        dba.Notes.StartsWith("Feedback", StringComparison.OrdinalIgnoreCase) ||
+                        dba.Notes.StartsWith("Coach", StringComparison.OrdinalIgnoreCase))
+                    {
+                        feedback = dba.Notes.Trim();
+                        hasFeedback = true;
+                    }
+                    else if (!dba.Notes.StartsWith("Client booked consultation", StringComparison.OrdinalIgnoreCase) &&
+                             !dba.Notes.Equals("Standard consultation session.", StringComparison.OrdinalIgnoreCase))
+                    {
+                        sessionFocus = dba.Notes.Trim();
+                    }
                 }
 
                 items.Add(new TrainerAppointmentItem
@@ -1402,7 +1427,10 @@ namespace HealthTrack.Controllers
                     TimeSlot = dba.TimeSlot,
                     DurationMinutes = 45,
                     Status = (dba.Status == "Confirmed" || dba.Status == "Approved") ? "Approved" : dba.Status,
-                    Notes = dba.Notes ?? "General consultation check-in"
+                    Notes = dba.Notes ?? "General consultation check-in",
+                    SessionFocus = sessionFocus,
+                    Feedback = feedback,
+                    HasFeedback = hasFeedback
                 });
             }
 

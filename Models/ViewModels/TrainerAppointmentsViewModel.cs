@@ -35,5 +35,8 @@ namespace HealthTrack.Models.ViewModels
         public int DurationMinutes { get; set; } = 45;
         public string Status { get; set; } = "Approved"; // "Approved", "Pending", "Cancelled"
         public string Notes { get; set; } = string.Empty;
+        public string SessionFocus { get; set; } = string.Empty;
+        public string Feedback { get; set; } = string.Empty;
+        public bool HasFeedback { get; set; } = false;
     }
 }

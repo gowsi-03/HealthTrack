@@ -1041,7 +1041,11 @@
                                         <i class="bi bi-clock"></i>
                                         <span>@appt.TimeSlot · @appt.DurationText</span>
                                     </div>
-                                    @if (!string.IsNullOrWhiteSpace(appt.Notes) && !appt.Notes.StartsWith("Client booked consultation", StringComparison.OrdinalIgnoreCase) && !appt.Notes.Equals("Standard consultation session.", StringComparison.OrdinalIgnoreCase))
+                                    @if (!string.IsNullOrWhiteSpace(appt.Notes) && 
+                                        (appt.Status == "Completed" || 
+                                         appt.Notes.StartsWith("Form check", StringComparison.OrdinalIgnoreCase) || 
+                                         appt.Notes.StartsWith("Feedback", StringComparison.OrdinalIgnoreCase) || 
+                                         appt.Notes.StartsWith("Coach", StringComparison.OrdinalIgnoreCase)))
                                     {
                                         <div class="mt-2 p-2 px-3 rounded-3 small" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-left: 3px solid #10B981 !important; max-width: 520px;">
                                             <div class="d-flex align-items-center gap-1 text-success fw-bold" style="font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase;">
@@ -1051,6 +1055,14 @@
                                             <div class="text-secondary small fw-medium mt-0.5" style="line-height: 1.45; font-size: 0.82rem;">
                                                 @appt.Notes
                                             </div>
+                                        </div>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(appt.Notes) && 
+                                             !appt.Notes.StartsWith("Client booked consultation", StringComparison.OrdinalIgnoreCase) && 
+                                             !appt.Notes.Equals("Standard consultation session.", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <div class="mt-1 small text-muted" style="font-size: 0.78rem;">
+                                            <i class="bi bi-card-text me-1 text-secondary"></i><span class="text-secondary">Focus: @appt.Notes</span>
                                         </div>
                                     }
                                 </div>

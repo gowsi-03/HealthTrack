@@ -1256,7 +1256,10 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="text-muted small fw-bold text-uppercase">Session Focus & Notes</label>
+                    <label class="text-muted small fw-bold text-uppercase d-flex align-items-center gap-1 mb-1" id="viewNotesLabel">
+                        <i class="bi bi-journal-text"></i>
+                        <span>Session Focus</span>
+                    </label>
                     <div id="viewNotes" class="p-3 rounded-3 bg-light small text-secondary"></div>
                 </div>
             </div>
@@ -1302,7 +1305,24 @@
         document.getElementById('viewSpecialistName').innerText = specialist;
         document.getElementById('viewRole').innerText = role;
         document.getElementById('viewDateTime').innerText = dateText + ' · ' + time + ' (' + duration + ')';
-        document.getElementById('viewNotes').innerText = notes && notes.length > 0 ? notes : "No specific notes provided.";
+
+        var label = document.getElementById('viewNotesLabel');
+        var notesBox = document.getElementById('viewNotes');
+        var isFeedback = (status === 'Completed' || (notes && (notes.toLowerCase().startsWith('form check') || notes.toLowerCase().startsWith('feedback') || notes.toLowerCase().startsWith('coach') || notes.toLowerCase().startsWith('enter posture'))));
+
+        if (isFeedback) {
+            label.className = 'small fw-bold text-uppercase text-success d-flex align-items-center gap-1 mb-1';
+            label.innerHTML = '<i class="bi bi-chat-left-quote-fill"></i><span>Coach Feedback & Review</span>';
+            notesBox.className = 'p-3 rounded-3 small fw-medium text-dark border-start border-3 border-success';
+            notesBox.style.backgroundColor = '#F0FDF4';
+            notesBox.innerText = notes && notes.length > 0 ? notes : "No specific feedback provided.";
+        } else {
+            label.className = 'text-muted small fw-bold text-uppercase d-flex align-items-center gap-1 mb-1';
+            label.innerHTML = '<i class="bi bi-journal-text"></i><span>Session Focus</span>';
+            notesBox.className = 'p-3 rounded-3 bg-light small text-secondary';
+            notesBox.style.backgroundColor = '#F8FAFC';
+            notesBox.innerText = notes && notes.length > 0 ? notes : "No specific session focus provided.";
+        }
 
         var pill = document.getElementById('viewStatusPill');
         pill.innerText = status;

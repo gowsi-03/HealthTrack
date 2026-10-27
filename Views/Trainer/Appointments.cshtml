@@ -1227,7 +1227,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="form-label text-muted small fw-bold text-uppercase">Clinical & Coaching Notes</label>
+                    <label class="form-label text-muted small fw-bold text-uppercase d-flex align-items-center gap-1 mb-1" id="viewModalNotesLabel">Clinical & Coaching Notes</label>
                     <div class="p-3 bg-light rounded-3 text-dark small" id="viewModalNotes">
                         Review progressive strength milestone and monitor cardio recovery.
                     </div>
@@ -1416,6 +1416,22 @@
         document.getElementById('viewModalDate').innerText = date;
         document.getElementById('viewModalTime').innerText = time + ' (' + duration + ' min)';
         document.getElementById('viewModalNotes').innerText = notes;
+
+        var notesLabel = document.getElementById('viewModalNotesLabel');
+        var notesBox = document.getElementById('viewModalNotes');
+        var isFeedback = (status === 'Completed' || (notes && (notes.toLowerCase().startsWith('form check') || notes.toLowerCase().startsWith('feedback') || notes.toLowerCase().startsWith('coach') || notes.toLowerCase().startsWith('enter posture'))));
+
+        if (isFeedback) {
+            notesLabel.className = 'form-label small fw-bold text-uppercase text-success d-flex align-items-center gap-1 mb-1';
+            notesLabel.innerHTML = '<i class="bi bi-chat-left-quote-fill"></i><span>Coach Feedback & Review</span>';
+            notesBox.className = 'p-3 rounded-3 small fw-medium text-dark border-start border-3 border-success';
+            notesBox.style.backgroundColor = '#F0FDF4';
+        } else {
+            notesLabel.className = 'form-label text-muted small fw-bold text-uppercase d-flex align-items-center gap-1 mb-1';
+            notesLabel.innerHTML = '<i class="bi bi-journal-text"></i><span>Clinical & Coaching Notes</span>';
+            notesBox.className = 'p-3 bg-light rounded-3 text-dark small';
+            notesBox.style.backgroundColor = '';
+        }
 
         var badgeContainer = document.getElementById('viewModalStatusBadge');
         if (status === 'Approved') {

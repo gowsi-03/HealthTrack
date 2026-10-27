@@ -853,24 +853,9 @@
                         <li class="px-3 py-2 border-bottom">
                             <div class="fw-bold text-dark small">@Model.TrainerName</div>
                             <div class="text-muted" style="font-size: 0.78rem;">@Model.TrainerEmail</div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-0.5 rounded-pill mt-1" style="font-size: 0.7rem;">Trainer Account</span>
                         </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer">
-                                <i class="bi bi-grid text-secondary"></i> Trainer Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Trainer/Clients">
-                                <i class="bi bi-people text-secondary"></i> My Clients
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Trainer/Profile">
-                                <i class="bi bi-person-gear text-secondary"></i> Trainer Profile
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li class="px-2 pt-1">
+                        <li class="px-2 pt-2">
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
                                 <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
                                     <i class="bi bi-box-arrow-right"></i>

@@ -829,44 +829,9 @@
                         <li class="px-3 py-2 border-bottom">
                             <div class="fw-bold text-dark small">@Model.FullName</div>
                             <div class="text-muted" style="font-size: 0.78rem;">@Model.Email</div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-0.5 rounded-pill mt-1" style="font-size: 0.7rem;">Client Account</span>
                         </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client">
-                                <i class="bi bi-grid text-secondary"></i> Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Workouts">
-                                <i class="bi bi-shield-check text-secondary"></i> Workout Plans
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Diet">
-                                <i class="bi bi-egg-fried text-secondary"></i> Diet Plans
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Appointments">
-                                <i class="bi bi-calendar2-event text-secondary"></i> Appointments
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Analytics">
-                                <i class="bi bi-graph-up-arrow text-secondary"></i> Progress & Analytics
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Client/Notifications">
-                                <i class="bi bi-bell text-secondary"></i> Notifications
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Client/Profile">
-                                <i class="bi bi-person text-secondary"></i> Profile & Health
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li class="px-2 pt-1">
+                        <li class="px-2 pt-2">
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
                                 <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
                                     <i class="bi bi-box-arrow-right"></i>

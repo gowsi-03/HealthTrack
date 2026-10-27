@@ -917,29 +917,9 @@
                         <li class="px-3 py-2 border-bottom">
                             <div class="fw-bold text-dark small">@Model.AdminFullName</div>
                             <div class="text-muted" style="font-size: 0.78rem;">@Model.AdminEmail</div>
+                            <span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-0.5 rounded-pill mt-1" style="font-size: 0.7rem;">Admin Account</span>
                         </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin">
-                                <i class="bi bi-grid text-secondary"></i> Administrator Dashboard
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2 active" href="/Admin/Users">
-                                <i class="bi bi-people text-secondary"></i> Client Management
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Trainers">
-                                <i class="bi bi-activity text-secondary"></i> Trainer Management
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item py-2 small d-flex align-items-center gap-2" href="/Admin/Appointments">
-                                <i class="bi bi-calendar2-event text-secondary"></i> Appointments
-                            </a>
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        <li class="px-2 pt-1">
+                        <li class="px-2 pt-2">
                             <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="/" method="post">
                                 <button type="submit" class="btn btn-sm btn-outline-danger w-100 rounded-2 py-1.5 d-flex align-items-center justify-content-center gap-2 fw-semibold">
                                     <i class="bi bi-box-arrow-right"></i>

@@ -1378,6 +1378,16 @@ namespace HealthTrack.Controllers
                 if (inits.Length > 2) inits = inits.Substring(0, 2);
                 if (string.IsNullOrEmpty(inits)) inits = "CL";
 
+                string consultType = "HEALTH CONSULTATION";
+                if (!string.IsNullOrWhiteSpace(dba.Notes))
+                {
+                    if (dba.Notes.Contains("PERSONAL TRAINING", StringComparison.OrdinalIgnoreCase)) consultType = "PERSONAL TRAINING";
+                    else if (dba.Notes.Contains("NUTRITION REVIEW", StringComparison.OrdinalIgnoreCase)) consultType = "NUTRITION REVIEW";
+                    else if (dba.Notes.Contains("POSTURE", StringComparison.OrdinalIgnoreCase)) consultType = "POSTURE & REHAB";
+                    else if (dba.Notes.Contains("HEALTH CONSULTATION", StringComparison.OrdinalIgnoreCase)) consultType = "HEALTH CONSULTATION";
+                    else if (dba.Notes.Contains("·")) consultType = dba.Notes.Split('·')[0].Trim().ToUpper();
+                }
+
                 items.Add(new TrainerAppointmentItem
                 {
                     Id = dba.Id,
@@ -1385,7 +1395,7 @@ namespace HealthTrack.Controllers
                     ClientName = cName,
                     ClientEmail = cEmail,
                     ClientInitials = inits,
-                    ConsultationType = dba.Notes?.Split('·')[0].Trim().ToUpper() ?? "HEALTH CONSULTATION",
+                    ConsultationType = consultType,
                     DayNumber = dba.AppointmentDate.ToString("dd"),
                     MonthText = dba.AppointmentDate.ToString("MMM").ToUpper(),
                     AppointmentDate = dba.AppointmentDate,
@@ -1488,6 +1498,49 @@ namespace HealthTrack.Controllers
             }
 
             TempData["SuccessMessage"] = "All pending appointment requests have been approved!";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        // POST: /Trainer/SaveAppointmentFeedback (TC-12 Consultation Feedback and Review Notes)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveAppointmentFeedback(int id, string feedbackNotes, string? returnUrl = null)
+        {
+            var trainer = await GetCurrentTrainerUserAsync();
+            if (trainer == null) return RedirectToPage("/Account/Login", new { area = "Identity" });
+
+            var appt = await _context.Appointments
+                .Include(a => a.Client)
+                .FirstOrDefaultAsync(a => a.Id == id && a.TrainerId == trainer.Id);
+
+            if (appt != null)
+            {
+                appt.Notes = feedbackNotes?.Trim() ?? string.Empty;
+                if (appt.Status == "Approved" || appt.Status == "Confirmed")
+                {
+                    appt.Status = "Completed";
+                }
+
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = appt.ClientId,
+                    Message = $"Coach {trainer.FullName} submitted session feedback: \"{(appt.Notes.Length > 60 ? appt.Notes.Substring(0, 57) + "..." : appt.Notes)}\"",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                });
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Consultation feedback and review notes saved successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Appointment not found or unauthorized.";
+            }
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
             return RedirectToAction(nameof(Appointments));
         }
 

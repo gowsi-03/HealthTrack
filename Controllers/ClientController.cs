@@ -567,12 +567,13 @@ namespace HealthTrack.Controllers
             bool hasConflict = await _context.Appointments.AnyAsync(a =>
                 a.TrainerId == trainerId &&
                 a.AppointmentDate.Date == vm.QuickBooking.AppointmentDate.Date &&
-                a.TimeSlot == vm.QuickBooking.TimeSlot &&
-                a.Status != "Declined");
+                (a.TimeSlot == vm.QuickBooking.TimeSlot || a.TimeSlot.StartsWith(vm.QuickBooking.TimeSlot) || vm.QuickBooking.TimeSlot.StartsWith(a.TimeSlot)) &&
+                a.Status != "Declined" && a.Status != "Cancelled");
 
             if (hasConflict)
             {
-                TempData["ErrorMessage"] = $"The time slot {vm.QuickBooking.TimeSlot} on {vm.QuickBooking.AppointmentDate:MMM dd} is already booked. Please choose another slot.";
+                TempData["ErrorMessage"] = $"The time slot {vm.QuickBooking.TimeSlot} is already booked. Please choose another slot.";
+                TempData["OpenBookingModal"] = "true";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -1478,6 +1479,20 @@ namespace HealthTrack.Controllers
             {
                 var fallback = await _userManager.FindByEmailAsync("trainer@healthtrack.com");
                 if (fallback != null) trainerId = fallback.Id;
+            }
+
+            // Conflict detection (TC-14): verify coach does not have an existing booking at the same date and time slot
+            bool hasConflict = await _context.Appointments.AnyAsync(a =>
+                a.TrainerId == trainerId &&
+                a.AppointmentDate.Date == form.AppointmentDate.Date &&
+                (a.TimeSlot == form.TimeSlot || a.TimeSlot.StartsWith(form.TimeSlot) || form.TimeSlot.StartsWith(a.TimeSlot)) &&
+                a.Status != "Cancelled" && a.Status != "Declined");
+
+            if (hasConflict)
+            {
+                TempData["ErrorMessage"] = $"The time slot {form.TimeSlot} is already booked. Please choose another slot.";
+                TempData["OpenBookingModal"] = "true";
+                return RedirectToAction(nameof(Appointments));
             }
 
             var appt = new Appointment

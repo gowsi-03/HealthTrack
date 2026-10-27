@@ -1623,6 +1623,14 @@
             <form asp-action="BookQuickAppointment" method="post">
                 @Html.AntiForgeryToken()
                 <div class="modal-body">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show rounded-3 p-3 mb-3 d-flex align-items-center gap-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 text-danger flex-shrink-0"></i>
+                            <div class="small fw-semibold">@TempData["ErrorMessage"]</div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
                     <div class="alert alert-info py-2 px-3 small rounded-3 mb-3">
                         <i class="bi bi-shield-check me-1"></i> Conflict-Detection Active: System automatically verifies coach schedule availability.
                     </div>
@@ -1770,6 +1778,13 @@
     const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
     const mealModal = new bootstrap.Modal(document.getElementById('mealModal'));
     const workoutModal = new bootstrap.Modal(document.getElementById('workoutModal'));
+
+    @if (TempData["OpenBookingModal"] != null && TempData["OpenBookingModal"]?.ToString() == "true")
+    {
+        <text>
+        bookingModal.show();
+        </text>
+    }
 
     function openMeasurementModal() { measurementModal.show(); }
     function openBookingModal() { bookingModal.show(); }

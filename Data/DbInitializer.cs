@@ -1,3 +1,5 @@
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,9 +14,34 @@ namespace HealthTrack.Data
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
+            var env = serviceProvider.GetService<IWebHostEnvironment>();
 
             // Ensure database is created and migrations are applied
             await context.Database.MigrateAsync();
+
+            // 0. Auto-inject full database backup seed script (HealthTrackSeedData.sql) if present
+            var seedSqlPath = Path.Combine(env?.ContentRootPath ?? Directory.GetCurrentDirectory(), "Data", "HealthTrackSeedData.sql");
+            if (!File.Exists(seedSqlPath))
+            {
+                seedSqlPath = Path.Combine(AppContext.BaseDirectory, "Data", "HealthTrackSeedData.sql");
+            }
+
+            if (File.Exists(seedSqlPath) && !await context.Users.AnyAsync(u => u.Role == "Trainer" || u.Role == "Client"))
+            {
+                var sqlScript = await File.ReadAllTextAsync(seedSqlPath);
+                if (!string.IsNullOrWhiteSpace(sqlScript))
+                {
+                    var dbConn = context.Database.GetDbConnection();
+                    if (dbConn.State != System.Data.ConnectionState.Open)
+                    {
+                        await dbConn.OpenAsync();
+                    }
+                    using var dbCmd = dbConn.CreateCommand();
+                    dbCmd.CommandTimeout = 120;
+                    dbCmd.CommandText = sqlScript;
+                    await dbCmd.ExecuteNonQueryAsync();
+                }
+            }
 
             // 1. Seed Roles (Admin, Trainer, Client) - required for user registration and role assignment
             string[] roles = { "Admin", "Trainer", "Client" };

@@ -26,7 +26,10 @@ namespace HealthTrack.Data
                 seedSqlPath = Path.Combine(AppContext.BaseDirectory, "Data", "HealthTrackSeedData.sql");
             }
 
-            if (File.Exists(seedSqlPath) && !await context.Users.AnyAsync(u => u.Role == "Trainer" || u.Role == "Client"))
+            if (File.Exists(seedSqlPath) && (
+                !await context.Users.AnyAsync(u => u.Role == "Trainer" || u.Role == "Client") ||
+                !await context.Users.AnyAsync(u => u.Email == "trainer@healthtrack.com") ||
+                !await context.Users.AnyAsync(u => u.Email == "client@healthtrack.com")))
             {
                 var sqlScript = await File.ReadAllTextAsync(seedSqlPath);
                 if (!string.IsNullOrWhiteSpace(sqlScript))

@@ -203,7 +203,56 @@
         .form-subtitle {
             font-size: 0.95rem;
             color: var(--ht-muted);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Quick Role Toggle Buttons (Client / Trainer / Admin) */
+        .role-toggle-wrapper {
+            margin-bottom: 1.5rem;
+        }
+        .role-toggle-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ht-muted);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .role-toggle-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background-color: #F1F5F9;
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid var(--ht-border);
+        }
+        .role-toggle-btn {
+            border: none;
+            background: transparent;
+            color: #475569;
+            font-size: 0.86rem;
+            font-weight: 700;
+            padding: 0.55rem 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.18s ease;
+        }
+        .role-toggle-btn:hover {
+            color: #0F172A;
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+        .role-toggle-btn.active {
+            background-color: #FFFFFF;
+            color: var(--ht-green);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
         }
 
         /* Form Inputs */
@@ -447,6 +496,28 @@
             <h2 class="form-title">Log in to HealthTrack</h2>
             <p class="form-subtitle">Enter your details to access your dashboard.</p>
 
+            <!-- 3-Way Quick Login Toggle (Client / Trainer / Admin) -->
+            <div class="role-toggle-wrapper">
+                <div class="role-toggle-label">
+                    <span>Quick Role Login</span>
+                    <span id="roleSelectedHint" style="color: var(--ht-green); font-weight: 600; text-transform: none; letter-spacing: 0;">Select a role to auto-fill</span>
+                </div>
+                <div class="role-toggle-group" role="group" aria-label="Quick Role Login Toggle">
+                    <button type="button" class="role-toggle-btn" id="toggleClientBtn" onclick="selectQuickRole('client', this)">
+                        <i class="bi bi-person-check-fill"></i>
+                        <span>Client</span>
+                    </button>
+                    <button type="button" class="role-toggle-btn" id="toggleTrainerBtn" onclick="selectQuickRole('trainer', this)">
+                        <i class="bi bi-clipboard2-pulse-fill"></i>
+                        <span>Trainer</span>
+                    </button>
+                    <button type="button" class="role-toggle-btn" id="toggleAdminBtn" onclick="selectQuickRole('admin', this)">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        <span>Admin</span>
+                    </button>
+                </div>
+            </div>
+
             <form id="account" method="post" asp-route-returnUrl="@Model.ReturnUrl">
                 <div asp-validation-summary="ModelOnly" class="mb-3" role="alert"></div>
 
@@ -510,6 +581,36 @@
         } else {
             input.type = 'password';
             btn.textContent = 'Show';
+        }
+    }
+
+    function selectQuickRole(role, btn) {
+        const credentials = {
+            client:  { email: 'client@healthtrack.com',  password: 'Client123!',  label: 'Client (Liam Smith)' },
+            trainer: { email: 'trainer@healthtrack.com', password: 'Trainer123!', label: 'Trainer (Dr. Maya Patel)' },
+            admin:   { email: 'admin@healthtrack.com',   password: 'Admin123!',   label: 'Admin (System Administrator)' }
+        };
+
+        const selected = credentials[role];
+        if (!selected) return;
+
+        document.querySelectorAll('.role-toggle-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const hint = document.getElementById('roleSelectedHint');
+
+        if (emailInput) {
+            emailInput.value = selected.email;
+            emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (passwordInput) {
+            passwordInput.value = selected.password;
+            passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (hint) {
+            hint.textContent = selected.label;
         }
     }
 </script>

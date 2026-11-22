@@ -56,14 +56,18 @@ if (app.Environment.IsDevelopment())
     // does not prematurely terminate HealthTrack.exe with exit code -1 (0xffffffff).
     app.Lifetime.ApplicationStarted.Register(() =>
     {
-        var launchUrl = builder.Configuration["HEALTHTRACK_OPEN_BROWSER"];
-        if (!string.IsNullOrWhiteSpace(launchUrl) && string.IsNullOrEmpty(builder.Configuration["urls"]))
+        var targetUrl = app.Urls.FirstOrDefault(u => u.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                        ?? app.Urls.FirstOrDefault()
+                        ?? "https://localhost:7120";
+
+        // Only auto-open browser when running on default development ports (7120 / 5258)
+        if (targetUrl.Contains("7120") || targetUrl.Contains("5258"))
         {
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = launchUrl,
+                    FileName = targetUrl,
                     UseShellExecute = true
                 });
             }

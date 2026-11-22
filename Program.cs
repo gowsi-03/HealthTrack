@@ -51,6 +51,28 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
+
+    // Open browser safely via shell execute so Visual Studio's browser-lifetime tracker
+    // does not prematurely terminate HealthTrack.exe with exit code -1 (0xffffffff).
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        var launchUrl = builder.Configuration["HEALTHTRACK_OPEN_BROWSER"];
+        if (!string.IsNullOrWhiteSpace(launchUrl) && string.IsNullOrEmpty(builder.Configuration["urls"]))
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = launchUrl,
+                    UseShellExecute = true
+                });
+            }
+            catch
+            {
+                // Ignore if default browser cannot be launched
+            }
+        }
+    });
 }
 else
 {
